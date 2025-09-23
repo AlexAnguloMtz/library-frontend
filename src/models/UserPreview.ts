@@ -5,7 +5,7 @@ export type UserPreview = {
     name: string;
     email: string;
     roles: RoleDTO[];
-    activeLoans: string;
-    memberSince: string;
     phone: string;
+    registrationDate: string;
+    activeLoans: string;
 }

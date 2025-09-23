@@ -17,7 +17,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { Dayjs } from 'dayjs';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton } from '@mui/material';
 import type { UserPreview } from '../../models/UserPreview';
-import { userService } from '../../services/UserService';
+import userService  from '../../services/UserService';
 import { DashboardModuleTopBar } from '../../components/DashboardModuleTopBar/DashboardModuleTopBar';
 import type { UserPreviewQuery } from '../../models/UserPreviewQuery';
 import type { PaginationRequest } from '../../models/PaginationRequest';
@@ -56,16 +56,16 @@ const datePickerslotProps: any = {
   },
 }
 
-type Filters = {
+type UserFilters = {
   search: string;
   role: string;
-  membershipMinDate: Dayjs | null;
-  membershipMaxDate: Dayjs | null;
+  registrationDateMin: Dayjs | null;
+  registrationDateMax: Dayjs | null;
   minLoans: string;
   maxLoans: string;
 };
 
-type SortableColumn = 'name' | 'contact' | 'role' | 'memberSince' | 'activeLoans';
+type SortableColumn = 'name' | 'contact' | 'role' | 'registrationDate' | 'activeLoans';
 
 type PaginationState = {
   sort?: SortableColumn;
@@ -79,11 +79,11 @@ type UsersState =
   | { status: 'success'; users: UserPreview[] };
 
 const Users: React.FC = () => {
-  const [filters, setFilters] = useState<Filters>({
+  const [filters, setFilters] = useState<UserFilters>({
     search: '',
     role: '',
-    membershipMinDate: null,
-    membershipMaxDate: null,
+    registrationDateMin: null,
+    registrationDateMax: null,
     minLoans: '',
     maxLoans: ''
   });
@@ -112,13 +112,13 @@ const Users: React.FC = () => {
     };
 
     fetchUsers();
-  }, [debouncedSearch, filters.role, filters.membershipMinDate, filters.membershipMaxDate, filters.minLoans, filters.maxLoans, paginationState]);
+  }, [debouncedSearch, filters.role, filters.registrationDateMin, filters.registrationDateMax, filters.minLoans, filters.maxLoans, paginationState]);
 
-  const toQuery = (filters: Filters): UserPreviewQuery => {
+  const toQuery = (filters: UserFilters): UserPreviewQuery => {
     return {
       search: filters.search,
-      memberSinceMin: filters.membershipMinDate?.toDate(),
-      memberSinceMax: filters.membershipMaxDate?.toDate(),
+      registrationDateMin: filters.registrationDateMin?.toDate(),
+      registrationDateMax: filters.registrationDateMax?.toDate(),
       role: filters.role ? [filters.role] : undefined,
       activeBookLoansMin: filters.minLoans ? parseInt(filters.minLoans, 10) : undefined,
       activeBookLoansMax: filters.maxLoans ? parseInt(filters.maxLoans, 10) : undefined,
@@ -153,8 +153,8 @@ const Users: React.FC = () => {
       return [{ sort: 'role', order: paginationState.order }];
     }
 
-    if (paginationState.sort === 'memberSince') {
-      return [{ sort: 'createdAt', order: paginationState.order }];
+    if (paginationState.sort === 'registrationDate') {
+      return [{ sort: 'registrationDate', order: paginationState.order }];
     }
 
     if (paginationState.sort === 'activeLoans') {
@@ -244,8 +244,8 @@ const Users: React.FC = () => {
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
               label="Fecha membresía (mín)"
-              value={filters.membershipMinDate}
-              onChange={(v) => handleFilterChange('membershipMinDate', v)}
+              value={filters.registrationDateMin}
+              onChange={(v) => handleFilterChange('registrationDateMin', v)}
               slotProps={datePickerslotProps}
 
             />
@@ -255,8 +255,8 @@ const Users: React.FC = () => {
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
               label="Fecha membresía (max)"
-              value={filters.membershipMaxDate}
-              onChange={(v) => handleFilterChange('membershipMaxDate', v)}
+              value={filters.registrationDateMax}
+              onChange={(v) => handleFilterChange('registrationDateMax', v)}
               slotProps={datePickerslotProps}
             />
           </LocalizationProvider>
@@ -337,9 +337,9 @@ const Users: React.FC = () => {
                 />
                 <SortableColumnHeader
                   title='Miembro desde'
-                  active={paginationState.sort === 'memberSince'}
+                  active={paginationState.sort === 'registrationDate'}
                   order={paginationState.order}
-                  onClick={() => { setPaginationState(nextPagination("memberSince")) }}
+                  onClick={() => { setPaginationState(nextPagination("registrationDate")) }}
                   style={{ width: '22%' }}
                 />
                 <SortableColumnHeader
@@ -391,7 +391,7 @@ const Users: React.FC = () => {
                       <span className={`user-role-badge ${role.slug}`}>{role.name}</span>
                     ))}
                   </td>
-                  <td>{user.memberSince}</td>
+                  <td>{user.registrationDate}</td>
                   <td>{user.activeLoans}</td>
                   <td>
                     <div className='actions'>

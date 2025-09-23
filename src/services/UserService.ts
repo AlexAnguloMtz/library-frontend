@@ -1,49 +1,23 @@
-import { UserFactory } from "../factories/UserFactory";
 import type { PaginationRequest } from "../models/PaginationRequest";
 import type { UserPreview } from "../models/UserPreview";
 import type { UserPreviewQuery } from "../models/UserPreviewQuery";
 
-interface UserClient {
-    getUsersPreviews(query: string, pagination: string): string;
-}
+class UserService {
+    async getUsersPreviews(query: UserPreviewQuery, pagination: PaginationRequest): Promise<UserPreview[]> {
+        const { page, size } = pagination;
 
-export interface UserService {
-    getUsersPreviews(query: UserPreviewQuery, pagination: PaginationRequest): Promise<UserPreview[]>;
-}
+        const url = `http://localhost:8080/api/v1/users?page=${page}&size=${size}`;
 
-class DevelopmentUserService implements UserService {
-    async getUsersPreviews(_: UserPreviewQuery, __: PaginationRequest): Promise<UserPreview[]> {
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        return UserFactory.createUsersPreviews(25);
-    }
-}
+        const response = await fetch(url);
 
-class ProductionUserService implements UserService {
-    private userClient: UserClient;
-
-    constructor() {
-        // @ts-ignore
-        if (!window.userClient) {
-            throw new Error("user client not available in window");
+        if (!response.ok) {
+            throw new Error(`Error al obtener usuarios: ${response.statusText}`);
         }
 
-        // @ts-ignore
-        this.userClient = window.userClient;
+        const users: UserPreview[] = await response.json();
+        
+        return users;
     }
-
-    async getUsersPreviews(query: UserPreviewQuery, pagination: PaginationRequest): Promise<UserPreview[]> {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        const queryJson = JSON.stringify(query);
-        const paginationJson = JSON.stringify(pagination);
-
-        return JSON.parse(this.userClient.getUsersPreviews(queryJson, paginationJson)) as UserPreview[];
-    }
-
 }
 
-const isDevelopment = process.env.NODE_ENV === 'development';
-
-export const userService = isDevelopment
-    ? new DevelopmentUserService()
-    : new ProductionUserService();
+export default new UserService();
