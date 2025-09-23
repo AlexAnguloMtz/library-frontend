@@ -1,0 +1,53 @@
+.sortable-column-header.non-sortable {
+    cursor: default;
+}
+
+.sortable-column-header.non-sortable:hover {
+    background-color: white;
+}
+
+.sortable-column-header:hover {
+    background-color: rgb(221, 221, 221);
+}
+
+.sortable-column-header {
+    padding: 0px 6px;
+    text-align: left;
+    color: #6B7280;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.sortable-column-header.active {
+    color: white;
+    background-color: black;
+}
+
+.sortable-column-header .sort-icon {
+    width: 20px;
+    height: 20px;
+    display: none;
+    position: relative;
+    left: 4px;
+}
+
+.sortable-column-header.active.asc .sort-icon.asc {
+    display: inline-block;
+}
+
+.sortable-column-header.active.desc .sort-icon.desc {
+    display: inline-block;
+}
+
+.sortable-column-header.active .inactive-sort-icon {
+    display: none;
+}
+
+.sortable-column-header-content {
+    display: flex;
+    align-items: center;
+}
+
+.sortable-column-header .inactive-sort-icon {
+    transform: scale(0.6) rotate(90deg);
+}
