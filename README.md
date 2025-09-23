@@ -25,10 +25,5 @@ Cómo empezar a desarrollar en local:
    npm run dev
 ```
 
-Vite cargará automáticamente .env.development y sobrescribirá valores con .env.local si existe.
+Vite cargará automáticamente .env.development
 
-Buenas prácticas:
-
-- Nunca commitees tu .env.development real con secretos.
-- .env.example sirve como referencia y plantilla para todos los desarrolladores.
-- Si agregas nuevas variables de entorno, actualiza .env.example para que todos sepan que deben agregarlas.
