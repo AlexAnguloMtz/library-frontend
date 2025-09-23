@@ -13,13 +13,17 @@ Archivos `.env`:
 Cómo empezar a desarrollar en local:
 
 1. Copiar el archivo de ejemplo a .env.development:
-   "cp .env.example .env.development"
+```bash
+   cp .env.example .env.development
+```
 
 2. Opcional: agregar valores secretos o personalizados en .env.local (este archivo no se debe commitear).
 
 3. Instalar dependencias e iniciar la app:
-   "npm install"
-   "npm run dev"
+```bash
+   npm install
+   npm run dev
+```
 
 Vite cargará automáticamente .env.development y sobrescribirá valores con .env.local si existe.
 
