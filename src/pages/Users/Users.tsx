@@ -24,6 +24,7 @@ import type { PaginationRequest } from '../../models/PaginationRequest';
 import { useDebounce } from '../../hooks/useDebounce';
 import { SortableColumnHeader } from '../../components/SortableColumnHeader/SortableColumnHeader';
 import type { SortRequest } from '../../models/SortRequest';
+import type { PaginationResponse } from '../../models/PaginationResponse';
 
 const loanOptions = Array.from({ length: 20 }, (_, i) => i + 1);
 
@@ -76,7 +77,7 @@ type UsersState =
   | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'error'; error: string }
-  | { status: 'success'; users: UserPreview[] };
+  | { status: 'success'; response: PaginationResponse<UserPreview> };
 
 const Users: React.FC = () => {
   const [filters, setFilters] = useState<UserFilters>({
@@ -103,8 +104,8 @@ const Users: React.FC = () => {
     const fetchUsers = async () => {
       setUsersState({ status: 'loading' });
       try {
-        const users = await userService.getUsersPreviews(toQuery(filters), pagination(paginationState));
-        setUsersState({ status: 'success', users });
+        const response = await userService.getUsersPreviews(toQuery(filters), pagination(paginationState));
+        setUsersState({ status: 'success', response });
       } catch (error: any) {
         setUsersState({ status: 'error', error: error.message || 'Unknown error' });
         setErrorOpen(true);
@@ -369,7 +370,7 @@ const Users: React.FC = () => {
                   </tr>
                 ))
               )}
-              {usersState.status === 'success' && usersState.users.map(user => (
+              {usersState.status === 'success' && usersState.response.items.map((user: UserPreview) => (
                 <tr key={user.id}>
                   <td className='user-info-cell'>
                     <div className='user-avatar-container'>
