@@ -1,6 +1,6 @@
 # Gestor de librería (frontend)
 
-Este proyecto utiliza variables de entorno para configurar URLs, flags y claves necesarias para ejecutar la app en distintos entornos (desarrollo, producción, etc.).
+Este proyecto utiliza variables de entorno para configuración, que permiten ejecutar la app en distintos entornos (desarrollo, producción, etc.).
 
 Archivos `.env`:
 
