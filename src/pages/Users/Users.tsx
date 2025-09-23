@@ -19,7 +19,7 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton } from '@mu
 import type { UserPreview } from '../../models/UserPreview';
 import userService  from '../../services/UserService';
 import { DashboardModuleTopBar } from '../../components/DashboardModuleTopBar/DashboardModuleTopBar';
-import type { UserPreviewQuery } from '../../models/UserPreviewQuery';
+import type { UserPreviewsQuery } from '../../models/UserPreviewQuery';
 import type { PaginationRequest } from '../../models/PaginationRequest';
 import { useDebounce } from '../../hooks/useDebounce';
 import { SortableColumnHeader } from '../../components/SortableColumnHeader/SortableColumnHeader';
@@ -115,7 +115,7 @@ const Users: React.FC = () => {
     fetchUsers();
   }, [debouncedSearch, filters.role, filters.registrationDateMin, filters.registrationDateMax, filters.minLoans, filters.maxLoans, paginationState]);
 
-  const toQuery = (filters: UserFilters): UserPreviewQuery => {
+  const toQuery = (filters: UserFilters): UserPreviewsQuery => {
     return {
       search: filters.search,
       registrationDateMin: filters.registrationDateMin?.toDate(),

@@ -1,14 +1,17 @@
 import type { PaginationRequest } from "../models/PaginationRequest";
 import type { PaginationResponse } from "../models/PaginationResponse";
 import type { UserPreview } from "../models/UserPreview";
-import type { UserPreviewQuery } from "../models/UserPreviewQuery";
+import type { UserPreviewsQuery } from "../models/UserPreviewQuery";
 import { appConfig } from "../config/AppConfig"; 
+import * as paginationRequest from '../models/PaginationRequest';
+import * as userPreviewsQuery from '../models/UserPreviewQuery';
+import * as URLSearchParamsHelpers from '../util/URLSearchParamsHelpers';
 
 class UserService {
-    async getUsersPreviews(query: UserPreviewQuery, pagination: PaginationRequest): Promise<PaginationResponse<UserPreview>> {
-        const { page, size } = pagination;
+    async getUsersPreviews(query: UserPreviewsQuery, pagination: PaginationRequest): Promise<PaginationResponse<UserPreview>> {
+        const queryString = userPreviewsQueryString(query, pagination);
 
-        const url = `${appConfig.apiUrl}/api/v1/users?page=${page}&size=${size}`;
+        const url = `${appConfig.apiUrl}/api/v1/users?${queryString}`;
 
         const response = await fetch(url);
 
@@ -20,6 +23,13 @@ class UserService {
         
         return users;
     }
+}
+
+function userPreviewsQueryString(query: UserPreviewsQuery, pagination: PaginationRequest): string {
+    const filtersParams: URLSearchParams = userPreviewsQuery.toURLSearchParams(query);
+    const paginationParams: URLSearchParams = paginationRequest.toURLSearchParams(pagination); 
+    const finalParams: URLSearchParams = URLSearchParamsHelpers.merge([filtersParams, paginationParams]);
+    return finalParams.toString();
 }
 
 export default new UserService();
