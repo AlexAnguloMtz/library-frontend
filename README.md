@@ -4,11 +4,11 @@ Este proyecto utiliza variables de entorno para configuración, que permiten eje
 
 Archivos `.env`:
 
-- Todos los archivos `.env` están git ignorados:
+- Todos los archivos `.env` están en .gitignored:
   - .env.development
   - .env.production
   - .env.local
-- Sólo se encuentra commiteado `.env.example`, que contiene los valores por defecto o placeholders.
+- La unica excepción es `.env.example`, que contiene los valores por defecto o placeholders.
 
 Cómo empezar a desarrollar en local:
 
