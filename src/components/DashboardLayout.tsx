@@ -38,11 +38,9 @@ const DashboardLayout: React.FC = () => {
         }
     }, []);
 
-    // Show loading or nothing while checking authentication
     if (auth === null) {
         return null;
     }
-
 
     const toggleDrawer = () => setMobileOpen(!mobileOpen);
 
@@ -73,8 +71,10 @@ const DashboardLayout: React.FC = () => {
             <Box sx={{ flexGrow: 1 }}>
                 <List>
                     {[
-                        { text: 'Usuarios', icon: <PeopleAltOutlinedIcon />, path: '/users' },
-                    ].map((item) => {
+                        { text: 'Usuarios', icon: <PeopleAltOutlinedIcon />, path: '/users', permission: 'users:read' },
+                    ].filter((item) => {
+                        return !item.permission || auth?.permissions?.includes(item.permission);
+                    }).map((item) => {
                         const isActive = location.pathname === item.path;
 
                         return (
