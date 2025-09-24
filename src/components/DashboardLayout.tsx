@@ -20,7 +20,7 @@ import { Icon, Icons } from './Icon';
 import authenticationHelper from '../util/AuthenticationHelper';
 import type { AuthenticationResponse } from '../models/AuthenticationResponse';
 
-const drawerWidth = 240;
+const drawerWidth = 194;
 
 const DashboardLayout: React.FC = () => {
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -60,7 +60,7 @@ const DashboardLayout: React.FC = () => {
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '20px 12px', color: 'white' }}>
                 <Icon name={Icons.book_open} />
-                <h3>
+                <h3 style={{ fontSize: '0.85em' }}>
                     Sistema Biblioteca
                 </h3>
             </div>
@@ -68,8 +68,8 @@ const DashboardLayout: React.FC = () => {
             <div style={{ width: '96%', height: '1px', margin: '0px auto 8px auto', backgroundColor: '#D8BCE3' }}>
             </div>
 
-            <Box sx={{ flexGrow: 1 }}>
-                <List>
+            <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                <List sx={{ flexGrow: 1 }}>
                     {[
                         { text: 'Usuarios', icon: <PeopleAltOutlinedIcon />, path: '/users', permission: 'users:read' },
                     ].filter((item) => {
@@ -98,35 +98,37 @@ const DashboardLayout: React.FC = () => {
                                     textDecoration: 'none',
                                 }}
                             >
-                                <ListItemIcon sx={{ color: 'inherit' }}>{item.icon}</ListItemIcon>
-                                <ListItemText primary={item.text} />
+                                <ListItemIcon sx={{ color: 'inherit', fontSize: '0.9em', minWidth: '32px' }}>{item.icon}</ListItemIcon>
+                                <ListItemText primary={item.text} sx={{ '& .MuiListItemText-primary': { fontSize: '0.9em' } }} />
                             </ListItem>
                         );
                     })}
                 </List>
-            </Box>
 
-            {/* Logout button at the bottom */}
-            <Box sx={{ p: 2 }}>
-                <ListItem
-                    onClick={handleLogout}
-                    sx={{
-                        color: 'white',
-                        borderRadius: 1,
-                        px: 2,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        '&:hover': {
-                            bgcolor: 'rgba(255,255,255,0.1)',
-                            transform: 'translateX(3px)',
-                        },
-                    }}
-                >
-                    <ListItemIcon sx={{ color: 'inherit' }}>
-                        <Icon name={Icons.logout} />
-                    </ListItemIcon>
-                    <ListItemText primary="Cerrar Sesión" />
-                </ListItem>
+                {/* Logout button at the bottom */}
+                <List sx={{ mt: 'auto' }}>
+                    <ListItem
+                        onClick={handleLogout}
+                        sx={{
+                            color: 'white',
+                            mb: 0.5,
+                            borderRadius: 1,
+                            px: 2,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            '&:hover': {
+                                bgcolor: 'rgba(255,255,255,0.1)',
+                                transform: 'translateX(3px)',
+                            },
+                            textDecoration: 'none',
+                        }}
+                    >
+                        <ListItemIcon sx={{ color: 'inherit', fontSize: '0.9em', minWidth: '32px' }}>
+                            <Icon name={Icons.logout} />
+                        </ListItemIcon>
+                        <ListItemText primary="Cerrar Sesión" sx={{ '& .MuiListItemText-primary': { fontSize: '0.9em' } }} />
+                    </ListItem>
+                </List>
             </Box>
         </Box>
     );
