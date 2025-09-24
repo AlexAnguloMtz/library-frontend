@@ -67,7 +67,7 @@ export function Login() {
       const authentication: AuthenticationResponse = await authService.login({ email: data.email, password: data.password });
       setLoginState({ status: LoginStatus.LoginSuccess });
       authenticationHelper.setAuthentication(authentication);
-      navigate('/auth-page');
+      navigate('/dashboard/users');
     } catch (error: any) {
       setLoginState({
         status: LoginStatus.LoginError,

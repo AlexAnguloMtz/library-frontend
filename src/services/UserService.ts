@@ -6,6 +6,7 @@ import { appConfig } from "../config/AppConfig";
 import * as paginationRequest from '../models/PaginationRequest';
 import * as userPreviewsQuery from '../models/UserPreviewQuery';
 import * as URLSearchParamsHelpers from '../util/URLSearchParamsHelpers';
+import authenticationHelper from "../util/AuthenticationHelper";
 
 class UserService {
     async getUsersPreviews(query: UserPreviewsQuery, pagination: PaginationRequest): Promise<PaginationResponse<UserPreview>> {
@@ -13,7 +14,12 @@ class UserService {
 
         const url = `${appConfig.apiUrl}/api/v1/users?${queryString}`;
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${authenticationHelper.getAuthentication()?.accessToken}`
+            },
+            credentials: 'include'
+        });
 
         if (!response.ok) {
             throw new Error(`Error al obtener usuarios: ${response.statusText}`);

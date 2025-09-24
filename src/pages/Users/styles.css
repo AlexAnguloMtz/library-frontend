@@ -85,17 +85,12 @@ body {
   color: white;
 }
 
-.user-role-badge.admin {
-  color: rgb(49, 99, 207);
-  background-color: #c3d7f8;
-}
-
-.user-role-badge.user {
+.user-role-badge.USER {
   color: #166534;
   background-color: #DCFCE7;
 }
 
-.user-role-badge.staff {
+.user-role-badge.LIBRARIAN {
   background-color: #f3bd5f;
 }
 

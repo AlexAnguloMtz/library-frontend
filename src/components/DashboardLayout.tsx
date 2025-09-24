@@ -1,6 +1,6 @@
 // src/layouts/DashboardLayout.tsx
-import React, { useState } from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
     Box,
     Drawer,
@@ -17,17 +17,42 @@ import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
 import { Icon, Icons } from './Icon';
+import authenticationHelper from '../util/AuthenticationHelper';
+import type { AuthenticationResponse } from '../models/AuthenticationResponse';
 
 const drawerWidth = 240;
 
 const DashboardLayout: React.FC = () => {
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [auth, setAuth] = useState<AuthenticationResponse | null>(null);
     const location = useLocation();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const authentication = authenticationHelper.getAuthentication();
+        if (!authentication) {
+            setAuth(null);
+            navigate('/login');
+        } else {
+            setAuth(authentication);
+        }
+    }, []);
+
+    // Show loading or nothing while checking authentication
+    if (auth === null) {
+        return null;
+    }
+
 
     const toggleDrawer = () => setMobileOpen(!mobileOpen);
 
+    const handleLogout = () => {
+        authenticationHelper.logout();
+        navigate('/login');
+    };
+
     const drawerContent = (
-        <Box sx={{ width: drawerWidth, bgcolor: '#3834a4', height: '100%' }}>
+        <Box sx={{ width: drawerWidth, bgcolor: '#3834a4', height: '100%', display: 'flex', flexDirection: 'column' }}>
             {/* Close button solo visible en mobile */}
             <Toolbar sx={{ display: { xs: 'flex', md: 'none' }, justifyContent: 'flex-end' }}>
                 <IconButton onClick={toggleDrawer}>
@@ -45,39 +70,64 @@ const DashboardLayout: React.FC = () => {
             <div style={{ width: '96%', height: '1px', margin: '0px auto 8px auto', backgroundColor: '#D8BCE3' }}>
             </div>
 
-            <List>
-                {[
-                    { text: 'Usuarios', icon: <PeopleAltOutlinedIcon />, path: '/users' },
-                ].map((item) => {
-                    const isActive = location.pathname === item.path;
+            <Box sx={{ flexGrow: 1 }}>
+                <List>
+                    {[
+                        { text: 'Usuarios', icon: <PeopleAltOutlinedIcon />, path: '/users' },
+                    ].map((item) => {
+                        const isActive = location.pathname === item.path;
 
-                    return (
-                        <ListItem
-                            key={item.text}
-                            component={Link}
-                            to={item.path}
-                            sx={{
-                                color: 'white',
-                                mb: 0.5,
-                                borderRadius: 1,
-                                px: 2,
-                                transition: 'all 0.2s',
-                                ...(isActive && {
-                                    bgcolor: 'rgba(255,255,255,0.2)',
-                                }),
-                                '&:hover': {
-                                    bgcolor: 'rgba(255,255,255,0.1)',
-                                    transform: 'translateX(3px)',
-                                },
-                                textDecoration: 'none',
-                            }}
-                        >
-                            <ListItemIcon sx={{ color: 'inherit' }}>{item.icon}</ListItemIcon>
-                            <ListItemText primary={item.text} />
-                        </ListItem>
-                    );
-                })}
-            </List>
+                        return (
+                            <ListItem
+                                key={item.text}
+                                component={Link}
+                                to={item.path}
+                                sx={{
+                                    color: 'white',
+                                    mb: 0.5,
+                                    borderRadius: 1,
+                                    px: 2,
+                                    transition: 'all 0.2s',
+                                    ...(isActive && {
+                                        bgcolor: 'rgba(255,255,255,0.2)',
+                                    }),
+                                    '&:hover': {
+                                        bgcolor: 'rgba(255,255,255,0.1)',
+                                        transform: 'translateX(3px)',
+                                    },
+                                    textDecoration: 'none',
+                                }}
+                            >
+                                <ListItemIcon sx={{ color: 'inherit' }}>{item.icon}</ListItemIcon>
+                                <ListItemText primary={item.text} />
+                            </ListItem>
+                        );
+                    })}
+                </List>
+            </Box>
+
+            {/* Logout button at the bottom */}
+            <Box sx={{ p: 2 }}>
+                <ListItem
+                    onClick={handleLogout}
+                    sx={{
+                        color: 'white',
+                        borderRadius: 1,
+                        px: 2,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                            bgcolor: 'rgba(255,255,255,0.1)',
+                            transform: 'translateX(3px)',
+                        },
+                    }}
+                >
+                    <ListItemIcon sx={{ color: 'inherit' }}>
+                        <Icon name={Icons.logout} />
+                    </ListItemIcon>
+                    <ListItemText primary="Cerrar Sesión" />
+                </ListItem>
+            </Box>
         </Box>
     );
 
