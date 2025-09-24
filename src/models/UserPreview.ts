@@ -8,4 +8,5 @@ export type UserPreview = {
     phone: string;
     registrationDate: string;
     activeLoans: string;
+    profilePictureUrl: string;
 }

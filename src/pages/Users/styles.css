@@ -46,13 +46,22 @@ body {
 }
 
 .user-avatar-container {
-  min-width: 40px;
-  min-height: 40px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
   background-color: #E0E7FF;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.user-avatar-image {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .user-name-and-id {

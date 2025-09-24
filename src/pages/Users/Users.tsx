@@ -552,14 +552,14 @@ const Users: React.FC = () => {
                   active={paginationState.sort === 'registrationDate'}
                   order={paginationState.order}
                   onClick={() => { setPaginationState(nextPagination("registrationDate")) }}
-                  style={{ width: '22%' }}
+                  style={{ width: '18%' }}
                 />
                 <SortableColumnHeader
                   title='Préstamos activos'
                   active={paginationState.sort === 'activeLoans'}
                   order={paginationState.order}
                   onClick={() => { setPaginationState(nextPagination("activeLoans")) }}
-                  style={{ width: '10%' }}
+                  style={{ width: '14%' }}
                 />
                 <SortableColumnHeader
                   title='Acciones'
@@ -585,7 +585,15 @@ const Users: React.FC = () => {
                 <tr key={user.id}>
                   <td className='user-info-cell'>
                     <div className='user-avatar-container'>
-                      <Icon name={Icons.user_avatar} />
+                      {user.profilePictureUrl ? (
+                        <img 
+                          src={user.profilePictureUrl} 
+                          alt={`${user.name} profile`}
+                          className='user-avatar-image'
+                        />
+                      ) : (
+                        <Icon name={Icons.user_avatar} />
+                      )}
                     </div>
                     <div className='user-name-and-id'>
                       <span className='user-name'>{user.name}</span>
