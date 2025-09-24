@@ -48,6 +48,23 @@ class UserService {
         return filters;
     }
 
+    async deleteUserById(id: string): Promise<void> {
+        const url = `${appConfig.apiUrl}/api/v1/users/${id}`;
+        
+        const response = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${authenticationHelper.getAuthentication()?.accessToken}`
+            },
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error al eliminar usuario: ${response.statusText}`);
+        }
+
+        return;
+    }
 }
 
 function userPreviewsQueryString(query: UserPreviewsQuery, pagination: PaginationRequest): string {

@@ -32,10 +32,28 @@
   color: black;
 }
 
+.btn-error {
+  background-color: #dc2626;
+  color: white;
+}
+
 .btn-primary:hover {
   background-color: var(--primary-color-hover);
 }
 
 .btn-secondary:hover {
   background-color: rgb(201, 200, 200);
+}
+
+.btn-error:hover {
+  background-color: #b91c1c;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn:disabled:hover {
+  background-color: inherit;
 }

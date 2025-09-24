@@ -13,7 +13,8 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { Dayjs } from 'dayjs';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, Pagination, MenuItem } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, Pagination, MenuItem, Box, Typography, Chip, Divider, CircularProgress } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import type { UserPreview } from '../../models/UserPreview';
 import userService  from '../../services/UserService';
 import { DashboardModuleTopBar } from '../../components/DashboardModuleTopBar/DashboardModuleTopBar';
@@ -92,6 +93,7 @@ type FiltersState =
   | { status: 'success'; roles: OptionResponse[] };
 
 const Users: React.FC = () => {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<UserFilters>({
     search: '',
     role: '',
@@ -118,6 +120,9 @@ const Users: React.FC = () => {
   const [displayCount, setDisplayCount] = useState<{ start: number; end: number; total: number } | null>(null);
 
   const [errorOpen, setErrorOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UserPreview | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const debouncedSearch = useDebounce(filters.search, 500);
 
@@ -311,6 +316,48 @@ const Users: React.FC = () => {
     return { sort: column, order: 'asc' };
   };
 
+  const handleViewUser = (userId: string) => {
+    navigate(`/dashboard/users/${userId}`);
+  };
+
+  const handleDeleteClick = (user: UserPreview) => {
+    setUserToDelete(user);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModalOpen(false);
+    setUserToDelete(null);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!userToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      await userService.deleteUserById(userToDelete.id);
+      // Si llegamos aquí, la eliminación fue exitosa
+      setDeleteModalOpen(false);
+      setUserToDelete(null);
+      
+      // Eliminar el usuario del estado local sin recargar
+      if (usersState.status === 'success') {
+        const updatedItems = usersState.response.items.filter(user => user.id !== userToDelete.id);
+        const updatedResponse = {
+          ...usersState.response,
+          items: updatedItems,
+          totalItems: usersState.response.totalItems - 1
+        };
+        setUsersState({ status: 'success', response: updatedResponse });
+      }
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      setUsersState({ status: 'error', error: error.message || 'Error al eliminar usuario' });
+      setErrorOpen(true);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className='parent-container'>
@@ -616,12 +663,18 @@ const Users: React.FC = () => {
                   <td>
                     <div className='actions'>
                       {auth && authenticationHelper.hasAnyPermission(auth, ['users:read']) && (
-                        <button className='action-button edit-button'>
+                        <button 
+                          className='action-button edit-button'
+                          onClick={() => handleViewUser(user.id)}
+                        >
                           <Icon name={Icons.eye} className='edit-icon' />
                         </button>
                       )}
                       {auth && authenticationHelper.hasAnyPermission(auth, ['users:delete']) && (
-                        <button className='action-button delete-button'>
+                        <button 
+                          className='action-button delete-button'
+                          onClick={() => handleDeleteClick(user)}
+                        >
                           <DeleteIcon className='delete-icon' />
                         </button>
                       )}
@@ -642,6 +695,275 @@ const Users: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button type='primary' onClick={(e: any) => closeError(e)}>Cerrar</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog 
+        open={deleteModalOpen} 
+        onClose={isDeleting ? undefined : handleDeleteCancel}
+        maxWidth="sm"
+        fullWidth
+        disableEscapeKeyDown={isDeleting}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          textAlign: 'left', 
+          pb: 1,
+          fontSize: '1.25rem',
+          fontWeight: 600,
+          color: '#1f2937'
+        }}>
+          ¿Eliminar este usuario?
+        </DialogTitle>
+        
+        <DialogContent sx={{ pt: 2, pb: 3 }}>
+          {userToDelete && (
+            <>
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'row', 
+              alignItems: 'flex-start',
+              gap: 3,
+              p: 2
+            }}>
+              {/* User Avatar - Left side */}
+              <Box sx={{ 
+                width: 256, 
+                height: 230,
+                borderRadius: 2,
+                overflow: 'hidden',
+                bgcolor: '#E0E7FF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                {userToDelete.profilePictureUrl ? (
+                  <img 
+                    src={userToDelete.profilePictureUrl} 
+                    alt={`${userToDelete.name} profile`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
+                ) : (
+                  <Icon name={Icons.user_avatar} className="large-icon" />
+                )}
+              </Box>
+
+              {/* User Info - Right side */}
+              <Box sx={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                justifyContent: 'center',
+                flex: 1,
+                minHeight: 230
+              }}>
+                <Typography variant="h6" sx={{ 
+                  fontWeight: 600, 
+                  color: '#1f2937',
+                  mb: 1
+                }}>
+                  {userToDelete.name}
+                </Typography>
+                
+                <Typography variant="body2" sx={{ 
+                  color: '#6b7280'
+                }}>
+                  ID: {userToDelete.id}
+                </Typography>
+              </Box>
+            </Box>
+
+            <Divider sx={{ my: 2 }} />
+
+            {/* User Details */}
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: 1.5,
+              width: '100%'
+            }}>
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'flex-start', 
+                alignItems: 'center',
+                py: 0.5,
+                gap: 2
+              }}>
+                <Typography variant="body2" sx={{ 
+                  fontWeight: 400, 
+                  color: '#9ca3af',
+                  minWidth: '120px',
+                  textAlign: 'left'
+                }}>
+                  Email:
+                </Typography>
+                <Typography variant="body2" sx={{ 
+                  fontWeight: 600,
+                  color: '#1f2937',
+                  textAlign: 'right',
+                  flex: 1
+                }}>
+                  {userToDelete.email}
+                </Typography>
+              </Box>
+
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'flex-start', 
+                alignItems: 'center',
+                py: 0.5,
+                gap: 2
+              }}>
+                <Typography variant="body2" sx={{ 
+                  fontWeight: 400, 
+                  color: '#9ca3af',
+                  minWidth: '120px',
+                  textAlign: 'left'
+                }}>
+                  Teléfono:
+                </Typography>
+                <Typography variant="body2" sx={{ 
+                  fontWeight: 600,
+                  color: '#1f2937',
+                  textAlign: 'right',
+                  flex: 1
+                }}>
+                  {userToDelete.phone}
+                </Typography>
+              </Box>
+
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'flex-start', 
+                alignItems: 'flex-start',
+                py: 0.5,
+                gap: 2
+              }}>
+                <Typography variant="body2" sx={{ 
+                  fontWeight: 400, 
+                  color: '#9ca3af',
+                  minWidth: '120px',
+                  textAlign: 'left',
+                  mt: 0.5
+                }}>
+                  Rol(es):
+                </Typography>
+                <Box sx={{ 
+                  display: 'flex', 
+                  gap: 1, 
+                  flexWrap: 'wrap',
+                  justifyContent: 'flex-end',
+                  flex: 1
+                }}>
+                  {userToDelete.roles.map((role, index) => (
+                    <Chip
+                      key={index}
+                      label={role.name}
+                      size="small"
+                      sx={{
+                        backgroundColor: role.slug === 'USER' ? '#DCFCE7' : '#f3bd5f',
+                        color: role.slug === 'USER' ? '#166534' : '#000',
+                        fontSize: '0.75rem',
+                        height: '24px'
+                      }}
+                    />
+                  ))}
+                </Box>
+              </Box>
+
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'flex-start', 
+                alignItems: 'center',
+                py: 0.5,
+                gap: 2
+              }}>
+                <Typography variant="body2" sx={{ 
+                  fontWeight: 400, 
+                  color: '#9ca3af',
+                  minWidth: '120px',
+                  textAlign: 'left'
+                }}>
+                  Miembro desde:
+                </Typography>
+                <Typography variant="body2" sx={{ 
+                  fontWeight: 600,
+                  color: '#1f2937',
+                  textAlign: 'right',
+                  flex: 1
+                }}>
+                  {userToDelete.registrationDate}
+                </Typography>
+              </Box>
+
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'flex-start', 
+                alignItems: 'center',
+                py: 0.5,
+                gap: 2
+              }}>
+                <Typography variant="body2" sx={{ 
+                  fontWeight: 400, 
+                  color: '#9ca3af',
+                  minWidth: '120px',
+                  textAlign: 'left'
+                }}>
+                  Préstamos activos:
+                </Typography>
+                <Typography variant="body2" sx={{ 
+                  fontWeight: 600,
+                  color: '#1f2937',
+                  textAlign: 'right',
+                  flex: 1
+                }}>
+                  {userToDelete.activeLoans}
+                </Typography>
+              </Box>
+            </Box>
+            </>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ 
+          p: 3, 
+          pt: 1,
+          gap: 0.5,
+          justifyContent: 'flex-end'
+        }}>
+          <Button 
+            type='secondary' 
+            onClick={handleDeleteCancel}
+            className='small-button'
+            disabled={isDeleting}
+          >
+            Cancelar
+          </Button>
+          <Button 
+            type='error' 
+            onClick={handleDeleteConfirm}
+            className='small-button'
+            disabled={isDeleting}
+          >
+            {isDeleting ? (
+              <>
+                <CircularProgress size={16} sx={{ color: 'white', mr: 1 }} />
+                Eliminando...
+              </>
+            ) : (
+              'Eliminar'
+            )}
+          </Button>
         </DialogActions>
       </Dialog>
     </div>

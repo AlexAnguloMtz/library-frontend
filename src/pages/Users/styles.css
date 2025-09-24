@@ -64,6 +64,10 @@ body {
   border-radius: 50%;
 }
 
+.large-icon {
+  font-size: 2rem !important;
+}
+
 .user-name-and-id {
   display: flex;
   flex-direction: column;
