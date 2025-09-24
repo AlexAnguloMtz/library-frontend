@@ -71,11 +71,11 @@ const DashboardLayout: React.FC = () => {
             <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                 <List sx={{ flexGrow: 1 }}>
                     {[
-                        { text: 'Usuarios', icon: <PeopleAltOutlinedIcon />, path: '/users', permission: 'users:read' },
+                        { text: 'Usuarios', icon: <PeopleAltOutlinedIcon />, path: '/dashboard/users', permission: 'users:read' },
                     ].filter((item) => {
                         return !item.permission || auth?.permissions?.includes(item.permission);
                     }).map((item) => {
-                        const isActive = location.pathname === item.path;
+                        const isActive = location.pathname.startsWith(item.path);
 
                         return (
                             <ListItem

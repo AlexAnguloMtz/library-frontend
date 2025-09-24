@@ -25,6 +25,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { SortableColumnHeader } from '../../components/SortableColumnHeader/SortableColumnHeader';
 import type { SortRequest } from '../../models/SortRequest';
 import type { PaginationResponse } from '../../models/PaginationResponse';
+import type { OptionResponse } from '../../models/OptionResponse';
 
 const loanOptions = Array.from({ length: 20 }, (_, i) => i + 1);
 
@@ -79,6 +80,12 @@ type UsersState =
   | { status: 'error'; error: string }
   | { status: 'success'; response: PaginationResponse<UserPreview> };
 
+type FiltersState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'error' }
+  | { status: 'success'; roles: OptionResponse[] };
+
 const Users: React.FC = () => {
   const [filters, setFilters] = useState<UserFilters>({
     search: '',
@@ -95,10 +102,27 @@ const Users: React.FC = () => {
   });
 
   const [usersState, setUsersState] = useState<UsersState>({ status: 'idle' });
+  const [filtersState, setFiltersState] = useState<FiltersState>({ status: 'idle' });
 
   const [errorOpen, setErrorOpen] = useState(false);
 
   const debouncedSearch = useDebounce(filters.search, 500);
+
+  // Load filters on component mount
+  useEffect(() => {
+    const fetchFilters = async () => {
+      setFiltersState({ status: 'loading' });
+      try {
+        const response = await userService.getUserFilters();
+        setFiltersState({ status: 'success', roles: response.roles });
+      } catch (error: any) {
+        // Fail silently as requested
+        setFiltersState({ status: 'error' });
+      }
+    };
+
+    fetchFilters();
+  }, []);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -165,8 +189,54 @@ const Users: React.FC = () => {
     return [];
   }
 
+  const getMinLoanOptions = () => {
+    const maxValue = filters.maxLoans ? parseInt(filters.maxLoans, 10) : 20;
+    return loanOptions.filter(num => num <= maxValue);
+  };
+
+  const getMaxLoanOptions = () => {
+    const minValue = filters.minLoans ? parseInt(filters.minLoans, 10) : 1;
+    return loanOptions.filter(num => num >= minValue);
+  };
+
   const handleFilterChange = (field: keyof typeof filters, value: any) => {
-    setFilters(prev => ({ ...prev, [field]: value }));
+    setFilters(prev => {
+      const newFilters = { ...prev, [field]: value };
+      
+      // Validar que minLoans no sea mayor que maxLoans
+      if (field === 'minLoans' && value && prev.maxLoans) {
+        const minValue = parseInt(value, 10);
+        const maxValue = parseInt(prev.maxLoans, 10);
+        if (minValue > maxValue) {
+          newFilters.maxLoans = value; // Ajustar maxLoans al nuevo minLoans
+        }
+      }
+      
+      // Validar que maxLoans no sea menor que minLoans
+      if (field === 'maxLoans' && value && prev.minLoans) {
+        const maxValue = parseInt(value, 10);
+        const minValue = parseInt(prev.minLoans, 10);
+        if (maxValue < minValue) {
+          newFilters.minLoans = value; // Ajustar minLoans al nuevo maxLoans
+        }
+      }
+      
+      // Validar que registrationDateMin no sea posterior a registrationDateMax
+      if (field === 'registrationDateMin' && value && prev.registrationDateMax) {
+        if (value.isAfter(prev.registrationDateMax)) {
+          newFilters.registrationDateMax = value; // Ajustar maxDate al nuevo minDate
+        }
+      }
+      
+      // Validar que registrationDateMax no sea anterior a registrationDateMin
+      if (field === 'registrationDateMax' && value && prev.registrationDateMin) {
+        if (value.isBefore(prev.registrationDateMin)) {
+          newFilters.registrationDateMin = value; // Ajustar minDate al nuevo maxDate
+        }
+      }
+      
+      return newFilters;
+    });
   };
 
   const closeError = (_: any) => setErrorOpen(false);
@@ -233,9 +303,11 @@ const Users: React.FC = () => {
 
             >
               <MenuItem value="">Cualquiera</MenuItem>
-              <MenuItem value="admin">Administrador</MenuItem>
-              <MenuItem value="user">Usuario</MenuItem>
-              <MenuItem value="staff">Personal</MenuItem>
+              {filtersState.status === 'success' && filtersState.roles.map((role) => (
+                <MenuItem key={role.value} value={role.value}>
+                  {role.label}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
         </div>
@@ -245,8 +317,9 @@ const Users: React.FC = () => {
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
               label="Fecha membresía (mín)"
-              value={filters.registrationDateMin}
+              value={filters.registrationDateMin || undefined}
               onChange={(v) => handleFilterChange('registrationDateMin', v)}
+              maxDate={filters.registrationDateMax || undefined}
               slotProps={datePickerslotProps}
 
             />
@@ -256,8 +329,9 @@ const Users: React.FC = () => {
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
               label="Fecha membresía (max)"
-              value={filters.registrationDateMax}
+              value={filters.registrationDateMax || undefined}
               onChange={(v) => handleFilterChange('registrationDateMax', v)}
+              minDate={filters.registrationDateMin || undefined}
               slotProps={datePickerslotProps}
             />
           </LocalizationProvider>
@@ -281,7 +355,7 @@ const Users: React.FC = () => {
 
             >
               <MenuItem value="">Cualquiera</MenuItem>
-              {loanOptions.map((num) => (
+              {getMinLoanOptions().map((num) => (
                 <MenuItem key={num} value={num}>{num}</MenuItem>
               ))}
             </Select>
@@ -300,7 +374,7 @@ const Users: React.FC = () => {
 
             >
               <MenuItem value="">Cualquiera</MenuItem>
-              {loanOptions.map((num) => (
+              {getMaxLoanOptions().map((num) => (
                 <MenuItem key={num} value={num}>{num}</MenuItem>
               ))}
             </Select>

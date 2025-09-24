@@ -7,6 +7,7 @@ import * as paginationRequest from '../models/PaginationRequest';
 import * as userPreviewsQuery from '../models/UserPreviewQuery';
 import * as URLSearchParamsHelpers from '../util/URLSearchParamsHelpers';
 import authenticationHelper from "../util/AuthenticationHelper";
+import type { UserFiltersResponse } from "../models/UserFiltersResponse";
 
 class UserService {
     async getUsersPreviews(query: UserPreviewsQuery, pagination: PaginationRequest): Promise<PaginationResponse<UserPreview>> {
@@ -29,6 +30,24 @@ class UserService {
         
         return users;
     }
+
+    async getUserFilters(): Promise<UserFiltersResponse> {
+        const url = `${appConfig.apiUrl}/api/v1/users/filters`;
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${authenticationHelper.getAuthentication()?.accessToken}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error al obtener filtros de usuarios: ${response.statusText}`);
+        }
+
+        const filters: UserFiltersResponse = await response.json();
+    
+        return filters;
+    }
+
 }
 
 function userPreviewsQueryString(query: UserPreviewsQuery, pagination: PaginationRequest): string {
