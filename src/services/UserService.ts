@@ -8,6 +8,7 @@ import * as userPreviewsQuery from '../models/UserPreviewQuery';
 import * as URLSearchParamsHelpers from '../util/URLSearchParamsHelpers';
 import authenticationHelper from "../util/AuthenticationHelper";
 import type { UserFiltersResponse } from "../models/UserFiltersResponse";
+import type { FullUser } from "../models/FullUser";
 
 class UserService {
     async getUsersPreviews(query: UserPreviewsQuery, pagination: PaginationRequest): Promise<PaginationResponse<UserPreview>> {
@@ -46,6 +47,24 @@ class UserService {
         const filters: UserFiltersResponse = await response.json();
     
         return filters;
+    }
+
+    async getFullUserById(id: string): Promise<FullUser> {
+        const url = `${appConfig.apiUrl}/api/v1/users/${id}`;
+        
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${authenticationHelper.getAuthentication()?.accessToken}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error al obtener usuario: ${response.statusText}`);
+        }
+
+        const user: FullUser = await response.json();
+
+        return user;
     }
 
     async deleteUserById(id: string): Promise<void> {
