@@ -5,7 +5,6 @@ import { Icon, Icons } from '../../components/Icon';
 import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
 import SearchIcon from '@mui/icons-material/Search';
-import EditIcon from "@mui/icons-material/EditOutlined";
 import DeleteIcon from "@mui/icons-material/DeleteOutline";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
@@ -363,7 +362,7 @@ const Users: React.FC = () => {
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
               label="Fecha membresía (mín)"
-              value={filters.registrationDateMin || undefined}
+              value={filters.registrationDateMin}
               onChange={(v) => handleFilterChange('registrationDateMin', v)}
               maxDate={filters.registrationDateMax || undefined}
               slotProps={datePickerslotProps}
@@ -375,7 +374,7 @@ const Users: React.FC = () => {
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
               label="Fecha membresía (max)"
-              value={filters.registrationDateMax || undefined}
+              value={filters.registrationDateMax}
               onChange={(v) => handleFilterChange('registrationDateMax', v)}
               minDate={filters.registrationDateMin || undefined}
               slotProps={datePickerslotProps}

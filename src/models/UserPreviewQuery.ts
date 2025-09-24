@@ -1,3 +1,5 @@
+import { datePartString } from "../util/DateHelper";
+
 export type UserPreviewsQuery = {
     search?: string,
     registrationDateMin?: Date,
@@ -19,11 +21,11 @@ export function toURLSearchParams(query: UserPreviewsQuery): URLSearchParams {
     }
 
     if (query.registrationDateMin) {
-        url.append("registrationDateMin", query.registrationDateMin.toISOString());
+        url.append("registrationDateMin", datePartString(query.registrationDateMin));
     }
 
     if (query.registrationDateMax) {
-        url.append("registrationDateMax", query.registrationDateMax.toISOString());
+        url.append("registrationDateMax", datePartString(query.registrationDateMax));
     }
 
     if (query.role) {
