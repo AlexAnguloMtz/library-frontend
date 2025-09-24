@@ -115,6 +115,7 @@ const Users: React.FC = () => {
   const [filtersState, setFiltersState] = useState<FiltersState>({ status: 'idle' });
   const [auth, setAuth] = useState<AuthenticationResponse | null>(null);
   const [displayPagination, setDisplayPagination] = useState<{ totalPages: number; page: number } | null>(null);
+  const [displayCount, setDisplayCount] = useState<{ start: number; end: number; total: number } | null>(null);
 
   const [errorOpen, setErrorOpen] = useState(false);
 
@@ -126,12 +127,18 @@ const Users: React.FC = () => {
     setAuth(authentication);
   }, []);
 
-  // Update display pagination only when we have successful data
+  // Update display pagination and count only when we have successful data
   useEffect(() => {
     if (usersState.status === 'success') {
+      const response = usersState.response;
       setDisplayPagination({
-        totalPages: usersState.response.totalPages,
-        page: usersState.response.page
+        totalPages: response.totalPages,
+        page: response.page
+      });
+      setDisplayCount({
+        start: response.page * response.size + 1,
+        end: Math.min((response.page + 1) * response.size, response.totalItems),
+        total: response.totalItems
       });
     }
   }, [usersState]);
@@ -434,6 +441,17 @@ const Users: React.FC = () => {
         </Button>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {/* Element Count */}
+          {displayCount && (
+            <span style={{ 
+              fontSize: '12px', 
+              color: '#6B7280',
+              marginRight: '0.5rem'
+            }}>
+              {displayCount.start} - {displayCount.end} de {displayCount.total}
+            </span>
+          )}
+          
           {/* Page Size Selector */}
           <FormControl size="small" sx={{ minWidth: 100 }}>
             <InputLabel sx={{ fontSize: '12px' }}>Items</InputLabel>
