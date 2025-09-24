@@ -7,7 +7,8 @@ export enum Icons {
     sort_desc = 'sort_desc'
 }
 
-export const Icon: React.FC<{ name: Icons, className?: string }> = ({ name, className }) => {
+export const Icon: React.FC<{ name: Icons, className?: string, fillColor?: string }> = ({ name, className, fillColor }) => {
+    const getColor = (defaultColor: string) => fillColor || defaultColor;
     if (name === Icons.add) {
         return (
             <svg className={className} width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -37,8 +38,8 @@ export const Icon: React.FC<{ name: Icons, className?: string }> = ({ name, clas
     if (name === Icons.book_open) {
         return (
             <svg className={className} width="25" height="24" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12.4377 7V21" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M21.4377 18C21.703 18 21.9573 17.8946 22.1449 17.7071C22.3324 17.5196 22.4377 17.2652 22.4377 17V4C22.4377 3.73478 22.3324 3.48043 22.1449 3.29289C21.9573 3.10536 21.703 3 21.4377 3H16.4377C15.3769 3 14.3595 3.42143 13.6093 4.17157C12.8592 4.92172 12.4377 5.93913 12.4377 7C12.4377 5.93913 12.0163 4.92172 11.2662 4.17157C10.516 3.42143 9.49861 3 8.43774 3H3.43774C3.17253 3 2.91817 3.10536 2.73064 3.29289C2.5431 3.48043 2.43774 3.73478 2.43774 4V17C2.43774 17.2652 2.5431 17.5196 2.73064 17.7071C2.91817 17.8946 3.17253 18 3.43774 18H9.43774C10.2334 18 10.9965 18.3161 11.5591 18.8787C12.1217 19.4413 12.4377 20.2044 12.4377 21C12.4377 20.2044 12.7538 19.4413 13.3164 18.8787C13.879 18.3161 14.6421 18 15.4377 18H21.4377Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M12.4377 7V21" stroke={getColor("white")} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M21.4377 18C21.703 18 21.9573 17.8946 22.1449 17.7071C22.3324 17.5196 22.4377 17.2652 22.4377 17V4C22.4377 3.73478 22.3324 3.48043 22.1449 3.29289C21.9573 3.10536 21.703 3 21.4377 3H16.4377C15.3769 3 14.3595 3.42143 13.6093 4.17157C12.8592 4.92172 12.4377 5.93913 12.4377 7C12.4377 5.93913 12.0163 4.92172 11.2662 4.17157C10.516 3.42143 9.49861 3 8.43774 3H3.43774C3.17253 3 2.91817 3.10536 2.73064 3.29289C2.5431 3.48043 2.43774 3.73478 2.43774 4V17C2.43774 17.2652 2.5431 17.5196 2.73064 17.7071C2.91817 17.8946 3.17253 18 3.43774 18H9.43774C10.2334 18 10.9965 18.3161 11.5591 18.8787C12.1217 19.4413 12.4377 20.2044 12.4377 21C12.4377 20.2044 12.7538 19.4413 13.3164 18.8787C13.879 18.3161 14.6421 18 15.4377 18H21.4377Z" stroke={getColor("white")} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
         );
     }
