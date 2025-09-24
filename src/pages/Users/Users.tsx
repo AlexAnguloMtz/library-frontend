@@ -10,12 +10,11 @@ import DeleteIcon from "@mui/icons-material/DeleteOutline";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
-import MenuItem from "@mui/material/MenuItem";
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { Dayjs } from 'dayjs';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, Pagination, MenuItem } from '@mui/material';
 import type { UserPreview } from '../../models/UserPreview';
 import userService  from '../../services/UserService';
 import { DashboardModuleTopBar } from '../../components/DashboardModuleTopBar/DashboardModuleTopBar';
@@ -26,6 +25,8 @@ import { SortableColumnHeader } from '../../components/SortableColumnHeader/Sort
 import type { SortRequest } from '../../models/SortRequest';
 import type { PaginationResponse } from '../../models/PaginationResponse';
 import type { OptionResponse } from '../../models/OptionResponse';
+import authenticationHelper from '../../util/AuthenticationHelper';
+import type { AuthenticationResponse } from '../../models/AuthenticationResponse';
 
 const loanOptions = Array.from({ length: 20 }, (_, i) => i + 1);
 
@@ -74,6 +75,11 @@ type PaginationState = {
   order?: 'asc' | 'desc';
 };
 
+type PaginationControls = {
+  page: number;
+  size: number;
+};
+
 type UsersState =
   | { status: 'idle' }
   | { status: 'loading' }
@@ -101,12 +107,35 @@ const Users: React.FC = () => {
     order: undefined
   });
 
+  const [paginationControls, setPaginationControls] = useState<PaginationControls>({
+    page: 0,
+    size: 20
+  });
+
   const [usersState, setUsersState] = useState<UsersState>({ status: 'idle' });
   const [filtersState, setFiltersState] = useState<FiltersState>({ status: 'idle' });
+  const [auth, setAuth] = useState<AuthenticationResponse | null>(null);
+  const [displayPagination, setDisplayPagination] = useState<{ totalPages: number; page: number } | null>(null);
 
   const [errorOpen, setErrorOpen] = useState(false);
 
   const debouncedSearch = useDebounce(filters.search, 500);
+
+  // Load authentication on component mount
+  useEffect(() => {
+    const authentication = authenticationHelper.getAuthentication();
+    setAuth(authentication);
+  }, []);
+
+  // Update display pagination only when we have successful data
+  useEffect(() => {
+    if (usersState.status === 'success') {
+      setDisplayPagination({
+        totalPages: usersState.response.totalPages,
+        page: usersState.response.page
+      });
+    }
+  }, [usersState]);
 
   // Load filters on component mount
   useEffect(() => {
@@ -124,11 +153,16 @@ const Users: React.FC = () => {
     fetchFilters();
   }, []);
 
+  // Reset pagination when filters change
+  useEffect(() => {
+    setPaginationControls(prev => ({ ...prev, page: 0 }));
+  }, [debouncedSearch, filters.role, filters.registrationDateMin, filters.registrationDateMax, filters.minLoans, filters.maxLoans]);
+
   useEffect(() => {
     const fetchUsers = async () => {
       setUsersState({ status: 'loading' });
       try {
-        const response = await userService.getUsersPreviews(toQuery(filters), pagination(paginationState));
+        const response = await userService.getUsersPreviews(toQuery(filters), pagination(paginationState, paginationControls));
         setUsersState({ status: 'success', response });
       } catch (error: any) {
         setUsersState({ status: 'error', error: error.message || 'Unknown error' });
@@ -137,7 +171,7 @@ const Users: React.FC = () => {
     };
 
     fetchUsers();
-  }, [debouncedSearch, filters.role, filters.registrationDateMin, filters.registrationDateMax, filters.minLoans, filters.maxLoans, paginationState]);
+  }, [debouncedSearch, filters.role, filters.registrationDateMin, filters.registrationDateMax, filters.minLoans, filters.maxLoans, paginationState, paginationControls]);
 
   const toQuery = (filters: UserFilters): UserPreviewsQuery => {
     return {
@@ -150,12 +184,12 @@ const Users: React.FC = () => {
     };
   }
 
-  const pagination = (paginationState: PaginationState): PaginationRequest => {
+  const pagination = (paginationState: PaginationState, paginationControls: PaginationControls): PaginationRequest => {
     const sorts = mapSort(paginationState);
     return {
       sorts: sorts,
-      page: 0,
-      size: 20
+      page: paginationControls.page,
+      size: paginationControls.size
     };
   }
 
@@ -240,6 +274,18 @@ const Users: React.FC = () => {
   };
 
   const closeError = (_: any) => setErrorOpen(false);
+
+  const clearFilters = () => {
+    setFilters({
+      search: '',
+      role: '',
+      registrationDateMin: null,
+      registrationDateMax: null,
+      minLoans: '',
+      maxLoans: ''
+    });
+    setPaginationControls(prev => ({ ...prev, page: 0 }));
+  };
 
   const nextPagination = (column: SortableColumn): PaginationState => {
     const { sort, order } = paginationState;
@@ -382,8 +428,82 @@ const Users: React.FC = () => {
         </div>
       </div>
 
+      {/* Pagination Controls */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 20px', marginBottom: '1rem' }}>
+        <Button type='secondary' onClick={clearFilters} className='small-button'>
+          Limpiar filtros
+        </Button>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {/* Page Size Selector */}
+          <FormControl size="small" sx={{ minWidth: 100 }}>
+            <InputLabel sx={{ fontSize: '12px' }}>Items</InputLabel>
+            <Select
+              value={paginationControls.size}
+              onChange={(e) => setPaginationControls(prev => ({ ...prev, size: e.target.value as number, page: 0 }))}
+              label="Elementos por página"
+              sx={{ fontSize: '12px', height: '32px' }}
+            >
+              <MenuItem value={10} sx={{ fontSize: '12px' }}>10</MenuItem>
+              <MenuItem value={20} sx={{ fontSize: '12px' }}>20</MenuItem>
+              <MenuItem value={50} sx={{ fontSize: '12px' }}>50</MenuItem>
+              <MenuItem value={100} sx={{ fontSize: '12px' }}>100</MenuItem>
+            </Select>
+          </FormControl>
+
+          {/* Pagination */}
+          {displayPagination && displayPagination.totalPages > 1 ? (
+            <Pagination
+              count={displayPagination.totalPages}
+              page={displayPagination.page + 1} // Material-UI uses 1-based indexing
+              onChange={(_, page) => setPaginationControls(prev => ({ ...prev, page: page - 1 }))} // Convert back to 0-based
+              color="primary"
+              size="small"
+              sx={{
+                '& .MuiPaginationItem-root': {
+                  color: '#4F46E5',
+                  fontSize: '12px',
+                  minWidth: '28px',
+                  height: '28px',
+                  '&.Mui-selected': {
+                    backgroundColor: '#4F46E5',
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: '#433BCF',
+                    }
+                  },
+                  '&:hover': {
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                  }
+                }
+              }}
+            />
+          ) : (
+            <Pagination
+              count={1}
+              page={1}
+              disabled={true}
+              color="primary"
+              size="small"
+              sx={{
+                '& .MuiPaginationItem-root': {
+                  color: '#4F46E5',
+                  fontSize: '12px',
+                  minWidth: '28px',
+                  height: '28px',
+                  '&.Mui-selected': {
+                    backgroundColor: '#4F46E5',
+                    color: 'white',
+                  }
+                }
+              }}
+            />
+          )}
+        </div>
+      </div>
+
       {/* Table / Spinner */}
-      <div className='table-container' style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+      <div className='table-container' style={{ display: 'flex', justifyContent: 'center' }}>
 
         {(
           <table className='table'>
@@ -470,12 +590,16 @@ const Users: React.FC = () => {
                   <td>{user.activeLoans}</td>
                   <td>
                     <div className='actions'>
-                      <button className='action-button edit-button'>
-                        <EditIcon className='edit-icon' />
-                      </button>
-                      <button className='action-button delete-button'>
-                        <DeleteIcon className='delete-icon' />
-                      </button>
+                      {auth && authenticationHelper.hasAnyPermission(auth, ['users:read']) && (
+                        <button className='action-button edit-button'>
+                          <Icon name={Icons.eye} className='edit-icon' />
+                        </button>
+                      )}
+                      {auth && authenticationHelper.hasAnyPermission(auth, ['users:delete']) && (
+                        <button className='action-button delete-button'>
+                          <DeleteIcon className='delete-icon' />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

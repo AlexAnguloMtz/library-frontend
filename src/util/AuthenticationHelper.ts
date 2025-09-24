@@ -16,6 +16,13 @@ class AuthenticationHelper {
     logout() {
         localStorage.removeItem(this.AUTHENTICATION_KEY);
     }
+
+    hasAnyPermission(auth: AuthenticationResponse, permissions: string[]): boolean {
+        if (!auth || !auth.permissions) {
+            return false;
+        }
+        return permissions.some(permission => auth.permissions!.includes(permission));
+    }
 }
 
 export default new AuthenticationHelper();

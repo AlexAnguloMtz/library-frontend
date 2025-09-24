@@ -73,7 +73,7 @@ const DashboardLayout: React.FC = () => {
                     {[
                         { text: 'Usuarios', icon: <PeopleAltOutlinedIcon />, path: '/dashboard/users', permission: 'users:read' },
                     ].filter((item) => {
-                        return !item.permission || auth?.permissions?.includes(item.permission);
+                        return !item.permission || authenticationHelper.hasAnyPermission(auth, [item.permission]);
                     }).map((item) => {
                         const isActive = location.pathname.startsWith(item.path);
 

@@ -5,7 +5,8 @@ export enum Icons {
     book_open = 'book_open',
     sort_asc = 'sort_asc',
     sort_desc = 'sort_desc',
-    logout = 'logout'
+    logout = 'logout',
+    eye = 'eye'
 }
 
 export const Icon: React.FC<{ name: Icons, className?: string, fillColor?: string }> = ({ name, className, fillColor }) => {
@@ -75,6 +76,14 @@ export const Icon: React.FC<{ name: Icons, className?: string, fillColor?: strin
                 <path d="M7.5 17.5H4.16667C3.72464 17.5 3.30072 17.3244 2.98816 17.0118C2.67559 16.6993 2.5 16.2754 2.5 15.8333V4.16667C2.5 3.72464 2.67559 3.30072 2.98816 2.98816C3.30072 2.67559 3.72464 2.5 4.16667 2.5H7.5" stroke={getColor("white")} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 <path d="M13.3333 14.1667L17.5 10L13.3333 5.83333" stroke={getColor("white")} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 <path d="M17.5 10H7.5" stroke={getColor("white")} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+        );
+    }
+    if (name === Icons.eye) {
+        return (
+            <svg className={className} width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 3C4.5 3 1.73 5.11 1 8C1.73 10.89 4.5 13 8 13C11.5 13 14.27 10.89 15 8C14.27 5.11 11.5 3 8 3Z" stroke={getColor("#4F46E5")} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="8" cy="8" r="2" stroke={getColor("#4F46E5")} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
         );
     }
