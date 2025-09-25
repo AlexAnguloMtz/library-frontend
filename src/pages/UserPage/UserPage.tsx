@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Tabs, Tab, Box, Typography, IconButton, TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
-import { ContentCopy, ArrowBack } from '@mui/icons-material';
+import { ArrowBack } from '@mui/icons-material';
 import './styles.css';
 import userService from '../../services/UserService';
 import type { FullUser } from '../../models/FullUser';
 import type { UserOptionsResponse } from '../../models/UserOptionsResponse';
 import { Button } from '../../components/Button';
+import { CopyToClipboard } from '../../components/CopyToClipboard/CopyToClipboard';
 
 enum UserPageStatus {
     IDLE = 'idle',
@@ -62,15 +63,10 @@ const UserPage: React.FC = () => {
         loadUserData();
     };
 
-    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
         setActiveTab(newValue);
     };
 
-    const handleCopyId = () => {
-        if (state.status === UserPageStatus.SUCCESS) {
-            navigator.clipboard.writeText(state.user.id);
-        }
-    };
 
     const handleGoBack = () => {
         navigate(-1);
@@ -142,13 +138,11 @@ const UserPage: React.FC = () => {
                                     <Typography variant="body1" color="text.secondary">
                                         ID: {state.user.id}
                                     </Typography>
-                                    <IconButton 
-                                        size="small" 
-                                        onClick={handleCopyId}
+                                    <CopyToClipboard 
+                                        text={state.user.id}
+                                        size="small"
                                         sx={{ ml: 1 }}
-                                    >
-                                        <ContentCopy fontSize="small" />
-                                    </IconButton>
+                                    />
                                 </Box>
                             </Box>
                         </Box>
@@ -163,7 +157,7 @@ const UserPage: React.FC = () => {
                         </Box>
 
                         {/* Contenido de las pestañas */}
-                        <Box sx={{ mt: 3, pb: 24 }}>
+                        <Box sx={{ mt: 3, pb: 24, px: 3 }}>
                             {activeTab === 0 && (
                                 <Typography>Contenido de Préstamos</Typography>
                             )}
@@ -252,8 +246,43 @@ const UserPage: React.FC = () => {
                                                         }}
                                                     />
                                                 ) : (
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                                            {state.user.phone}
+                                                        </Typography>
+                                                        <CopyToClipboard 
+                                                            text={state.user.phone}
+                                                            size="small"
+                                                        />
+                                                    </Box>
+                                                )}
+                                            </Box>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
+                                                    Género:
+                                                </Typography>
+                                                {isEditingBasicInfo ? (
+                                                    <FormControl size="small" sx={{ width: 300 }}>
+                                                        <InputLabel>Género</InputLabel>
+                                                        <Select
+                                                            value={state.userOptions.genders.find(g => g.value === state.user.gender.id)?.value || ''}
+                                                            label="Género"
+                                                            sx={{ 
+                                                                '& .MuiOutlinedInput-root': {
+                                                                    fontSize: '0.875rem'
+                                                                }
+                                                            }}
+                                                        >
+                                                            {state.userOptions.genders.map((gender) => (
+                                                                <MenuItem key={gender.value} value={gender.value}>
+                                                                    {gender.label}
+                                                                </MenuItem>
+                                                            ))}
+                                                        </Select>
+                                                    </FormControl>
+                                                ) : (
                                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                        {state.user.phone}
+                                                        {state.user.gender.name}
                                                     </Typography>
                                                 )}
                                             </Box>
@@ -290,7 +319,7 @@ const UserPage: React.FC = () => {
                                                     <FormControl size="small" sx={{ width: 300 }}>
                                                         <InputLabel>Estado</InputLabel>
                                                         <Select
-                                                            value={state.user.address.state}
+                                                            value={state.user.address.state.id}
                                                             label="Estado"
                                                             sx={{ 
                                                                 '& .MuiOutlinedInput-root': {
@@ -299,15 +328,15 @@ const UserPage: React.FC = () => {
                                                             }}
                                                         >
                                                             {state.userOptions.states.map((state) => (
-                                                                <MenuItem key={state.id} value={state.id}>
-                                                                    {state.name}
+                                                                <MenuItem key={state.value} value={state.value}>
+                                                                    {state.label}
                                                                 </MenuItem>
                                                             ))}
                                                         </Select>
                                                     </FormControl>
                                                 ) : (
                                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                        {state.user.address.state}
+                                                        {state.user.address.state.name}
                                                     </Typography>
                                                 )}
                                             </Box>
@@ -432,6 +461,11 @@ const UserPage: React.FC = () => {
                                             <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                                 {state.user.id}
                                             </Typography>
+                                            <CopyToClipboard 
+                                                text={state.user.id}
+                                                size="small"
+                                                sx={{ ml: 1 }}
+                                            />
                                         </Box>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
@@ -450,9 +484,15 @@ const UserPage: React.FC = () => {
                                                     }}
                                                 />
                                             ) : (
-                                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                    {state.user.email}
-                                                </Typography>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                                        {state.user.email}
+                                                    </Typography>
+                                                    <CopyToClipboard 
+                                                        text={state.user.email}
+                                                        size="small"
+                                                    />
+                                                </Box>
                                             )}
                                         </Box>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -472,8 +512,8 @@ const UserPage: React.FC = () => {
                                                         }}
                                                     >
                                                         {state.userOptions.roles.map((role) => (
-                                                            <MenuItem key={role.id} value={role.id}>
-                                                                {role.name}
+                                                            <MenuItem key={role.value} value={role.value}>
+                                                                {role.label}
                                                             </MenuItem>
                                                         ))}
                                                     </Select>

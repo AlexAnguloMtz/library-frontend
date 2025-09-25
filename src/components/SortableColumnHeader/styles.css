@@ -3,10 +3,10 @@
 }
 
 .sortable-column-header.non-sortable:hover {
-    background-color: white;
+    background-color: #F5F5F5;
 }
 
-.sortable-column-header:hover {
+.sortable-column-header:not(.non-sortable):hover {
     background-color: rgb(221, 221, 221);
 }
 
@@ -47,6 +47,10 @@
 .sortable-column-header-content {
     display: flex;
     align-items: center;
+}
+
+.sortable-column-header-content.centered {
+    justify-content: center;
 }
 
 .sortable-column-header .inactive-sort-icon {

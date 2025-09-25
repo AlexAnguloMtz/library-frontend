@@ -1,3 +1,4 @@
+import type { GenderResponse } from "./GenderResponse";
 import type { RoleDTO } from "./RoleDTO";
 import type { UserAddressResponse } from "./UserAddressResponse";
 
@@ -10,6 +11,7 @@ export type FullUser = {
     phone: string;
     roles: RoleDTO[];
     address: UserAddressResponse;
+    gender: GenderResponse;
     registrationDate: string;
     profilePictureUrl: string;
 }

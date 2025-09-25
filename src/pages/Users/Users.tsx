@@ -13,8 +13,12 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { Dayjs } from 'dayjs';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, Pagination, MenuItem, Box, Typography, Chip, Divider, CircularProgress, Stepper, Step, StepLabel, Button as MuiButton, Checkbox } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, Pagination, MenuItem, Box, Typography, Chip, Divider, CircularProgress, Stepper, Step, StepLabel, Button as MuiButton, Checkbox, IconButton } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import type { UserPreview } from '../../models/UserPreview';
 import userService  from '../../services/UserService';
 import { DashboardModuleTopBar } from '../../components/DashboardModuleTopBar/DashboardModuleTopBar';
@@ -25,10 +29,33 @@ import { SortableColumnHeader } from '../../components/SortableColumnHeader/Sort
 import type { SortRequest } from '../../models/SortRequest';
 import type { PaginationResponse } from '../../models/PaginationResponse';
 import type { OptionResponse } from '../../models/OptionResponse';
+import type { UserOptionsResponse } from '../../models/UserOptionsResponse';
 import authenticationHelper from '../../util/AuthenticationHelper';
 import type { AuthenticationResponse } from '../../models/AuthenticationResponse';
 
 const loanOptions = Array.from({ length: 20 }, (_, i) => i + 1);
+
+// Zod schema para validación del formulario de crear usuario
+const createUserSchema = z.object({
+  firstName: z.string().min(1, 'El nombre es requerido'),
+  lastName: z.string().min(1, 'El apellido es requerido'),
+  phone: z.string().min(1, 'El teléfono es requerido').regex(/^\d{10}$/, 'El teléfono debe tener exactamente 10 dígitos'),
+  gender: z.string().min(1, 'El género es requerido'),
+  state: z.string().min(1, 'El estado es requerido'),
+  city: z.string().min(1, 'La ciudad es requerida'),
+  address: z.string().min(1, 'La dirección es requerida'),
+  district: z.string().min(1, 'La colonia es requerida'),
+  zipCode: z.string().min(1, 'El código postal es requerido').regex(/^\d{5}$/, 'El código postal debe tener exactamente 5 dígitos'),
+  email: z.string().min(1, 'El email es requerido').email('El email no es válido'),
+  role: z.string().min(1, 'El rol es requerido'),
+  password: z.string().min(1, 'La contraseña es requerida').min(8, 'La contraseña debe tener al menos 8 caracteres'),
+  confirmPassword: z.string().min(1, 'La confirmación de contraseña es requerida')
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Las contraseñas no coinciden",
+  path: ["confirmPassword"],
+});
+
+type CreateUserFormData = z.infer<typeof createUserSchema>;
 
 const dropdownLabelStyles = {
   transform: 'translate(14px, 9px) scale(1)',
@@ -128,22 +155,43 @@ const Users: React.FC = () => {
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [isAllSelected, setIsAllSelected] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [userOptions, setUserOptions] = useState<UserOptionsResponse | null>(null);
 
   // Estados del modal de creación de usuario
   const [createUserModalOpen, setCreateUserModalOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    phone: '',
-    gender: '',
-    state: '',
-    city: '',
-    address: '',
-    district: '',
-    zipCode: ''
+  const [isCreating, setIsCreating] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // React Hook Form setup
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isValid },
+    reset,
+    watch
+  } = useForm<CreateUserFormData>({
+    resolver: zodResolver(createUserSchema),
+    mode: 'onChange',
+    reValidateMode: 'onChange',
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      phone: '',
+      gender: '',
+      state: '',
+      city: '',
+      address: '',
+      district: '',
+      zipCode: '',
+      email: '',
+      role: '',
+      password: '',
+      confirmPassword: ''
+    }
   });
 
   const debouncedSearch = useDebounce(filters.search, 500);
@@ -154,17 +202,7 @@ const Users: React.FC = () => {
     setActiveStep(0);
     setProfileImage(null);
     setProfileImagePreview(null);
-    setFormData({
-      firstName: '',
-      lastName: '',
-      phone: '',
-      gender: '',
-      state: '',
-      city: '',
-      address: '',
-      district: '',
-      zipCode: ''
-    });
+    reset();
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -184,12 +222,8 @@ const Users: React.FC = () => {
     setProfileImagePreview(null);
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
+  const handleTogglePasswordVisibility = () => setShowPassword(prev => !prev);
+  const handleToggleConfirmPasswordVisibility = () => setShowConfirmPassword(prev => !prev);
 
   const handleNext = () => {
     setActiveStep(1);
@@ -204,17 +238,26 @@ const Users: React.FC = () => {
     setActiveStep(0);
     setProfileImage(null);
     setProfileImagePreview(null);
-    setFormData({
-      firstName: '',
-      lastName: '',
-      phone: '',
-      gender: '',
-      state: '',
-      city: '',
-      address: '',
-      district: '',
-      zipCode: ''
-    });
+    reset();
+  };
+
+  const onSubmit = async (data: CreateUserFormData) => {
+    setIsCreating(true);
+    try {
+      // Aquí iría la llamada al servicio para crear el usuario
+      console.log('Creating user with data:', data);
+      console.log('Profile image:', profileImage);
+      
+      // Simular llamada al API
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Cerrar modal y limpiar formulario
+      handleCloseModal();
+    } catch (error) {
+      console.error('Error creating user:', error);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   // Funciones para selección múltiple
@@ -265,11 +308,11 @@ const Users: React.FC = () => {
 
   // Limpiar selección cuando cambien los datos
   useEffect(() => {
-    if (usersState.status === 'success') {
+    if (usersState.status === 'success' && usersState.response) {
       setSelectedUsers(new Set());
       setIsAllSelected(false);
     }
-  }, [usersState.status, usersState.response?.items]);
+  }, [usersState.status, usersState.status === 'success' ? usersState.response?.items : undefined]);
 
   // Sincronizar checkbox maestro
   useEffect(() => {
@@ -308,8 +351,9 @@ const Users: React.FC = () => {
     const fetchFilters = async () => {
       setFiltersState({ status: 'loading' });
       try {
-        const response = await userService.getUserFilters();
+        const response = await userService.getUserOptions();
         setFiltersState({ status: 'success', roles: response.roles });
+        setUserOptions(response); // Guardar el UserOptionsResponse completo
       } catch (error: any) {
         // Fail silently as requested
         setFiltersState({ status: 'error' });
@@ -730,14 +774,19 @@ const Users: React.FC = () => {
           <table className='table'>
             <thead>
               <tr>
-                <th style={{ width: '50px', textAlign: 'center' }}>
+                <SortableColumnHeader
+                  title=""
+                  nonSortable={true}
+                  style={{ width: '50px', textAlign: 'center' }}
+                >
                   <Checkbox
                     checked={isAllSelected}
                     indeterminate={selectedUsers.size > 0 && !isAllSelected}
                     onChange={handleSelectAll}
                     size="small"
+                    disabled={usersState.status === 'loading'}
                   />
-                </th>
+                </SortableColumnHeader>
                 <SortableColumnHeader
                   title='Usuario'
                   active={paginationState.sort === 'name'}
@@ -784,7 +833,9 @@ const Users: React.FC = () => {
               {usersState.status === 'loading' && (
                 Array.from({ length: 15 }).map((_, i) => (
                   <tr key={i}>
-                    <td><Skeleton variant="rectangular" height={40} /></td>
+                    <td style={{ width: '50px', textAlign: 'center' }}>
+                      <Checkbox disabled size="small" />
+                    </td>
                     <td><Skeleton variant="rectangular" height={40} /></td>
                     <td><Skeleton variant="rectangular" height={40} /></td>
                     <td><Skeleton variant="rectangular" height={40} /></td>
@@ -1151,9 +1202,9 @@ const Users: React.FC = () => {
         onClose={handleCloseModal}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: { minHeight: '600px' }
-        }}
+         PaperProps={{
+           sx: { maxHeight: '90vh', overflow: 'auto' }
+         }}
       >
         <DialogTitle>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1181,24 +1232,24 @@ const Users: React.FC = () => {
               {/* Sección izquierda - Imagen */}
               <Box sx={{ width: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 {!profileImagePreview ? (
-                  <Box
-                    sx={{
-                      width: '100%',
-                      height: '200px',
-                      border: '2px dashed #d1d5db',
-                      borderRadius: '8px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      '&:hover': {
-                        borderColor: '#4F46E5',
-                        backgroundColor: '#f8fafc'
-                      }
-                    }}
-                    onClick={() => document.getElementById('image-upload')?.click()}
-                  >
+                   <Box
+                     sx={{
+                       width: '100%',
+                       height: '300px',
+                       border: '2px dashed #d1d5db',
+                       borderRadius: '8px',
+                       display: 'flex',
+                       flexDirection: 'column',
+                       alignItems: 'center',
+                       justifyContent: 'center',
+                       cursor: 'pointer',
+                       '&:hover': {
+                         borderColor: '#4F46E5',
+                         backgroundColor: '#f8fafc'
+                       }
+                     }}
+                     onClick={() => document.getElementById('image-upload')?.click()}
+                   >
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                       Subir imagen
                     </Typography>
@@ -1215,18 +1266,18 @@ const Users: React.FC = () => {
                   </Box>
                 ) : (
                   <Box sx={{ width: '100%', textAlign: 'center' }}>
-                    <Box
-                      component="img"
-                      src={profileImagePreview}
-                      alt="Preview"
-                      sx={{
-                        width: '100%',
-                        height: '200px',
-                        objectFit: 'cover',
-                        borderRadius: '8px',
-                        mb: 2
-                      }}
-                    />
+                     <Box
+                       component="img"
+                       src={profileImagePreview}
+                       alt="Preview"
+                       sx={{
+                         width: '100%',
+                         height: '300px',
+                         objectFit: 'cover',
+                         borderRadius: '8px',
+                         mb: 2
+                       }}
+                     />
                     <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
                       <Button type="secondary" onClick={handleRemoveImage}>
                         Borrar
@@ -1248,52 +1299,397 @@ const Users: React.FC = () => {
 
               {/* Sección derecha - Formulario */}
               <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                 {/* Información Básica */}
+                 <Box>
+                   <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                     Información Básica
+                   </Typography>
+                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                     <Box sx={{ display: 'flex', gap: 2 }}>
+                       <Controller
+                         name="firstName"
+                         control={control}
+                         render={({ field }) => (
+                           <TextField
+                             {...field}
+                             label="Nombre"
+                             variant="outlined"
+                             size="small"
+                             fullWidth
+                             error={!!errors.firstName}
+                             helperText={errors.firstName?.message}
+                             disabled={isCreating}
+                           />
+                         )}
+                       />
+                       <Controller
+                         name="lastName"
+                         control={control}
+                         render={({ field }) => (
+                           <TextField
+                             {...field}
+                             label="Apellido"
+                             variant="outlined"
+                             size="small"
+                             fullWidth
+                             error={!!errors.lastName}
+                             helperText={errors.lastName?.message}
+                             disabled={isCreating}
+                           />
+                         )}
+                       />
+                     </Box>
+                     <Box sx={{ display: 'flex', gap: 2 }}>
+                       <Controller
+                         name="phone"
+                         control={control}
+                         render={({ field }) => (
+                           <TextField
+                             {...field}
+                             label="Teléfono"
+                             variant="outlined"
+                             size="small"
+                             fullWidth
+                             error={!!errors.phone}
+                             helperText={errors.phone?.message}
+                             disabled={isCreating}
+                             inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 10 }}
+                             onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
+                           />
+                         )}
+                       />
+                       <Controller
+                         name="gender"
+                         control={control}
+                         render={({ field }) => (
+                           <FormControl fullWidth size="small" error={!!errors.gender}>
+                             <InputLabel>Género</InputLabel>
+                             <Select
+                               {...field}
+                               label="Género"
+                               disabled={isCreating}
+                             >
+                               {userOptions?.genders.map((gender) => (
+                                 <MenuItem key={gender.value} value={gender.value}>
+                                   {gender.label}
+                                 </MenuItem>
+                               ))}
+                             </Select>
+                             {errors.gender && (
+                               <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
+                                 {errors.gender.message}
+                               </Typography>
+                             )}
+                           </FormControl>
+                         )}
+                       />
+                     </Box>
+                   </Box>
+                 </Box>
+
+                 {/* Domicilio */}
+                 <Box>
+                   <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                     Domicilio
+                   </Typography>
+                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                     <Box sx={{ display: 'flex', gap: 2 }}>
+                       <Controller
+                         name="state"
+                         control={control}
+                         render={({ field }) => (
+                           <FormControl fullWidth size="small" error={!!errors.state}>
+                             <InputLabel>Estado</InputLabel>
+                             <Select
+                               {...field}
+                               label="Estado"
+                               disabled={isCreating}
+                             >
+                               {userOptions?.states.map((state) => (
+                                 <MenuItem key={state.value} value={state.value}>
+                                   {state.label}
+                                 </MenuItem>
+                               ))}
+                             </Select>
+                             {errors.state && (
+                               <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
+                                 {errors.state.message}
+                               </Typography>
+                             )}
+                           </FormControl>
+                         )}
+                       />
+                       <Controller
+                         name="city"
+                         control={control}
+                         render={({ field }) => (
+                           <TextField
+                             {...field}
+                             label="Ciudad"
+                             variant="outlined"
+                             size="small"
+                             fullWidth
+                             error={!!errors.city}
+                             helperText={errors.city?.message}
+                             disabled={isCreating}
+                           />
+                         )}
+                       />
+                     </Box>
+                     <Controller
+                       name="address"
+                       control={control}
+                       render={({ field }) => (
+                         <TextField
+                           {...field}
+                           label="Calle y número"
+                           variant="outlined"
+                           size="small"
+                           fullWidth
+                           error={!!errors.address}
+                           helperText={errors.address?.message}
+                           disabled={isCreating}
+                         />
+                       )}
+                     />
+                     <Box sx={{ display: 'flex', gap: 2 }}>
+                       <Controller
+                         name="district"
+                         control={control}
+                         render={({ field }) => (
+                           <TextField
+                             {...field}
+                             label="Colonia"
+                             variant="outlined"
+                             size="small"
+                             fullWidth
+                             error={!!errors.district}
+                             helperText={errors.district?.message}
+                             disabled={isCreating}
+                           />
+                         )}
+                       />
+                       <Controller
+                         name="zipCode"
+                         control={control}
+                         render={({ field }) => (
+                           <TextField
+                             {...field}
+                             label="Código Postal"
+                             variant="outlined"
+                             size="small"
+                             fullWidth
+                             error={!!errors.zipCode}
+                             helperText={errors.zipCode?.message}
+                             disabled={isCreating}
+                             inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 5 }}
+                             onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
+                           />
+                         )}
+                       />
+                     </Box>
+                   </Box>
+                 </Box>
+
+                 {/* Cuenta */}
+                 <Box>
+                   <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                     Cuenta
+                   </Typography>
+                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                     <Box sx={{ display: 'flex', gap: 2 }}>
+                       <Controller
+                         name="email"
+                         control={control}
+                         render={({ field }) => (
+                           <TextField
+                             {...field}
+                             label="Email"
+                             type="email"
+                             variant="outlined"
+                             size="small"
+                             fullWidth
+                             error={!!errors.email}
+                             helperText={errors.email?.message}
+                             disabled={isCreating}
+                           />
+                         )}
+                       />
+                       <Controller
+                         name="role"
+                         control={control}
+                         render={({ field }) => (
+                           <FormControl fullWidth size="small" error={!!errors.role}>
+                             <InputLabel>Rol</InputLabel>
+                             <Select
+                               {...field}
+                               label="Rol"
+                               disabled={isCreating}
+                             >
+                               {userOptions?.roles.map((role) => (
+                                 <MenuItem key={role.value} value={role.value}>
+                                   {role.label}
+                                 </MenuItem>
+                               ))}
+                             </Select>
+                             {errors.role && (
+                               <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
+                                 {errors.role.message}
+                               </Typography>
+                             )}
+                           </FormControl>
+                         )}
+                       />
+                     </Box>
+                     <Box sx={{ display: 'flex', gap: 2 }}>
+                       <Controller
+                         name="password"
+                         control={control}
+                         render={({ field }) => (
+                           <TextField
+                             {...field}
+                             label="Contraseña"
+                             type={showPassword ? 'text' : 'password'}
+                             variant="outlined"
+                             size="small"
+                             fullWidth
+                             error={!!errors.password}
+                             helperText={errors.password?.message}
+                             disabled={isCreating}
+                             InputProps={{
+                               endAdornment: (
+                                 <InputAdornment position="end">
+                                   <IconButton
+                                     onClick={handleTogglePasswordVisibility}
+                                     edge="end"
+                                     disabled={isCreating}
+                                   >
+                                     {showPassword ? <VisibilityOff /> : <Visibility />}
+                                   </IconButton>
+                                 </InputAdornment>
+                               )
+                             }}
+                           />
+                         )}
+                       />
+                       <Controller
+                         name="confirmPassword"
+                         control={control}
+                         render={({ field }) => (
+                           <TextField
+                             {...field}
+                             label="Confirmar Contraseña"
+                             type={showConfirmPassword ? 'text' : 'password'}
+                             variant="outlined"
+                             size="small"
+                             fullWidth
+                             error={!!errors.confirmPassword}
+                             helperText={errors.confirmPassword?.message}
+                             disabled={isCreating}
+                             InputProps={{
+                               endAdornment: (
+                                 <InputAdornment position="end">
+                                   <IconButton
+                                     onClick={handleToggleConfirmPasswordVisibility}
+                                     edge="end"
+                                     disabled={isCreating}
+                                   >
+                                     {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                                   </IconButton>
+                                 </InputAdornment>
+                               )
+                             }}
+                           />
+                         )}
+                       />
+                     </Box>
+                   </Box>
+                 </Box>
+              </Box>
+            </Box>
+          )}
+
+          {activeStep === 1 && (
+            <Box sx={{ display: 'flex', gap: 3, minHeight: '400px' }}>
+              {/* Sección izquierda - Imagen preview */}
+              <Box sx={{ width: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                {profileImagePreview ? (
+                  <Box
+                    component="img"
+                    src={profileImagePreview}
+                    alt="Preview"
+                    sx={{
+                      width: '100%',
+                      height: '300px',
+                      objectFit: 'cover',
+                      borderRadius: '8px',
+                      mb: 2
+                    }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      width: '100%',
+                      height: '300px',
+                      border: '2px dashed #d1d5db',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: '#f8fafc'
+                    }}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      Sin imagen
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+
+              {/* Sección derecha - Resumen de datos */}
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, textAlign: 'center' }}>
+                  Confirmar creación de usuario
+                </Typography>
+                
                 {/* Información Básica */}
                 <Box>
                   <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                     Información Básica
                   </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                      <TextField
-                        label="Nombre"
-                        value={formData.firstName}
-                        onChange={(e) => handleInputChange('firstName', e.target.value)}
-                        variant="outlined"
-                        size="small"
-                        fullWidth
-                      />
-                      <TextField
-                        label="Apellido"
-                        value={formData.lastName}
-                        onChange={(e) => handleInputChange('lastName', e.target.value)}
-                        variant="outlined"
-                        size="small"
-                        fullWidth
-                      />
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
+                      <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
+                        Nombre:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {watch('firstName') || 'No especificado'}
+                      </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                      <TextField
-                        label="Teléfono"
-                        value={formData.phone}
-                        onChange={(e) => handleInputChange('phone', e.target.value.replace(/\D/g, ''))}
-                        variant="outlined"
-                        size="small"
-                        fullWidth
-                        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                      />
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Género</InputLabel>
-                        <Select
-                          value={formData.gender}
-                          onChange={(e) => handleInputChange('gender', e.target.value)}
-                          label="Género"
-                        >
-                          <MenuItem value="M">Masculino</MenuItem>
-                          <MenuItem value="F">Femenino</MenuItem>
-                          <MenuItem value="O">Otro</MenuItem>
-                        </Select>
-                      </FormControl>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
+                      <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
+                        Apellido:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {watch('lastName') || 'No especificado'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
+                      <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
+                        Teléfono:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {watch('phone') || 'No especificado'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
+                      <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
+                        Género:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {userOptions?.genders.find(g => g.value === watch('gender'))?.label || 'No especificado'}
+                      </Typography>
                     </Box>
                   </Box>
                 </Box>
@@ -1303,102 +1699,129 @@ const Users: React.FC = () => {
                   <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                     Domicilio
                   </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Estado</InputLabel>
-                        <Select
-                          value={formData.state}
-                          onChange={(e) => handleInputChange('state', e.target.value)}
-                          label="Estado"
-                        >
-                          <MenuItem value="CDMX">Ciudad de México</MenuItem>
-                          <MenuItem value="JAL">Jalisco</MenuItem>
-                          <MenuItem value="NLE">Nuevo León</MenuItem>
-                          <MenuItem value="BCN">Baja California</MenuItem>
-                          <MenuItem value="YUC">Yucatán</MenuItem>
-                        </Select>
-                      </FormControl>
-                      <TextField
-                        label="Ciudad"
-                        value={formData.city}
-                        onChange={(e) => handleInputChange('city', e.target.value)}
-                        variant="outlined"
-                        size="small"
-                        fullWidth
-                      />
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
+                      <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
+                        Estado:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {userOptions?.states.find(s => s.value === watch('state'))?.label || 'No especificado'}
+                      </Typography>
                     </Box>
-                    <TextField
-                      label="Calle y número"
-                      value={formData.address}
-                      onChange={(e) => handleInputChange('address', e.target.value)}
-                      variant="outlined"
-                      size="small"
-                      fullWidth
-                    />
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                      <TextField
-                        label="Colonia"
-                        value={formData.district}
-                        onChange={(e) => handleInputChange('district', e.target.value)}
-                        variant="outlined"
-                        size="small"
-                        fullWidth
-                      />
-                      <TextField
-                        label="Código Postal"
-                        value={formData.zipCode}
-                        onChange={(e) => handleInputChange('zipCode', e.target.value.replace(/\D/g, ''))}
-                        variant="outlined"
-                        size="small"
-                        fullWidth
-                        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 5 }}
-                      />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
+                      <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
+                        Ciudad:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {watch('city') || 'No especificado'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
+                      <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
+                        Dirección:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {watch('address') || 'No especificado'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
+                      <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
+                        Colonia:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {watch('district') || 'No especificado'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
+                      <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
+                        Código Postal:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {watch('zipCode') || 'No especificado'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+
+                {/* Cuenta */}
+                <Box>
+                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                    Cuenta
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
+                      <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
+                        Email:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {watch('email') || 'No especificado'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
+                      <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
+                        Rol:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {userOptions?.roles.find(r => r.value === watch('role'))?.label || 'No especificado'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
+                      <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
+                        Contraseña:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {watch('password') ? '••••••••' : 'No especificado'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
+                      <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
+                        Confirmar Contraseña:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {watch('confirmPassword') ? '••••••••' : 'No especificado'}
+                      </Typography>
                     </Box>
                   </Box>
                 </Box>
               </Box>
             </Box>
           )}
-
-          {activeStep === 1 && (
-            <Box>
-              <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
-                Confirmar creación de usuario
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
-                Aquí irá el resumen de los datos ingresados
-              </Typography>
-            </Box>
-          )}
         </DialogContent>
 
-        <DialogActions sx={{ p: 3 }}>
-          {activeStep === 0 ? (
-            <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
-              <Button type="secondary" onClick={handleCloseModal}>
-                Cancelar
-              </Button>
-              <Button type="primary" onClick={handleNext}>
-                Siguiente
-              </Button>
-            </Box>
-          ) : (
-            <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'space-between' }}>
-              <Button type="secondary" onClick={handleBack}>
-                Atrás
-              </Button>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button type="secondary" onClick={handleCloseModal}>
-                  Cancelar
-                </Button>
-                <Button type="primary" onClick={() => {}}>
-                  Crear Usuario
-                </Button>
-              </Box>
-            </Box>
-          )}
-        </DialogActions>
+         <DialogActions sx={{ p: 3 }}>
+           {activeStep === 0 ? (
+             <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
+               <Button type="secondary" onClick={handleCloseModal} disabled={isCreating}>
+                 Cancelar
+               </Button>
+               <Button 
+                 type="primary" 
+                 onClick={handleNext}
+                 disabled={!isValid || isCreating}
+               >
+                 Siguiente
+               </Button>
+             </Box>
+           ) : (
+             <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'space-between' }}>
+               <Button type="secondary" onClick={handleBack} disabled={isCreating}>
+                 Atrás
+               </Button>
+               <Box sx={{ display: 'flex', gap: 1 }}>
+                 <Button type="secondary" onClick={handleCloseModal} disabled={isCreating}>
+                   Cancelar
+                 </Button>
+                 <Button 
+                   type="primary" 
+                   onClick={handleSubmit(onSubmit)}
+                   disabled={isCreating}
+                 >
+                   {isCreating ? 'Creando...' : 'Crear Usuario'}
+                 </Button>
+               </Box>
+             </Box>
+           )}
+         </DialogActions>
       </Dialog>
     </div>
   );
