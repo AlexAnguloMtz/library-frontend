@@ -7,8 +7,14 @@ import * as paginationRequest from '../models/PaginationRequest';
 import * as userPreviewsQuery from '../models/UserPreviewQuery';
 import * as URLSearchParamsHelpers from '../util/URLSearchParamsHelpers';
 import authenticationHelper from "../util/AuthenticationHelper";
-import type { UserFiltersResponse } from "../models/UserFiltersResponse";
+import type { UserOptionsResponse } from "../models/UserOptionsResponse";
 import type { FullUser } from "../models/FullUser";
+import type { UserPersonalDataUpdateRequest } from "../models/UserPersonalDataUpdateRequest";
+import type { UserPersonalDataResponse } from "../models/UserPersonalDataResponse";
+import type { UserAddressUpdateRequest } from "../models/UserAddressUpdateRequest";
+import type { UserAddressResponse } from "../models/UserAddressResponse";
+import type { UserAccountUpdateRequest } from "../models/UserAccountUpdateRequest";
+import type { UserAccountResponse } from "../models/UserAccountResponse";
 
 class UserService {
     async getUsersPreviews(query: UserPreviewsQuery, pagination: PaginationRequest): Promise<PaginationResponse<UserPreview>> {
@@ -32,8 +38,8 @@ class UserService {
         return users;
     }
 
-    async getUserFilters(): Promise<UserFiltersResponse> {
-        const url = `${appConfig.apiUrl}/api/v1/users/filters`;
+    async getUserOptions(): Promise<UserOptionsResponse> {
+        const url = `${appConfig.apiUrl}/api/v1/users/options`;
         const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${authenticationHelper.getAuthentication()?.accessToken}`
@@ -44,7 +50,7 @@ class UserService {
             throw new Error(`Error al obtener filtros de usuarios: ${response.statusText}`);
         }
 
-        const filters: UserFiltersResponse = await response.json();
+        const filters: UserOptionsResponse = await response.json();
     
         return filters;
     }
@@ -84,6 +90,108 @@ class UserService {
 
         return;
     }
+
+    async updateUserPersonalData(id: string, request: UserPersonalDataUpdateRequest): Promise<UserPersonalDataResponse> {
+        const url = `${appConfig.apiUrl}/api/v1/users/${id}/personal-data`;
+        
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${authenticationHelper.getAuthentication()?.accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(request)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error al actualizar datos personales: ${response.statusText}`);
+        }
+
+        const data: UserPersonalDataResponse = await response.json();
+        return data;
+    }
+
+    async updateUserAddress(id: string, request: UserAddressUpdateRequest): Promise<UserAddressResponse> {
+        const url = `${appConfig.apiUrl}/api/v1/users/${id}/address`;
+        
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${authenticationHelper.getAuthentication()?.accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(request)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error al actualizar dirección: ${response.statusText}`);
+        }
+
+        const data: UserAddressResponse = await response.json();
+        return data;
+    }
+
+    async updateUserAccount(id: string, request: UserAccountUpdateRequest): Promise<UserAccountResponse> {
+        const url = `${appConfig.apiUrl}/api/v1/users/${id}/account`;
+        
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${authenticationHelper.getAuthentication()?.accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(request)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error al actualizar cuenta: ${response.statusText}`);
+        }
+
+        const data: UserAccountResponse = await response.json();
+        return data;
+    }
+
+    async exportUsers (ids: string[]): Promise<void> {
+        try {
+          const response = await fetch(`${appConfig.apiUrl}/api/v1/users/export`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${authenticationHelper.getAuthentication()?.accessToken}`
+            },
+            body: JSON.stringify({
+              format: "pdf",
+              ids
+            }),
+            credentials: 'include'
+          });
+      
+          if (!response.ok) {
+            throw new Error("Error exportando usuarios");
+          }
+      
+          const blob = await response.blob();
+      
+          const contentDisposition = response.headers.get("Content-Disposition");
+          let filename = "users_export.pdf"; 
+          if (contentDisposition) {
+            const match = contentDisposition.match(/filename="?([^"]+)"?/);
+            if (match) filename = match[1];
+          }
+      
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+      
+        } catch (error) {
+          console.error(error);
+        }
+      }
 }
 
 function userPreviewsQueryString(query: UserPreviewsQuery, pagination: PaginationRequest): string {

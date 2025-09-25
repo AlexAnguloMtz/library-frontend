@@ -1,5 +1,6 @@
 import type { OptionResponse } from "./OptionResponse";
 
-export type UserFiltersResponse = {
+export type UserOptionsResponse = {
     roles: OptionResponse[];
+    states: OptionResponse[];
 }

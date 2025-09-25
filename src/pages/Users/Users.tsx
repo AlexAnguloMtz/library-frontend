@@ -13,7 +13,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { Dayjs } from 'dayjs';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, Pagination, MenuItem, Box, Typography, Chip, Divider, CircularProgress } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, Pagination, MenuItem, Box, Typography, Chip, Divider, CircularProgress, Stepper, Step, StepLabel, Button as MuiButton, Checkbox } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import type { UserPreview } from '../../models/UserPreview';
 import userService  from '../../services/UserService';
@@ -124,13 +124,168 @@ const Users: React.FC = () => {
   const [userToDelete, setUserToDelete] = useState<UserPreview | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Estados para selección múltiple
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [isAllSelected, setIsAllSelected] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Estados del modal de creación de usuario
+  const [createUserModalOpen, setCreateUserModalOpen] = useState(false);
+  const [activeStep, setActiveStep] = useState(0);
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    gender: '',
+    state: '',
+    city: '',
+    address: '',
+    district: '',
+    zipCode: ''
+  });
+
   const debouncedSearch = useDebounce(filters.search, 500);
+
+  // Funciones del modal de creación de usuario
+  const handleCreateUserClick = () => {
+    setCreateUserModalOpen(true);
+    setActiveStep(0);
+    setProfileImage(null);
+    setProfileImagePreview(null);
+    setFormData({
+      firstName: '',
+      lastName: '',
+      phone: '',
+      gender: '',
+      state: '',
+      city: '',
+      address: '',
+      district: '',
+      zipCode: ''
+    });
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setProfileImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setProfileImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setProfileImage(null);
+    setProfileImagePreview(null);
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleNext = () => {
+    setActiveStep(1);
+  };
+
+  const handleBack = () => {
+    setActiveStep(0);
+  };
+
+  const handleCloseModal = () => {
+    setCreateUserModalOpen(false);
+    setActiveStep(0);
+    setProfileImage(null);
+    setProfileImagePreview(null);
+    setFormData({
+      firstName: '',
+      lastName: '',
+      phone: '',
+      gender: '',
+      state: '',
+      city: '',
+      address: '',
+      district: '',
+      zipCode: ''
+    });
+  };
+
+  // Funciones para selección múltiple
+  const handleSelectUser = (userId: string) => {
+    setSelectedUsers(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(userId)) {
+        newSet.delete(userId);
+      } else {
+        newSet.add(userId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (usersState.status === 'success' && usersState.response) {
+      if (isAllSelected || selectedUsers.size > 0) {
+        // Deseleccionar todos
+        setSelectedUsers(new Set());
+        setIsAllSelected(false);
+      } else {
+        // Seleccionar todos
+        const allUserIds = new Set(usersState.response.items.map(user => user.id));
+        setSelectedUsers(allUserIds);
+        setIsAllSelected(true);
+      }
+    }
+  };
+
+  const handleBulkActions = async () => {
+    try {
+      setIsExporting(true);
+      const selectedIds = Array.from(selectedUsers);
+      await userService.exportUsers(selectedIds);
+    } catch (error) {
+      console.error('Error al exportar usuarios:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Load authentication on component mount
   useEffect(() => {
     const authentication = authenticationHelper.getAuthentication();
     setAuth(authentication);
   }, []);
+
+  // Limpiar selección cuando cambien los datos
+  useEffect(() => {
+    if (usersState.status === 'success') {
+      setSelectedUsers(new Set());
+      setIsAllSelected(false);
+    }
+  }, [usersState.status, usersState.response?.items]);
+
+  // Sincronizar checkbox maestro
+  useEffect(() => {
+    if (usersState.status === 'success' && usersState.response) {
+      const totalUsers = usersState.response.items.length;
+      const selectedCount = selectedUsers.size;
+      
+      if (selectedCount === 0) {
+        setIsAllSelected(false);
+      } else if (selectedCount === totalUsers) {
+        setIsAllSelected(true);
+      } else {
+        setIsAllSelected(false);
+      }
+    }
+  }, [selectedUsers, usersState]);
 
   // Update display pagination and count only when we have successful data
   useEffect(() => {
@@ -363,8 +518,10 @@ const Users: React.FC = () => {
     <div className='parent-container'>
       <DashboardModuleTopBar
         title="Usuarios"
-        onExportClick={() => { }}
-        onNewClick={() => { }}
+        onExportClick={handleBulkActions}
+        onNewClick={handleCreateUserClick}
+        selectedCount={selectedUsers.size}
+        isExporting={isExporting}
       />
 
       {/* Filters */}
@@ -573,6 +730,14 @@ const Users: React.FC = () => {
           <table className='table'>
             <thead>
               <tr>
+                <th style={{ width: '50px', textAlign: 'center' }}>
+                  <Checkbox
+                    checked={isAllSelected}
+                    indeterminate={selectedUsers.size > 0 && !isAllSelected}
+                    onChange={handleSelectAll}
+                    size="small"
+                  />
+                </th>
                 <SortableColumnHeader
                   title='Usuario'
                   active={paginationState.sort === 'name'}
@@ -625,11 +790,24 @@ const Users: React.FC = () => {
                     <td><Skeleton variant="rectangular" height={40} /></td>
                     <td><Skeleton variant="rectangular" height={40} /></td>
                     <td><Skeleton variant="rectangular" height={40} /></td>
+                    <td><Skeleton variant="rectangular" height={40} /></td>
                   </tr>
                 ))
               )}
               {usersState.status === 'success' && usersState.response.items.map((user: UserPreview) => (
-                <tr key={user.id}>
+                <tr 
+                  key={user.id}
+                  style={{ 
+                    backgroundColor: selectedUsers.has(user.id) ? '#f0f9ff' : 'transparent' 
+                  }}
+                >
+                  <td style={{ textAlign: 'center' }}>
+                    <Checkbox
+                      checked={selectedUsers.has(user.id)}
+                      onChange={() => handleSelectUser(user.id)}
+                      size="small"
+                    />
+                  </td>
                   <td className='user-info-cell'>
                     <div className='user-avatar-container'>
                       {user.profilePictureUrl ? (
@@ -964,6 +1142,262 @@ const Users: React.FC = () => {
               'Eliminar'
             )}
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de creación de usuario */}
+      <Dialog 
+        open={createUserModalOpen} 
+        onClose={handleCloseModal}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { minHeight: '600px' }
+        }}
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6">
+              {activeStep === 0 ? 'Crear Usuario' : 'Confirmar creación de usuario'}
+            </Typography>
+            <MuiButton onClick={handleCloseModal} sx={{ minWidth: 'auto', p: 1 }}>
+              ✕
+            </MuiButton>
+          </Box>
+        </DialogTitle>
+
+        <DialogContent>
+          <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
+            <Step>
+              <StepLabel>Formulario</StepLabel>
+            </Step>
+            <Step>
+              <StepLabel>Confirmación</StepLabel>
+            </Step>
+          </Stepper>
+
+          {activeStep === 0 && (
+            <Box sx={{ display: 'flex', gap: 3, minHeight: '400px' }}>
+              {/* Sección izquierda - Imagen */}
+              <Box sx={{ width: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                {!profileImagePreview ? (
+                  <Box
+                    sx={{
+                      width: '100%',
+                      height: '200px',
+                      border: '2px dashed #d1d5db',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        borderColor: '#4F46E5',
+                        backgroundColor: '#f8fafc'
+                      }
+                    }}
+                    onClick={() => document.getElementById('image-upload')?.click()}
+                  >
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Subir imagen
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Click para seleccionar
+                    </Typography>
+                    <input
+                      id="image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </Box>
+                ) : (
+                  <Box sx={{ width: '100%', textAlign: 'center' }}>
+                    <Box
+                      component="img"
+                      src={profileImagePreview}
+                      alt="Preview"
+                      sx={{
+                        width: '100%',
+                        height: '200px',
+                        objectFit: 'cover',
+                        borderRadius: '8px',
+                        mb: 2
+                      }}
+                    />
+                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                      <Button type="secondary" onClick={handleRemoveImage}>
+                        Borrar
+                      </Button>
+                      <Button type="primary" onClick={() => document.getElementById('image-upload')?.click()}>
+                        Cambiar
+                      </Button>
+                    </Box>
+                    <input
+                      id="image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </Box>
+                )}
+              </Box>
+
+              {/* Sección derecha - Formulario */}
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {/* Información Básica */}
+                <Box>
+                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                    Información Básica
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                      <TextField
+                        label="Nombre"
+                        value={formData.firstName}
+                        onChange={(e) => handleInputChange('firstName', e.target.value)}
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                      />
+                      <TextField
+                        label="Apellido"
+                        value={formData.lastName}
+                        onChange={(e) => handleInputChange('lastName', e.target.value)}
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                      />
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                      <TextField
+                        label="Teléfono"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange('phone', e.target.value.replace(/\D/g, ''))}
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                      />
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Género</InputLabel>
+                        <Select
+                          value={formData.gender}
+                          onChange={(e) => handleInputChange('gender', e.target.value)}
+                          label="Género"
+                        >
+                          <MenuItem value="M">Masculino</MenuItem>
+                          <MenuItem value="F">Femenino</MenuItem>
+                          <MenuItem value="O">Otro</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Box>
+                  </Box>
+                </Box>
+
+                {/* Domicilio */}
+                <Box>
+                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                    Domicilio
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Estado</InputLabel>
+                        <Select
+                          value={formData.state}
+                          onChange={(e) => handleInputChange('state', e.target.value)}
+                          label="Estado"
+                        >
+                          <MenuItem value="CDMX">Ciudad de México</MenuItem>
+                          <MenuItem value="JAL">Jalisco</MenuItem>
+                          <MenuItem value="NLE">Nuevo León</MenuItem>
+                          <MenuItem value="BCN">Baja California</MenuItem>
+                          <MenuItem value="YUC">Yucatán</MenuItem>
+                        </Select>
+                      </FormControl>
+                      <TextField
+                        label="Ciudad"
+                        value={formData.city}
+                        onChange={(e) => handleInputChange('city', e.target.value)}
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                      />
+                    </Box>
+                    <TextField
+                      label="Calle y número"
+                      value={formData.address}
+                      onChange={(e) => handleInputChange('address', e.target.value)}
+                      variant="outlined"
+                      size="small"
+                      fullWidth
+                    />
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                      <TextField
+                        label="Colonia"
+                        value={formData.district}
+                        onChange={(e) => handleInputChange('district', e.target.value)}
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                      />
+                      <TextField
+                        label="Código Postal"
+                        value={formData.zipCode}
+                        onChange={(e) => handleInputChange('zipCode', e.target.value.replace(/\D/g, ''))}
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 5 }}
+                      />
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
+          )}
+
+          {activeStep === 1 && (
+            <Box>
+              <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
+                Confirmar creación de usuario
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
+                Aquí irá el resumen de los datos ingresados
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ p: 3 }}>
+          {activeStep === 0 ? (
+            <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
+              <Button type="secondary" onClick={handleCloseModal}>
+                Cancelar
+              </Button>
+              <Button type="primary" onClick={handleNext}>
+                Siguiente
+              </Button>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'space-between' }}>
+              <Button type="secondary" onClick={handleBack}>
+                Atrás
+              </Button>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button type="secondary" onClick={handleCloseModal}>
+                  Cancelar
+                </Button>
+                <Button type="primary" onClick={() => {}}>
+                  Crear Usuario
+                </Button>
+              </Box>
+            </Box>
+          )}
         </DialogActions>
       </Dialog>
     </div>
