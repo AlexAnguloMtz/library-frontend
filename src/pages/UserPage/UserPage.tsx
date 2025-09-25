@@ -503,7 +503,7 @@ const UserPage: React.FC = () => {
                                                 <FormControl size="small" sx={{ width: 300 }}>
                                                     <InputLabel>Rol</InputLabel>
                                                     <Select
-                                                        value={state.user.roles[0]?.id || ''}
+                                                        value={state.user.role.id}
                                                         label="Rol"
                                                         sx={{ 
                                                             '& .MuiOutlinedInput-root': {
@@ -520,7 +520,7 @@ const UserPage: React.FC = () => {
                                                 </FormControl>
                                             ) : (
                                                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                    {state.user.roles.map(role => role.name).join(', ')}
+                                                    {state.user.role.name}
                                                 </Typography>
                                             )}
                                         </Box>

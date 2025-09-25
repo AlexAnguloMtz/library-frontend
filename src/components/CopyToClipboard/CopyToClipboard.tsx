@@ -19,7 +19,7 @@ export const CopyToClipboard: React.FC<CopyToClipboardProps> = ({
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000); // Hide tooltip after 2 seconds
+      setTimeout(() => setCopied(false), 2000); 
     } catch (error) {
       console.error('Failed to copy text: ', error);
     }

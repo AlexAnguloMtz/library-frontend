@@ -9,7 +9,7 @@ export type FullUser = {
     fullName: string;
     email: string;
     phone: string;
-    roles: RoleDTO[];
+    role: RoleDTO;
     address: UserAddressResponse;
     gender: GenderResponse;
     registrationDate: string;

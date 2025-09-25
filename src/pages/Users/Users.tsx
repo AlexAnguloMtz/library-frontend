@@ -883,9 +883,7 @@ const Users: React.FC = () => {
                     </div>
                   </td>
                   <td>
-                    {user.roles.map(role => (
-                      <span className={`user-role-badge ${role.slug}`}>{role.name}</span>
-                    ))}
+                    <span className={`user-role-badge ${user.role.slug}`}>{user.role.name}</span>
                   </td>
                   <td>{user.registrationDate}</td>
                   <td>{user.activeLoans}</td>
@@ -1094,19 +1092,16 @@ const Users: React.FC = () => {
                   justifyContent: 'flex-end',
                   flex: 1
                 }}>
-                  {userToDelete.roles.map((role, index) => (
-                    <Chip
-                      key={index}
-                      label={role.name}
-                      size="small"
-                      sx={{
-                        backgroundColor: role.slug === 'USER' ? '#DCFCE7' : '#f3bd5f',
-                        color: role.slug === 'USER' ? '#166534' : '#000',
-                        fontSize: '0.75rem',
-                        height: '24px'
-                      }}
-                    />
-                  ))}
+                  <Chip
+                    label={userToDelete.role.name}
+                    size="small"
+                    sx={{
+                      backgroundColor: userToDelete.role.slug === 'USER' ? '#DCFCE7' : '#f3bd5f',
+                      color: userToDelete.role.slug === 'USER' ? '#166534' : '#000',
+                      fontSize: '0.75rem',
+                      height: '24px'
+                    }}
+                  />
                 </Box>
               </Box>
 

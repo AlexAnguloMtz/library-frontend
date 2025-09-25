@@ -1,7 +1,7 @@
 export type AuthenticationResponse = {
     userId: string;
     email: string;
-    roles: string[];
+    role: string;
     permissions: string[];
     accessToken: string;
 }
