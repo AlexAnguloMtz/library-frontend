@@ -6,8 +6,12 @@
     background-color: #F5F5F5;
 }
 
-.sortable-column-header:not(.non-sortable):hover {
+.sortable-column-header:not(.non-sortable):not(.active):hover {
     background-color: rgb(221, 221, 221);
+}
+
+.sortable-column-header.active:hover {
+    background-color: #0d0d0d;
 }
 
 .sortable-column-header {
