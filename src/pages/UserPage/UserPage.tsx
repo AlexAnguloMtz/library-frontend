@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Tabs, Tab, Box, Typography, IconButton, TextField, FormControl, InputLabel, Select, MenuItem, Skeleton, Dialog, DialogTitle, DialogContent, DialogActions, Alert, CircularProgress, InputAdornment } from '@mui/material';
 import { ArrowBack, CameraAlt, Visibility, VisibilityOff } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
@@ -16,6 +16,7 @@ import type { UserAddressRequest } from '../../models/UserAddressRequest';
 import type { ChangePasswordRequest } from '../../models/ChangePasswordRequest';
 import { Button } from '../../components/Button';
 import { CopyToClipboard } from '../../components/CopyToClipboard/CopyToClipboard';
+import authenticationHelper from '../../util/AuthenticationHelper';
 
 // Schema de validación para datos personales
 const personalDataSchema = z.object({
@@ -88,12 +89,50 @@ type UserPageState =
     | { status: UserPageStatus.IDLE }
     | { status: UserPageStatus.LOADING }
     | { status: UserPageStatus.ERROR; error: string }
-    | { status: UserPageStatus.SUCCESS; user: FullUser; userOptions: UserOptionsResponse };
+    | { status: UserPageStatus.SUCCESS; user: FullUser };
 
 const UserPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
     const [state, setState] = useState<UserPageState>({ status: UserPageStatus.IDLE });
+    
+    // Estado separado para userOptions
+    const [userOptions, setUserOptions] = useState<UserOptionsResponse | null>(null);
+    const [isLoadingOptions, setIsLoadingOptions] = useState(false);
+    
+    // Calcular userId una vez para usar en todas las funciones
+    const getUserId = (): string | null => {
+        if (id) return id;
+        
+        const auth = authenticationHelper.getAuthentication();
+        if (auth && auth.userId) {
+            return auth.userId;
+        }
+        
+        return null;
+    };
+
+    // Función para cargar userOptions de manera lazy
+    const loadUserOptions = async (): Promise<void> => {
+        // Si ya están cargados, no volver a cargar
+        if (userOptions) return;
+        
+        // Si ya está cargando, no volver a cargar
+        if (isLoadingOptions) return;
+        
+        setIsLoadingOptions(true);
+        
+        try {
+            const options = await userService.getUserOptions();
+            setUserOptions(options);
+        } catch (error) {
+            // Fallar silenciosamente - no hacer nada
+            console.warn('Error loading user options:', error);
+        } finally {
+            setIsLoadingOptions(false);
+        }
+    };
     const [activeTab, setActiveTab] = useState(0);
     const [isEditingBasicInfo, setIsEditingBasicInfo] = useState(false);
     const [isEditingAddress, setIsEditingAddress] = useState(false);
@@ -203,7 +242,9 @@ const UserPage: React.FC = () => {
     }, [state.status, personalDataForm, addressForm, accountForm]);
 
     const loadUserData = async () => {
-        if (!id) {
+        const userId = getUserId();
+        
+        if (!userId) {
             navigate('/dashboard/users');
             return;
         }
@@ -211,16 +252,12 @@ const UserPage: React.FC = () => {
         setState({ status: UserPageStatus.LOADING });
         
         try {
-            // Cargar ambos datos en paralelo
-            const [user, userOptions] = await Promise.all([
-                userService.getFullUserById(id),
-                userService.getUserOptions()
-            ]);
+            // Solo cargar el usuario, no los options
+            const user = await userService.getFullUserById(userId);
             
             setState({ 
                 status: UserPageStatus.SUCCESS, 
-                user, 
-                userOptions 
+                user
             });
         } catch (error) {
             setState({ 
@@ -287,7 +324,8 @@ const UserPage: React.FC = () => {
     };
 
     const handleConfirmPersonalDataUpdate = async () => {
-        if (!id) return;
+        const userId = getUserId();
+        if (!userId) return;
 
         setIsUpdatingPersonalData(true);
         setPersonalDataError(null);
@@ -302,7 +340,7 @@ const UserPage: React.FC = () => {
                 genderId: formData.genderId
             };
 
-            const response = await userService.updateUserPersonalData(id, request);
+            const response = await userService.updateUserPersonalData(userId, request);
             
             // Actualizar el estado del usuario con los nuevos datos
         if (state.status === UserPageStatus.SUCCESS) {
@@ -314,8 +352,7 @@ const UserPage: React.FC = () => {
                         lastName: response.lastName,
                         phone: response.phone,
                         gender: response.gender
-                    },
-                    userOptions: state.userOptions
+                    }
                 });
             }
 
@@ -345,7 +382,8 @@ const UserPage: React.FC = () => {
     };
 
     const handleConfirmAddressUpdate = async () => {
-        if (!id) return;
+        const userId = getUserId();
+        if (!userId) return;
 
         setIsUpdatingAddress(true);
         setAddressError(null);
@@ -361,7 +399,7 @@ const UserPage: React.FC = () => {
                 stateId: formData.stateId
             };
 
-            const response = await userService.updateUserAddress(id, request);
+            const response = await userService.updateUserAddress(userId, request);
             
             // Actualizar el estado del usuario con los nuevos datos
             if (state.status === UserPageStatus.SUCCESS) {
@@ -370,8 +408,7 @@ const UserPage: React.FC = () => {
                     user: {
                         ...state.user,
                         address: response
-                    },
-                    userOptions: state.userOptions
+                    }
                 });
             }
 
@@ -395,7 +432,8 @@ const UserPage: React.FC = () => {
     };
 
     const handleConfirmAccountUpdate = async () => {
-        if (!id) return;
+        const userId = getUserId();
+        if (!userId) return;
 
         setIsUpdatingAccount(true);
         setAccountError(null);
@@ -408,7 +446,7 @@ const UserPage: React.FC = () => {
                 roleId: formData.roleId
             };
 
-            const response = await userService.updateUserAccount(id, request);
+            const response = await userService.updateUserAccount(userId, request);
 
             if (state.status === UserPageStatus.SUCCESS) {
                 setState({
@@ -417,8 +455,7 @@ const UserPage: React.FC = () => {
                         ...state.user,
                         email: response.email,
                         role: response.role
-                    },
-                    userOptions: state.userOptions
+                    }
                 });
             }
 
@@ -442,7 +479,8 @@ const UserPage: React.FC = () => {
     };
 
     const handleConfirmPasswordUpdate = async () => {
-        if (!id) return;
+        const userId = getUserId();
+        if (!userId) return;
 
         setIsUpdatingPassword(true);
         setPasswordError(null);
@@ -455,7 +493,7 @@ const UserPage: React.FC = () => {
                 confirmedPassword: formData.confirmedPassword
             };
 
-            await userService.changePassword(id, request);
+            await userService.changePassword(userId, request);
 
             setPasswordSuccess(true);
             setIsEditingPassword(false);
@@ -477,6 +515,9 @@ const UserPage: React.FC = () => {
     const handleSaveProfilePicture = async () => {
         if (!selectedImageFile) return;
         
+        const userId = getUserId();
+        if (!userId) return;
+        
         setIsUpdatingProfilePicture(true);
         setProfilePictureError(null);
         
@@ -485,7 +526,7 @@ const UserPage: React.FC = () => {
                 profilePicture: selectedImageFile
             };
             
-            const response: UpdateProfilePictureResponse = await userService.updateProfilePicture(id!, request);
+            const response: UpdateProfilePictureResponse = await userService.updateProfilePicture(userId, request);
             
             // Actualizar la imagen en el estado
             if (state.status === UserPageStatus.SUCCESS) {
@@ -508,7 +549,7 @@ const UserPage: React.FC = () => {
 
     useEffect(() => {
         loadUserData();
-    }, []);
+    }, [location.pathname]); // Se ejecuta cuando cambia la ruta completa
 
     const renderContent = () => {
         switch (state.status) {
@@ -698,7 +739,10 @@ const UserPage: React.FC = () => {
                                                     </Button>
                                                 </Box>
                                             ) : (
-                                                <Button type="primary" onClick={() => setIsEditingBasicInfo(true)}>
+                                                <Button type="primary" onClick={async () => {
+                                                    await loadUserOptions();
+                                                    setIsEditingBasicInfo(true);
+                                                }}>
                                                     Editar
                                                 </Button>
                                             )}
@@ -820,7 +864,7 @@ const UserPage: React.FC = () => {
                                                                         }
                                                                     }}
                                                                 >
-                                                                    {state.userOptions.genders.map((gender) => (
+                                                                    {userOptions?.genders.map((gender) => (
                                                                         <MenuItem key={gender.value} value={gender.value}>
                                                                             {gender.label}
                                                                         </MenuItem>
@@ -871,7 +915,10 @@ const UserPage: React.FC = () => {
                                                     </Button>
                                                 </Box>
                                             ) : (
-                                                <Button type="primary" onClick={() => setIsEditingAddress(true)}>
+                                                <Button type="primary" onClick={async () => {
+                                                    await loadUserOptions();
+                                                    setIsEditingAddress(true);
+                                                }}>
                                                     Editar
                                                 </Button>
                                             )}
@@ -897,9 +944,9 @@ const UserPage: React.FC = () => {
                                                                 }
                                                             }}
                                                         >
-                                                            {state.userOptions.states.map((state) => (
-                                                                        <MenuItem key={state.value} value={state.value}>
-                                                                            {state.label}
+                                                            {userOptions?.states.map((stateOption) => (
+                                                                        <MenuItem key={stateOption.value} value={stateOption.value}>
+                                                                            {stateOption.label}
                                                                 </MenuItem>
                                                             ))}
                                                         </Select>
@@ -1065,7 +1112,10 @@ const UserPage: React.FC = () => {
                                                 </Button>
                                             </Box>
                                         ) : (
-                                            <Button type="primary" onClick={() => setIsEditingAccount(true)}>
+                                            <Button type="primary" onClick={async () => {
+                                                await loadUserOptions();
+                                                setIsEditingAccount(true);
+                                            }}>
                                                 Editar
                                             </Button>
                                         )}
@@ -1148,7 +1198,7 @@ const UserPage: React.FC = () => {
                                                             }
                                                         }}
                                                     >
-                                                        {state.userOptions.roles.map((role) => (
+                                                        {userOptions?.roles.map((role) => (
                                                                     <MenuItem key={role.value} value={role.value}>
                                                                         {role.label}
                                                             </MenuItem>
@@ -1484,7 +1534,7 @@ const UserPage: React.FC = () => {
                                     </Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                         {state.status === UserPageStatus.SUCCESS 
-                                            ? state.userOptions.roles.find(r => r.value === accountForm.getValues('roleId'))?.label || 'N/A'
+                                            ? userOptions?.roles.find(r => r.value === accountForm.getValues('roleId'))?.label || 'N/A'
                                             : 'N/A'
                                         }
                                     </Typography>
@@ -1604,7 +1654,7 @@ const UserPage: React.FC = () => {
                                     </Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                         {state.status === UserPageStatus.SUCCESS 
-                                            ? state.userOptions.genders.find(g => g.value === personalDataForm.getValues('genderId'))?.label || 'N/A'
+                                            ? userOptions?.genders.find(g => g.value === personalDataForm.getValues('genderId'))?.label || 'N/A'
                                             : 'N/A'
                                         }
                                     </Typography>
@@ -1701,7 +1751,7 @@ const UserPage: React.FC = () => {
                                     </Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                         {state.status === UserPageStatus.SUCCESS 
-                                            ? state.userOptions.states.find(s => s.value === addressForm.getValues('stateId'))?.label || 'N/A'
+                                            ? userOptions?.states.find(s => s.value === addressForm.getValues('stateId'))?.label || 'N/A'
                                             : 'N/A'
                                         }
                                     </Typography>

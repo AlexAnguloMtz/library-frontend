@@ -67,7 +67,12 @@ export function Login() {
       const authentication: AuthenticationResponse = await authService.login({ email: data.email, password: data.password });
       setLoginState({ status: LoginStatus.LoginSuccess });
       authenticationHelper.setAuthentication(authentication);
-      navigate('/dashboard/users');
+      
+      if (authenticationHelper.hasAnyPermission(authentication, ['users:read'])) {
+        navigate('/dashboard/users');
+      } else {
+        navigate('/dashboard/profile');
+      }
     } catch (error: any) {
       setLoginState({
         status: LoginStatus.LoginError,

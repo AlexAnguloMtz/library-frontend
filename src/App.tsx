@@ -12,7 +12,8 @@ function App() {
           <Route path="/login" element={<Login />} ></Route>
           <Route path="/dashboard" element={<DashboardLayout />} >
             <Route path="/dashboard/users" element={<Users />} ></Route>
-            <Route path="/dashboard/users/:id" element={<UserPage />} ></Route>
+            <Route path="/dashboard/users/:id" element={<UserPage key="user-specific" />} ></Route>
+            <Route path="/dashboard/profile" element={<UserPage key="user-profile" />} ></Route>
           </Route>
         </Routes>
       </HashRouter>

@@ -13,7 +13,6 @@ import type { PersonalDataRequest } from "../models/PersonalDataRequest";
 import type { PersonalDataResponse } from "../models/PersonalDataResponse";
 import type { UserAddressRequest } from "../models/UserAddressRequest";
 import type { UserAddressResponse } from "../models/UserAddressResponse";
-import type { CreateAccountRequest } from "../models/CreateAccountRequest";
 import type { AccountResponse } from "../models/AccountResponse";
 import type { CreateUserRequest } from "../models/CreateUserRequest";
 import type { CreateUserResponse } from "../models/CreateUserResponse";
