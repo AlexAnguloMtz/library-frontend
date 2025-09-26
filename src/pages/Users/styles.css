@@ -98,13 +98,17 @@ body {
   color: white;
 }
 
-.user-role-badge.USER {
-  color: #166534;
-  background-color: #DCFCE7;
+.user-role-badge.ADMIN {
+  background-color: #D44444;
 }
 
 .user-role-badge.LIBRARIAN {
   background-color: #f3bd5f;
+}
+
+.user-role-badge.USER {
+  color: #166534;
+  background-color: #DCFCE7;
 }
 
 .actions {

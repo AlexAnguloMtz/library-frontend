@@ -176,6 +176,12 @@ const UserPage: React.FC = () => {
     const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
     const [passwordError, setPasswordError] = useState<string | null>(null);
     const [passwordSuccess, setPasswordSuccess] = useState(false);
+    
+    // Estados para eliminar usuario
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [isDeletingUser, setIsDeletingUser] = useState(false);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
+    const [deleteSuccess, setDeleteSuccess] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -284,6 +290,44 @@ const UserPage: React.FC = () => {
 
     const handleGoBack = () => {
         navigate(-1);
+    };
+
+    // Funciones para eliminar usuario
+    const handleDeleteUserClick = () => {
+        setDeleteModalOpen(true);
+        setDeleteError(null);
+        setDeleteSuccess(false);
+    };
+
+    const handleDeleteUserCancel = () => {
+        if (!isDeletingUser) {
+            setDeleteModalOpen(false);
+            setDeleteError(null);
+            setDeleteSuccess(false);
+        }
+    };
+
+    const handleDeleteUserConfirm = async () => {
+        const userId = getUserId();
+        if (!userId) return;
+        
+        setIsDeletingUser(true);
+        setDeleteError(null);
+        setDeleteSuccess(false);
+        
+        try {
+            await userService.deleteUserById(userId);
+            setDeleteSuccess(true);
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            setDeleteError('Error al eliminar el usuario. Inténtalo de nuevo.');
+        } finally {
+            setIsDeletingUser(false);
+        }
+    };
+
+    const handleReturnToUsers = () => {
+        navigate('/dashboard/users');
     };
 
     // Funciones para edición de foto de perfil
@@ -758,8 +802,8 @@ const UserPage: React.FC = () => {
                                             )}
                                         </Box>
                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
+                                            <Box sx={{ display: 'flex', alignItems: isEditingBasicInfo ? 'flex-start' : 'center', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: isEditingBasicInfo ? 0.5 : 0 }}>
                                                     Nombre:
                                                 </Typography>
                                                 {isEditingBasicInfo ? (
@@ -788,8 +832,8 @@ const UserPage: React.FC = () => {
                                                     </Typography>
                                                 )}
                                             </Box>
-                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
+                                            <Box sx={{ display: 'flex', alignItems: isEditingBasicInfo ? 'flex-start' : 'center', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: isEditingBasicInfo ? 0.5 : 0 }}>
                                                     Apellido:
                                                 </Typography>
                                                 {isEditingBasicInfo ? (
@@ -818,8 +862,8 @@ const UserPage: React.FC = () => {
                                                     </Typography>
                                                 )}
                                             </Box>
-                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
+                                            <Box sx={{ display: 'flex', alignItems: isEditingBasicInfo ? 'flex-start' : 'center', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: isEditingBasicInfo ? 0.5 : 0 }}>
                                                     Teléfono:
                                                 </Typography>
                                                 {isEditingBasicInfo ? (
@@ -843,7 +887,7 @@ const UserPage: React.FC = () => {
                                                         )}
                                                     />
                                                 ) : (
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Box sx={{ display: 'flex', alignItems: isEditingAddress ? 'flex-start' : 'center', gap: 1 }}>
                                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                                         {state.user.phone}
                                                     </Typography>
@@ -854,8 +898,8 @@ const UserPage: React.FC = () => {
                                                     </Box>
                                                 )}
                                             </Box>
-                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
+                                            <Box sx={{ display: 'flex', alignItems: isEditingBasicInfo ? 'flex-start' : 'center', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: isEditingBasicInfo ? 0.5 : 0 }}>
                                                     Género:
                                                 </Typography>
                                                 {isEditingBasicInfo ? (
@@ -936,8 +980,8 @@ const UserPage: React.FC = () => {
                                             )}
                                         </Box>
                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
+                                            <Box sx={{ display: 'flex', alignItems: isEditingAddress ? 'flex-start' : 'center', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: isEditingAddress ? 0.5 : 0 }}>
                                                     Estado:
                                                 </Typography>
                                                 {isEditingAddress ? (
@@ -976,8 +1020,8 @@ const UserPage: React.FC = () => {
                                                     </Typography>
                                                 )}
                                             </Box>
-                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
+                                            <Box sx={{ display: 'flex', alignItems: isEditingAddress ? 'flex-start' : 'center', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: isEditingAddress ? 0.5 : 0 }}>
                                                     Ciudad:
                                                 </Typography>
                                                 {isEditingAddress ? (
@@ -1006,8 +1050,8 @@ const UserPage: React.FC = () => {
                                                     </Typography>
                                                 )}
                                             </Box>
-                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
+                                            <Box sx={{ display: 'flex', alignItems: isEditingAddress ? 'flex-start' : 'center', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: isEditingAddress ? 0.5 : 0 }}>
                                                     Calle y número:
                                                 </Typography>
                                                 {isEditingAddress ? (
@@ -1036,8 +1080,8 @@ const UserPage: React.FC = () => {
                                                     </Typography>
                                                 )}
                                             </Box>
-                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
+                                            <Box sx={{ display: 'flex', alignItems: isEditingAddress ? 'flex-start' : 'center', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: isEditingAddress ? 0.5 : 0 }}>
                                                     Colonia:
                                                 </Typography>
                                                 {isEditingAddress ? (
@@ -1066,8 +1110,8 @@ const UserPage: React.FC = () => {
                                                     </Typography>
                                                 )}
                                             </Box>
-                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
+                                            <Box sx={{ display: 'flex', alignItems: isEditingAddress ? 'flex-start' : 'center', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: isEditingAddress ? 0.5 : 0 }}>
                                                     Código Postal:
                                                 </Typography>
                                                 {isEditingAddress ? (
@@ -1181,7 +1225,7 @@ const UserPage: React.FC = () => {
                                                     )}
                                                 />
                                             ) : (
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Box sx={{ display: 'flex', alignItems: isEditingAddress ? 'flex-start' : 'center', gap: 1 }}>
                                                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                                     {state.user.email}
                                                 </Typography>
@@ -1266,8 +1310,8 @@ const UserPage: React.FC = () => {
                                             )}
                                         </Box>
                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
+                                            <Box sx={{ display: 'flex', alignItems: isEditingPassword ? 'flex-start' : 'center', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: isEditingPassword ? 0.5 : 0 }}>
                                                     Contraseña:
                                                 </Typography>
                                                 {isEditingPassword ? (
@@ -1311,8 +1355,8 @@ const UserPage: React.FC = () => {
                                             )}
                                         </Box>
                                             {isEditingPassword && (
-                                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                                                    <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
+                                                <Box sx={{ display: 'flex', alignItems: isEditingPassword ? 'flex-start' : 'center', gap: 1 }}>
+                                                    <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: isEditingPassword ? 0.5 : 0 }}>
                                                         Confirmar:
                                                     </Typography>
                                                     <Controller
@@ -1369,28 +1413,50 @@ const UserPage: React.FC = () => {
             <Box sx={{ 
                 display: 'flex', 
                 alignItems: 'center', 
-                gap: 1, 
+                justifyContent: 'space-between',
                 mb: 3 
             }}>
-                <IconButton
-                    onClick={handleGoBack}
-                    size="small"
-                    sx={{ 
-                        color: 'black',
-                        p: 0.5
-                    }}
-                >
-                    <ArrowBack />
-                </IconButton>
-                <Typography 
-                    variant="body2" 
-                    sx={{ 
-                        color: 'black',
-                        fontWeight: 500
-                    }}
-                >
-                    Usuario
-                </Typography>
+                <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 1 
+                }}>
+                    <IconButton
+                        onClick={handleGoBack}
+                        size="small"
+                        sx={{ 
+                            color: 'black',
+                            p: 0.5
+                        }}
+                    >
+                        <ArrowBack />
+                    </IconButton>
+                    <Typography 
+                        variant="body2" 
+                        sx={{ 
+                            color: 'black',
+                            fontWeight: 500
+                        }}
+                    >
+                        Usuario
+                    </Typography>
+                </Box>
+                
+                {/* Botón Borrar usuario */}
+                {state.status === UserPageStatus.SUCCESS && 
+                 state.user.permissions.includes('delete') && (
+                    <Button 
+                        type="error"
+                        onClick={handleDeleteUserClick}
+                        sx={{ 
+                            fontSize: '0.75rem',
+                            padding: '6px 12px',
+                            minWidth: 'auto'
+                        }}
+                    >
+                        Borrar usuario
+                    </Button>
+                )}
             </Box>
             
             {renderContent()}
@@ -1914,6 +1980,143 @@ const UserPage: React.FC = () => {
                                 )}
                             </Button>
                         </Box>
+                    )}
+                </DialogActions>
+            </Dialog>
+            
+            {/* Modal de confirmación para eliminar usuario */}
+            <Dialog 
+                open={deleteModalOpen} 
+                onClose={deleteSuccess ? undefined : handleDeleteUserCancel}
+                maxWidth="sm"
+                fullWidth
+                disableEscapeKeyDown={isDeletingUser || deleteSuccess}
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
+                    }
+                }}
+            >
+                <DialogTitle>
+                    <Typography variant="h6">
+                        {deleteSuccess ? 'Usuario eliminado' : '¿Eliminar usuario?'}
+                    </Typography>
+                </DialogTitle>
+                
+                <DialogContent sx={{ pt: 2, pb: 3 }}>
+                    {deleteError && (
+                        <Alert severity="error" sx={{ mb: 3 }}>
+                            {deleteError}
+                        </Alert>
+                    )}
+                    
+                    {deleteSuccess && (
+                        <Alert severity="success" sx={{ mb: 3 }}>
+                            ¡Usuario eliminado exitosamente!
+                        </Alert>
+                    )}
+                    
+                    {!deleteSuccess && state.status === UserPageStatus.SUCCESS && (
+                        <Box>
+                            <Typography variant="body1" sx={{ mb: 2 }}>
+                                ¿Está seguro de que desea eliminar este usuario? Esta acción no se puede deshacer.
+                            </Typography>
+                            
+                            <Box sx={{ 
+                                display: 'flex', 
+                                flexDirection: 'row', 
+                                alignItems: 'flex-start',
+                                gap: 2,
+                                p: 2,
+                                backgroundColor: '#f8f9fa',
+                                borderRadius: 1,
+                                border: '1px solid #e9ecef'
+                            }}>
+                                <Box sx={{ 
+                                    width: 60, 
+                                    height: 60, 
+                                    borderRadius: '50%',
+                                    overflow: 'hidden',
+                                    backgroundColor: '#e9ecef',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    {state.user.profilePictureUrl ? (
+                                        <img 
+                                            src={state.user.profilePictureUrl} 
+                                            alt={`${state.user.fullName} profile`}
+                                            style={{
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'cover'
+                                            }}
+                                        />
+                                    ) : (
+                                        <Typography variant="h6" sx={{ color: '#6c757d' }}>
+                                            {state.user.firstName.charAt(0)}{state.user.lastName.charAt(0)}
+                                        </Typography>
+                                    )}
+                                </Box>
+                                
+                                <Box sx={{ flex: 1 }}>
+                                    <Typography variant="h6" sx={{ 
+                                        fontWeight: 600, 
+                                        color: '#1f2937',
+                                        mb: 1
+                                    }}>
+                                        {state.user.fullName}
+                                    </Typography>
+                                    
+                                    <Typography variant="body2" sx={{ 
+                                        color: '#6b7280'
+                                    }}>
+                                        ID: {state.user.id}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        </Box>
+                    )}
+                </DialogContent>
+                
+                <DialogActions sx={{ 
+                    p: 3, 
+                    gap: 1, 
+                    justifyContent: 'flex-end' 
+                }}>
+                    {deleteSuccess ? (
+                        <Button 
+                            type="primary" 
+                            onClick={handleReturnToUsers}
+                        >
+                            Regresar a página de usuarios
+                        </Button>
+                    ) : (
+                        <>
+                            <Button 
+                                type="secondary" 
+                                onClick={handleDeleteUserCancel}
+                                disabled={isDeletingUser}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button 
+                                type="error" 
+                                onClick={handleDeleteUserConfirm}
+                                disabled={isDeletingUser}
+                            >
+                                {isDeletingUser ? (
+                                    <>
+                                        <CircularProgress size={16} sx={{ color: 'white', mr: 1 }} />
+                                        Eliminando...
+                                    </>
+                                ) : (
+                                    'Eliminar'
+                                )}
+                            </Button>
+                        </>
                     )}
                 </DialogActions>
             </Dialog>
