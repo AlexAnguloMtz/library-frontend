@@ -133,6 +133,12 @@ const UserPage: React.FC = () => {
             setIsLoadingOptions(false);
         }
     };
+
+    // Función para verificar si el usuario tiene permisos de edición
+    const hasEditPermission = (): boolean => {
+        if (state.status !== UserPageStatus.SUCCESS) return false;
+        return state.user.permissions.includes('edit');
+    };
     const [activeTab, setActiveTab] = useState(0);
     const [isEditingBasicInfo, setIsEditingBasicInfo] = useState(false);
     const [isEditingAddress, setIsEditingAddress] = useState(false);
@@ -680,18 +686,20 @@ const UserPage: React.FC = () => {
                                 
                                 {/* Botón de editar foto */}
                                 <Box sx={{ mt: 2 }}>
-                                    <Button 
-                                        type="secondary" 
-                                        onClick={handleEditProfilePicture}
-                                        startIcon={<CameraAlt />}
-                                        sx={{ 
-                                            fontSize: '0.75rem',
-                                            padding: '6px 12px',
-                                            minWidth: 'auto'
-                                        }}
-                                    >
-                                        Cambiar foto
-                                    </Button>
+                                    {hasEditPermission() && (
+                                        <Button 
+                                            type="secondary" 
+                                            onClick={handleEditProfilePicture}
+                                            startIcon={<CameraAlt />}
+                                            sx={{ 
+                                                fontSize: '0.75rem',
+                                                padding: '6px 12px',
+                                                minWidth: 'auto'
+                                            }}
+                                        >
+                                            Cambiar foto
+                                        </Button>
+                                    )}
                                 </Box>
                             </Box>
                         </Box>
@@ -739,12 +747,14 @@ const UserPage: React.FC = () => {
                                                     </Button>
                                                 </Box>
                                             ) : (
-                                                <Button type="primary" onClick={async () => {
-                                                    await loadUserOptions();
-                                                    setIsEditingBasicInfo(true);
-                                                }}>
-                                                    Editar
-                                                </Button>
+                                                hasEditPermission() && (
+                                                    <Button type="primary" onClick={async () => {
+                                                        await loadUserOptions();
+                                                        setIsEditingBasicInfo(true);
+                                                    }}>
+                                                        Editar
+                                                    </Button>
+                                                )
                                             )}
                                         </Box>
                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -915,12 +925,14 @@ const UserPage: React.FC = () => {
                                                     </Button>
                                                 </Box>
                                             ) : (
-                                                <Button type="primary" onClick={async () => {
-                                                    await loadUserOptions();
-                                                    setIsEditingAddress(true);
-                                                }}>
-                                                    Editar
-                                                </Button>
+                                                hasEditPermission() && (
+                                                    <Button type="primary" onClick={async () => {
+                                                        await loadUserOptions();
+                                                        setIsEditingAddress(true);
+                                                    }}>
+                                                        Editar
+                                                    </Button>
+                                                )
                                             )}
                                         </Box>
                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -1112,12 +1124,14 @@ const UserPage: React.FC = () => {
                                                 </Button>
                                             </Box>
                                         ) : (
-                                            <Button type="primary" onClick={async () => {
-                                                await loadUserOptions();
-                                                setIsEditingAccount(true);
-                                            }}>
-                                                Editar
-                                            </Button>
+                                            hasEditPermission() && (
+                                                <Button type="primary" onClick={async () => {
+                                                    await loadUserOptions();
+                                                    setIsEditingAccount(true);
+                                                }}>
+                                                    Editar
+                                                </Button>
+                                            )
                                         )}
                                     </Box>
                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -1244,9 +1258,11 @@ const UserPage: React.FC = () => {
                                                     </Button>
                                                 </Box>
                                             ) : (
-                                                <Button type="primary" onClick={() => setIsEditingPassword(true)}>
-                                                    Editar
-                                                </Button>
+                                                hasEditPermission() && (
+                                                    <Button type="primary" onClick={() => setIsEditingPassword(true)}>
+                                                        Editar
+                                                    </Button>
+                                                )
                                             )}
                                         </Box>
                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
