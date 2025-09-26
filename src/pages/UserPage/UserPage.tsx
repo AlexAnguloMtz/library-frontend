@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Tabs, Tab, Box, Typography, IconButton, TextField, FormControl, InputLabel, Select, MenuItem, Skeleton } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
+import { Tabs, Tab, Box, Typography, IconButton, TextField, FormControl, InputLabel, Select, MenuItem, Skeleton, Dialog, DialogTitle, DialogContent, DialogActions, Alert, CircularProgress } from '@mui/material';
+import { ArrowBack, CameraAlt } from '@mui/icons-material';
 import './styles.css';
 import userService from '../../services/UserService';
 import type { FullUser } from '../../models/FullUser';
 import type { UserOptionsResponse } from '../../models/UserOptionsResponse';
+import type { UpdateProfilePictureRequest } from '../../models/UpdateProfilePictureRequest';
+import type { UpdateProfilePictureResponse } from '../../models/UpdateProfilePictureResponse';
 import { Button } from '../../components/Button';
 import { CopyToClipboard } from '../../components/CopyToClipboard/CopyToClipboard';
 
@@ -30,6 +32,14 @@ const UserPage: React.FC = () => {
     const [isEditingBasicInfo, setIsEditingBasicInfo] = useState(false);
     const [isEditingAddress, setIsEditingAddress] = useState(false);
     const [isEditingAccount, setIsEditingAccount] = useState(false);
+    
+    // Estados para edición de foto de perfil
+    const [profilePictureModalOpen, setProfilePictureModalOpen] = useState(false);
+    const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+    const [selectedImagePreview, setSelectedImagePreview] = useState<string | null>(null);
+    const [isUpdatingProfilePicture, setIsUpdatingProfilePicture] = useState(false);
+    const [profilePictureError, setProfilePictureError] = useState<string | null>(null);
+    const [profilePictureSuccess, setProfilePictureSuccess] = useState(false);
 
     const loadUserData = async () => {
         if (!id) {
@@ -70,6 +80,66 @@ const UserPage: React.FC = () => {
 
     const handleGoBack = () => {
         navigate(-1);
+    };
+
+    // Funciones para edición de foto de perfil
+    const handleEditProfilePicture = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = (event) => {
+            const file = (event.target as HTMLInputElement).files?.[0];
+            if (file) {
+                setSelectedImageFile(file);
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    setSelectedImagePreview(e.target?.result as string);
+                    setProfilePictureModalOpen(true);
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+        input.click();
+    };
+
+    const handleCloseProfilePictureModal = () => {
+        setProfilePictureModalOpen(false);
+        setSelectedImageFile(null);
+        setSelectedImagePreview(null);
+        setProfilePictureError(null);
+        setProfilePictureSuccess(false);
+    };
+
+    const handleSaveProfilePicture = async () => {
+        if (!selectedImageFile) return;
+        
+        setIsUpdatingProfilePicture(true);
+        setProfilePictureError(null);
+        
+        try {
+            const request: UpdateProfilePictureRequest = {
+                profilePicture: selectedImageFile
+            };
+            
+            const response: UpdateProfilePictureResponse = await userService.updateProfilePicture(id!, request);
+            
+            // Actualizar la imagen en el estado
+            if (state.status === UserPageStatus.SUCCESS) {
+                setState({
+                    ...state,
+                    user: {
+                        ...state.user,
+                        profilePictureUrl: response.profilePictureUrl
+                    }
+                });
+            }
+            
+            setProfilePictureSuccess(true);
+        } catch (error: any) {
+            setProfilePictureError(error.message || 'Error al actualizar la foto de perfil');
+        } finally {
+            setIsUpdatingProfilePicture(false);
+        }
     };
 
     useEffect(() => {
@@ -201,6 +271,22 @@ const UserPage: React.FC = () => {
                                         size="small"
                                         sx={{ ml: 1 }}
                                     />
+                                </Box>
+                                
+                                {/* Botón de editar foto */}
+                                <Box sx={{ mt: 2 }}>
+                                    <Button 
+                                        type="secondary" 
+                                        onClick={handleEditProfilePicture}
+                                        startIcon={<CameraAlt />}
+                                        sx={{ 
+                                            fontSize: '0.75rem',
+                                            padding: '6px 12px',
+                                            minWidth: 'auto'
+                                        }}
+                                    >
+                                        Cambiar foto
+                                    </Button>
                                 </Box>
                             </Box>
                         </Box>
@@ -647,6 +733,101 @@ const UserPage: React.FC = () => {
             </Box>
             
             {renderContent()}
+            
+            {/* Modal de edición de foto de perfil */}
+            <Dialog 
+                open={profilePictureModalOpen} 
+                onClose={isUpdatingProfilePicture ? undefined : handleCloseProfilePictureModal}
+                maxWidth="sm"
+                fullWidth
+                disableEscapeKeyDown={isUpdatingProfilePicture}
+            >
+                <DialogTitle>
+                    <Typography variant="h6">
+                        {profilePictureSuccess ? 'Foto actualizada' : 'Cambiar foto de perfil'}
+                    </Typography>
+                </DialogTitle>
+                
+                <DialogContent>
+                    {/* Alert de error */}
+                    {profilePictureError && (
+                        <Alert severity="error" sx={{ mb: 3 }}>
+                            {profilePictureError}
+                        </Alert>
+                    )}
+                    
+                    {/* Alert de éxito */}
+                    {profilePictureSuccess && (
+                        <Alert severity="success" sx={{ mb: 3 }}>
+                            ¡Foto de perfil actualizada exitosamente!
+                        </Alert>
+                    )}
+                    
+                    {/* Vista previa de la imagen */}
+                    {selectedImagePreview && (
+                        <Box sx={{ textAlign: 'center', mb: 3 }}>
+                            <Typography variant="body1" sx={{ mb: 2 }}>
+                                {profilePictureSuccess ? 'Foto actualizada exitosamente' : '¿Desea cambiar la foto actual por esta?'}
+                            </Typography>
+                            <Box sx={{ 
+                                width: 200, 
+                                height: 200, 
+                                margin: '0 auto',
+                                backgroundColor: '#f5f5f5',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                overflow: 'hidden',
+                                borderRadius: 1
+                            }}>
+                                <img 
+                                    src={selectedImagePreview} 
+                                    alt="Vista previa"
+                                    style={{ 
+                                        width: '100%', 
+                                        height: '100%', 
+                                        objectFit: 'cover' 
+                                    }}
+                                />
+                            </Box>
+                        </Box>
+                    )}
+                </DialogContent>
+                
+                <DialogActions sx={{ p: 3 }}>
+                    {profilePictureSuccess ? (
+                        <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
+                            <Button type="primary" onClick={handleCloseProfilePictureModal}>
+                                Cerrar
+                            </Button>
+                        </Box>
+                    ) : (
+                        <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
+                            <Button 
+                                type="secondary" 
+                                onClick={handleCloseProfilePictureModal}
+                                disabled={isUpdatingProfilePicture}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button 
+                                type="primary" 
+                                onClick={handleSaveProfilePicture}
+                                disabled={isUpdatingProfilePicture}
+                            >
+                                {isUpdatingProfilePicture ? (
+                                    <>
+                                        <CircularProgress size={16} sx={{ color: 'white', mr: 1 }} />
+                                        Guardando...
+                                    </>
+                                ) : (
+                                    'Guardar'
+                                )}
+                            </Button>
+                        </Box>
+                    )}
+                </DialogActions>
+            </Dialog>
         </div>
     );
 };

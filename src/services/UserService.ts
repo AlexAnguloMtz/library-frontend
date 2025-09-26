@@ -17,6 +17,8 @@ import type { AccountRequest } from "../models/AccountRequest";
 import type { AccountResponse } from "../models/AccountResponse";
 import type { CreateUserRequest } from "../models/CreateUserRequest";
 import type { CreateUserResponse } from "../models/CreateUserResponse";
+import type { UpdateProfilePictureRequest } from "../models/UpdateProfilePictureRequest";
+import type { UpdateProfilePictureResponse } from "../models/UpdateProfilePictureResponse";
 
 class UserService {
     async getUsersPreviews(query: UserPreviewsQuery, pagination: PaginationRequest): Promise<PaginationResponse<UserPreview>> {
@@ -189,6 +191,30 @@ class UserService {
         }
 
         const data: CreateUserResponse = await response.json();
+        return data;
+    }
+
+    async updateProfilePicture(id: string, request: UpdateProfilePictureRequest): Promise<UpdateProfilePictureResponse> {
+        const url = `${appConfig.apiUrl}/api/v1/users/${id}/profile-picture`;
+        
+        const formData = new FormData();
+        formData.append('profilePicture', request.profilePicture);
+        
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${authenticationHelper.getAuthentication()?.accessToken}`
+                // No establecer Content-Type, el navegador lo hará automáticamente para FormData
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `Error al actualizar foto de perfil: ${response.statusText}`);
+        }
+
+        const data: UpdateProfilePictureResponse = await response.json();
         return data;
     }
 
