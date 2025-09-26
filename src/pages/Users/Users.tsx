@@ -34,6 +34,7 @@ import authenticationHelper from '../../util/AuthenticationHelper';
 import type { AuthenticationResponse } from '../../models/AuthenticationResponse';
 import type { CreateUserRequest } from '../../models/CreateUserRequest';
 import type { CreateUserResponse } from '../../models/CreateUserResponse';
+import { CopyToClipboard } from '../../components/CopyToClipboard/CopyToClipboard';
 
 const loanOptions = Array.from({ length: 20 }, (_, i) => i + 1);
 
@@ -908,13 +909,31 @@ const Users: React.FC = () => {
                     </div>
                     <div className='user-name-and-id'>
                       <span className='user-name'>{user.name}</span>
-                      <span className='user-id'>{user.id}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span className='user-id'>{user.id}</span>
+                        <CopyToClipboard 
+                          text={user.id}
+                          size="tiny"
+                        />
+                      </div>
                     </div>
                   </td>
                   <td className='user-contact-cell'>
                     <div className='user-contact-info'>
-                      <span className='user-email'>{user.email}</span>
-                      <span className='user-phone'>{user.phone}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span className='user-email'>{user.email}</span>
+                        <CopyToClipboard 
+                          text={user.email}
+                          size="tiny"
+                        />
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span className='user-phone'>{user.phone}</span>
+                        <CopyToClipboard 
+                          text={user.phone}
+                          size="tiny"
+                        />
+                      </div>
                     </div>
                   </td>
                   <td>

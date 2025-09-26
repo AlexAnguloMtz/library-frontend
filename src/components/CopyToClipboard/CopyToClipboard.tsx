@@ -4,7 +4,7 @@ import { ContentCopy } from '@mui/icons-material';
 
 interface CopyToClipboardProps {
   text: string;
-  size?: 'small' | 'medium' | 'large';
+  size?: 'small' | 'medium' | 'large' | 'tiny';
   sx?: object;
 }
 
@@ -35,11 +35,19 @@ export const CopyToClipboard: React.FC<CopyToClipboardProps> = ({
       disableTouchListener
     >
       <IconButton 
-        size={size} 
+        size={size === 'tiny' ? 'small' : size} 
         onClick={handleCopy}
-        sx={sx}
+        sx={{
+          ...sx,
+          ...(size === 'tiny' && {
+            width: 16,
+            height: 16,
+            minWidth: 16,
+            padding: 0
+          })
+        }}
       >
-        <ContentCopy fontSize={size} />
+        <ContentCopy fontSize={size === 'tiny' ? 'inherit' : size} sx={size === 'tiny' ? { fontSize: 12 } : {}} />
       </IconButton>
     </Tooltip>
   );
