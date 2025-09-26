@@ -163,6 +163,7 @@ const Users: React.FC = () => {
   const [createUserModalOpen, setCreateUserModalOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -204,6 +205,7 @@ const Users: React.FC = () => {
     setCreateUserModalOpen(true);
     setActiveStep(0);
     setProfileImagePreview(null);
+    setProfileImageFile(null);
     setCreatedUser(null);
     setCreateUserError(null);
     reset();
@@ -212,6 +214,7 @@ const Users: React.FC = () => {
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      setProfileImageFile(file);
       const reader = new FileReader();
       reader.onload = (e) => {
         setProfileImagePreview(e.target?.result as string);
@@ -222,6 +225,7 @@ const Users: React.FC = () => {
 
   const handleRemoveImage = () => {
     setProfileImagePreview(null);
+    setProfileImageFile(null);
   };
 
   const handleTogglePasswordVisibility = () => setShowPassword(prev => !prev);
@@ -240,6 +244,7 @@ const Users: React.FC = () => {
     setCreateUserModalOpen(false);
     setActiveStep(0);
     setProfileImagePreview(null);
+    setProfileImageFile(null);
     setCreatedUser(null);
     setCreateUserError(null);
     reset();
@@ -274,7 +279,8 @@ const Users: React.FC = () => {
         account: {
           email: data.email,
           roleId: data.role,
-          password: data.password
+          password: data.password,
+          profilePicture: profileImageFile!
         }
       };
 
@@ -1841,7 +1847,7 @@ const Users: React.FC = () => {
                <Button 
                  type="primary" 
                  onClick={handleNext}
-                 disabled={!isValid || isCreating}
+                 disabled={!isValid || isCreating || !profileImageFile}
                >
                  Siguiente
                </Button>

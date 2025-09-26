@@ -104,8 +104,8 @@ const UserPage: React.FC = () => {
                         }}>
                             {/* Caja Izquierda - Foto */}
                             <Box sx={{ 
-                                width: 280, 
-                                height: 250,
+                                width: 240, 
+                                height: 274,
                                 backgroundColor: '#f5f5f5',
                                 display: 'flex',
                                 alignItems: 'center',

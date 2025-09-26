@@ -156,21 +156,39 @@ class UserService {
     async createUser(request: CreateUserRequest): Promise<CreateUserResponse> {
         const url = `${appConfig.apiUrl}/api/v1/users`;
         
+        const formData = new FormData();
+        
+        formData.append('personalData.firstName', request.personalData.firstName);
+        formData.append('personalData.lastName', request.personalData.lastName);
+        formData.append('personalData.phone', request.personalData.phone);
+        formData.append('personalData.genderId', request.personalData.genderId);
+        
+        formData.append('address.address', request.address.address);
+        formData.append('address.stateId', request.address.stateId);
+        formData.append('address.city', request.address.city);
+        formData.append('address.district', request.address.district);
+        formData.append('address.zipCode', request.address.zipCode);
+        
+        formData.append('account.email', request.account.email);
+        formData.append('account.roleId', request.account.roleId);
+        formData.append('account.password', request.account.password);
+        formData.append('account.profilePicture', request.account.profilePicture);
+        
         const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${authenticationHelper.getAuthentication()?.accessToken}`,
-                'Content-Type': 'application/json'
+                'Authorization': `Bearer ${authenticationHelper.getAuthentication()?.accessToken}`
+                // No establecer Content-Type, el navegador lo hará automáticamente para FormData
             },
-            body: JSON.stringify(request)
+            body: formData
         });
 
         if (!response.ok) {
-            throw new Error(`Error al crear usuario: ${response.statusText}`);
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `Error al crear usuario: ${response.statusText}`);
         }
 
         const data: CreateUserResponse = await response.json();
- 
         return data;
     }
 
