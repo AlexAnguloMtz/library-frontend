@@ -1,15 +1,81 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Tabs, Tab, Box, Typography, IconButton, TextField, FormControl, InputLabel, Select, MenuItem, Skeleton, Dialog, DialogTitle, DialogContent, DialogActions, Alert, CircularProgress } from '@mui/material';
-import { ArrowBack, CameraAlt } from '@mui/icons-material';
+import { Tabs, Tab, Box, Typography, IconButton, TextField, FormControl, InputLabel, Select, MenuItem, Skeleton, Dialog, DialogTitle, DialogContent, DialogActions, Alert, CircularProgress, InputAdornment } from '@mui/material';
+import { ArrowBack, CameraAlt, Visibility, VisibilityOff } from '@mui/icons-material';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import './styles.css';
 import userService from '../../services/UserService';
 import type { FullUser } from '../../models/FullUser';
 import type { UserOptionsResponse } from '../../models/UserOptionsResponse';
 import type { UpdateProfilePictureRequest } from '../../models/UpdateProfilePictureRequest';
 import type { UpdateProfilePictureResponse } from '../../models/UpdateProfilePictureResponse';
+import type { PersonalDataRequest } from '../../models/PersonalDataRequest';
+import type { UserAddressRequest } from '../../models/UserAddressRequest';
+import type { ChangePasswordRequest } from '../../models/ChangePasswordRequest';
 import { Button } from '../../components/Button';
 import { CopyToClipboard } from '../../components/CopyToClipboard/CopyToClipboard';
+
+// Schema de validación para datos personales
+const personalDataSchema = z.object({
+    firstName: z.string()
+        .min(1, 'El nombre es requerido')
+        .max(100, 'El nombre no puede exceder 100 caracteres'),
+    lastName: z.string()
+        .min(1, 'El apellido es requerido')
+        .max(100, 'El apellido no puede exceder 100 caracteres'),
+    phone: z.string()
+        .min(1, 'El teléfono es requerido')
+        .regex(/^\d{10}$/, 'El teléfono debe tener exactamente 10 dígitos numéricos'),
+    genderId: z.string().min(1, 'El género es requerido')
+});
+
+type PersonalDataFormData = z.infer<typeof personalDataSchema>;
+
+// Schema de validación para datos de domicilio
+const addressSchema = z.object({
+    address: z.string()
+        .min(1, 'La calle y número es requerida')
+        .max(100, 'La calle y número no puede exceder 100 caracteres'),
+    zipCode: z.string()
+        .min(1, 'El código postal es requerido')
+        .regex(/^\d{5}$/, 'El código postal debe tener exactamente 5 dígitos numéricos'),
+    district: z.string()
+        .min(1, 'La colonia es requerida')
+        .max(100, 'La colonia no puede exceder 100 caracteres'),
+    city: z.string()
+        .min(1, 'La ciudad es requerida')
+        .max(100, 'La ciudad no puede exceder 100 caracteres'),
+    stateId: z.string().min(1, 'El estado es requerido')
+});
+
+type AddressFormData = z.infer<typeof addressSchema>;
+
+// Schema de validación para cuenta
+const accountSchema = z.object({
+    email: z.string()
+        .min(1, 'El email es requerido')
+        .email('Debe ser un email válido')
+        .max(100, 'El email no puede exceder 100 caracteres'),
+    roleId: z.string().min(1, 'El rol es requerido')
+});
+
+type AccountFormData = z.infer<typeof accountSchema>;
+
+// Schema de validación para contraseña
+const passwordSchema = z.object({
+    password: z.string()
+        .min(1, 'La contraseña es requerida')
+        .min(8, 'La contraseña debe tener al menos 8 caracteres'),
+    confirmedPassword: z.string()
+        .min(1, 'La confirmación de contraseña es requerida')
+}).refine((data) => data.password === data.confirmedPassword, {
+    message: "Las contraseñas no coinciden",
+    path: ["confirmedPassword"],
+});
+
+type PasswordFormData = z.infer<typeof passwordSchema>;
 
 enum UserPageStatus {
     IDLE = 'idle',
@@ -32,6 +98,7 @@ const UserPage: React.FC = () => {
     const [isEditingBasicInfo, setIsEditingBasicInfo] = useState(false);
     const [isEditingAddress, setIsEditingAddress] = useState(false);
     const [isEditingAccount, setIsEditingAccount] = useState(false);
+    const [isEditingPassword, setIsEditingPassword] = useState(false);
     
     // Estados para edición de foto de perfil
     const [profilePictureModalOpen, setProfilePictureModalOpen] = useState(false);
@@ -40,6 +107,100 @@ const UserPage: React.FC = () => {
     const [isUpdatingProfilePicture, setIsUpdatingProfilePicture] = useState(false);
     const [profilePictureError, setProfilePictureError] = useState<string | null>(null);
     const [profilePictureSuccess, setProfilePictureSuccess] = useState(false);
+    
+    // Estados para edición de datos personales
+    const [personalDataModalOpen, setPersonalDataModalOpen] = useState(false);
+    const [isUpdatingPersonalData, setIsUpdatingPersonalData] = useState(false);
+    const [personalDataError, setPersonalDataError] = useState<string | null>(null);
+    const [personalDataSuccess, setPersonalDataSuccess] = useState(false);
+    
+    // Estados para edición de domicilio
+    const [addressModalOpen, setAddressModalOpen] = useState(false);
+    const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
+    const [addressError, setAddressError] = useState<string | null>(null);
+    const [addressSuccess, setAddressSuccess] = useState(false);
+
+    // Estados para edición de cuenta
+    const [accountModalOpen, setAccountModalOpen] = useState(false);
+    const [isUpdatingAccount, setIsUpdatingAccount] = useState(false);
+    const [accountError, setAccountError] = useState<string | null>(null);
+    const [accountSuccess, setAccountSuccess] = useState(false);
+
+    // Estados para edición de contraseña
+    const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+    const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+    const [passwordError, setPasswordError] = useState<string | null>(null);
+    const [passwordSuccess, setPasswordSuccess] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    // Formulario para datos personales
+    const personalDataForm = useForm<PersonalDataFormData>({
+        resolver: zodResolver(personalDataSchema),
+        defaultValues: {
+            firstName: '',
+            lastName: '',
+            phone: '',
+            genderId: ''
+        }
+    });
+
+    // Formulario para domicilio
+    const addressForm = useForm<AddressFormData>({
+        resolver: zodResolver(addressSchema),
+        defaultValues: {
+            address: '',
+            zipCode: '',
+            district: '',
+            city: '',
+            stateId: ''
+        }
+    });
+
+    // Formulario para cuenta
+    const accountForm = useForm<AccountFormData>({
+        resolver: zodResolver(accountSchema),
+        defaultValues: {
+            email: '',
+            roleId: ''
+        }
+    });
+
+    // Formulario para contraseña
+    const passwordForm = useForm<PasswordFormData>({
+        resolver: zodResolver(passwordSchema),
+        defaultValues: {
+            password: '',
+            confirmedPassword: ''
+        }
+    });
+
+    // Actualizar valores del formulario cuando se carga el usuario
+    useEffect(() => {
+        if (state.status === UserPageStatus.SUCCESS) {
+            personalDataForm.reset({
+                firstName: state.user.firstName,
+                lastName: state.user.lastName,
+                phone: state.user.phone,
+                genderId: state.user.gender.id
+            });
+            
+            addressForm.reset({
+                address: state.user.address.address,
+                zipCode: state.user.address.zipCode,
+                district: state.user.address.district,
+                city: state.user.address.city,
+                stateId: state.user.address.state.id
+            });
+
+            accountForm.reset({
+                email: state.user.email,
+                roleId: state.user.role.id
+            });
+
+            // No reseteamos passwordForm porque no tenemos el valor real
+        }
+    }, [state.status, personalDataForm, addressForm, accountForm]);
 
     const loadUserData = async () => {
         if (!id) {
@@ -108,6 +269,209 @@ const UserPage: React.FC = () => {
         setSelectedImagePreview(null);
         setProfilePictureError(null);
         setProfilePictureSuccess(false);
+    };
+
+    // Funciones para datos personales
+    const handleSavePersonalData = () => {
+        setPersonalDataModalOpen(true);
+        setPersonalDataError(null);
+        setPersonalDataSuccess(false);
+    };
+
+    const handleClosePersonalDataModal = () => {
+        if (!isUpdatingPersonalData) {
+            setPersonalDataModalOpen(false);
+            setPersonalDataError(null);
+            setPersonalDataSuccess(false);
+        }
+    };
+
+    const handleConfirmPersonalDataUpdate = async () => {
+        if (!id) return;
+
+        setIsUpdatingPersonalData(true);
+        setPersonalDataError(null);
+        setPersonalDataSuccess(false);
+
+        try {
+            const formData = personalDataForm.getValues();
+            const request: PersonalDataRequest = {
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                phone: formData.phone,
+                genderId: formData.genderId
+            };
+
+            const response = await userService.updateUserPersonalData(id, request);
+            
+            // Actualizar el estado del usuario con los nuevos datos
+        if (state.status === UserPageStatus.SUCCESS) {
+                setState({
+                    status: UserPageStatus.SUCCESS,
+                    user: {
+                        ...state.user,
+                        firstName: response.firstName,
+                        lastName: response.lastName,
+                        phone: response.phone,
+                        gender: response.gender
+                    },
+                    userOptions: state.userOptions
+                });
+            }
+
+            setPersonalDataSuccess(true);
+            setIsEditingBasicInfo(false);
+        } catch (error) {
+            console.error('Error updating personal data:', error);
+            setPersonalDataError('Error al actualizar los datos personales. Inténtalo de nuevo.');
+        } finally {
+            setIsUpdatingPersonalData(false);
+        }
+    };
+
+    // Funciones para domicilio
+    const handleSaveAddress = () => {
+        setAddressModalOpen(true);
+        setAddressError(null);
+        setAddressSuccess(false);
+    };
+
+    const handleCloseAddressModal = () => {
+        if (!isUpdatingAddress) {
+            setAddressModalOpen(false);
+            setAddressError(null);
+            setAddressSuccess(false);
+        }
+    };
+
+    const handleConfirmAddressUpdate = async () => {
+        if (!id) return;
+
+        setIsUpdatingAddress(true);
+        setAddressError(null);
+        setAddressSuccess(false);
+
+        try {
+            const formData = addressForm.getValues();
+            const request: UserAddressRequest = {
+                address: formData.address,
+                zipCode: formData.zipCode,
+                district: formData.district,
+                city: formData.city,
+                stateId: formData.stateId
+            };
+
+            const response = await userService.updateUserAddress(id, request);
+            
+            // Actualizar el estado del usuario con los nuevos datos
+            if (state.status === UserPageStatus.SUCCESS) {
+                setState({
+                    status: UserPageStatus.SUCCESS,
+                    user: {
+                        ...state.user,
+                        address: response
+                    },
+                    userOptions: state.userOptions
+                });
+            }
+
+            setAddressSuccess(true);
+            setIsEditingAddress(false);
+        } catch (error) {
+            console.error('Error updating address:', error);
+            setAddressError('Error al actualizar el domicilio. Inténtalo de nuevo.');
+        } finally {
+            setIsUpdatingAddress(false);
+        }
+    };
+
+    // Funciones para cuenta
+    const handleCloseAccountModal = () => {
+        if (!isUpdatingAccount) {
+            setAccountModalOpen(false);
+            setAccountError(null);
+            setAccountSuccess(false);
+        }
+    };
+
+    const handleConfirmAccountUpdate = async () => {
+        if (!id) return;
+
+        setIsUpdatingAccount(true);
+        setAccountError(null);
+        setAccountSuccess(false);
+
+        try {
+            const formData = accountForm.getValues();
+            const request = {
+                email: formData.email,
+                roleId: formData.roleId
+            };
+
+            const response = await userService.updateUserAccount(id, request);
+
+            if (state.status === UserPageStatus.SUCCESS) {
+                setState({
+                    status: UserPageStatus.SUCCESS,
+                    user: {
+                        ...state.user,
+                        email: response.email,
+                        role: response.role
+                    },
+                    userOptions: state.userOptions
+                });
+            }
+
+            setAccountSuccess(true);
+            setIsEditingAccount(false);
+        } catch (error) {
+            console.error('Error updating account:', error);
+            setAccountError('Error al actualizar la cuenta. Inténtalo de nuevo.');
+        } finally {
+            setIsUpdatingAccount(false);
+        }
+    };
+
+    // Funciones para contraseña
+    const handleClosePasswordModal = () => {
+        if (!isUpdatingPassword) {
+            setPasswordModalOpen(false);
+            setPasswordError(null);
+            setPasswordSuccess(false);
+        }
+    };
+
+    const handleConfirmPasswordUpdate = async () => {
+        if (!id) return;
+
+        setIsUpdatingPassword(true);
+        setPasswordError(null);
+        setPasswordSuccess(false);
+
+        try {
+            const formData = passwordForm.getValues();
+            const request: ChangePasswordRequest = {
+                password: formData.password,
+                confirmedPassword: formData.confirmedPassword
+            };
+
+            await userService.changePassword(id, request);
+
+            setPasswordSuccess(true);
+            setIsEditingPassword(false);
+            // Limpiar el formulario después del éxito
+            passwordForm.reset({
+                password: '',
+                confirmedPassword: ''
+            });
+            setShowPassword(false);
+            setShowConfirmPassword(false);
+        } catch (error) {
+            console.error('Error updating password:', error);
+            setPasswordError('Error al cambiar la contraseña. Inténtalo de nuevo.');
+        } finally {
+            setIsUpdatingPassword(false);
+        }
     };
 
     const handleSaveProfilePicture = async () => {
@@ -259,7 +623,7 @@ const UserPage: React.FC = () => {
 
                             {/* Caja Derecha - Información */}
                             <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                <Typography variant="h4" component="h1" sx={{ mb: 1 }}>
+                                <Typography variant="h5" component="h1" sx={{ mb: 1 }}>
                                     {state.user.firstName} {state.user.lastName}
                                 </Typography>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -268,7 +632,7 @@ const UserPage: React.FC = () => {
                                     </Typography>
                                     <CopyToClipboard 
                                         text={state.user.id}
-                                        size="small"
+                                        size="small" 
                                         sx={{ ml: 1 }}
                                     />
                                 </Box>
@@ -315,10 +679,21 @@ const UserPage: React.FC = () => {
                                             </Typography>
                                             {isEditingBasicInfo ? (
                                                 <Box sx={{ display: 'flex', gap: 1 }}>
-                                                    <Button type="secondary" onClick={() => setIsEditingBasicInfo(false)}>
+                                                    <Button type="secondary" onClick={() => {
+                                                        // Resetear el formulario a los valores originales
+                                                        if (state.status === UserPageStatus.SUCCESS) {
+                                                            personalDataForm.reset({
+                                                                firstName: state.user.firstName,
+                                                                lastName: state.user.lastName,
+                                                                phone: state.user.phone,
+                                                                genderId: state.user.gender.id
+                                                            });
+                                                        }
+                                                        setIsEditingBasicInfo(false);
+                                                    }}>
                                                         Cancelar
                                                     </Button>
-                                                    <Button type="primary" onClick={() => {}}>
+                                                    <Button type="primary" onClick={personalDataForm.handleSubmit(handleSavePersonalData)}>
                                                         Guardar
                                                     </Button>
                                                 </Box>
@@ -329,21 +704,29 @@ const UserPage: React.FC = () => {
                                             )}
                                         </Box>
                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
                                                     Nombre:
                                                 </Typography>
                                                 {isEditingBasicInfo ? (
+                                                    <Controller
+                                                        name="firstName"
+                                                        control={personalDataForm.control}
+                                                        render={({ field, fieldState }) => (
                                                     <TextField
-                                                        value={state.user.firstName}
+                                                                {...field}
                                                         variant="outlined"
                                                         size="small"
+                                                                error={!!fieldState.error}
+                                                                helperText={fieldState.error?.message}
                                                         sx={{ 
                                                             width: 300,
                                                             '& .MuiOutlinedInput-root': {
                                                                 fontSize: '0.875rem'
                                                             }
                                                         }}
+                                                            />
+                                                        )}
                                                     />
                                                 ) : (
                                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
@@ -351,21 +734,29 @@ const UserPage: React.FC = () => {
                                                     </Typography>
                                                 )}
                                             </Box>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
                                                     Apellido:
                                                 </Typography>
                                                 {isEditingBasicInfo ? (
+                                                    <Controller
+                                                        name="lastName"
+                                                        control={personalDataForm.control}
+                                                        render={({ field, fieldState }) => (
                                                     <TextField
-                                                        value={state.user.lastName}
+                                                                {...field}
                                                         variant="outlined"
                                                         size="small"
+                                                                error={!!fieldState.error}
+                                                                helperText={fieldState.error?.message}
                                                         sx={{ 
                                                             width: 300,
                                                             '& .MuiOutlinedInput-root': {
                                                                 fontSize: '0.875rem'
                                                             }
                                                         }}
+                                                            />
+                                                        )}
                                                     />
                                                 ) : (
                                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
@@ -373,27 +764,35 @@ const UserPage: React.FC = () => {
                                                     </Typography>
                                                 )}
                                             </Box>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
                                                     Teléfono:
                                                 </Typography>
                                                 {isEditingBasicInfo ? (
+                                                    <Controller
+                                                        name="phone"
+                                                        control={personalDataForm.control}
+                                                        render={({ field, fieldState }) => (
                                                     <TextField
-                                                        value={state.user.phone}
+                                                                {...field}
                                                         variant="outlined"
                                                         size="small"
+                                                                error={!!fieldState.error}
+                                                                helperText={fieldState.error?.message}
                                                         sx={{ 
                                                             width: 300,
                                                             '& .MuiOutlinedInput-root': {
                                                                 fontSize: '0.875rem'
                                                             }
                                                         }}
+                                                            />
+                                                        )}
                                                     />
                                                 ) : (
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                            {state.user.phone}
-                                                        </Typography>
+                                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                                        {state.user.phone}
+                                                    </Typography>
                                                         <CopyToClipboard 
                                                             text={state.user.phone}
                                                             size="small"
@@ -401,29 +800,40 @@ const UserPage: React.FC = () => {
                                                     </Box>
                                                 )}
                                             </Box>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
                                                     Género:
                                                 </Typography>
                                                 {isEditingBasicInfo ? (
-                                                    <FormControl size="small" sx={{ width: 300 }}>
-                                                        <InputLabel>Género</InputLabel>
-                                                        <Select
-                                                            value={state.userOptions.genders.find(g => g.value === state.user.gender.id)?.value || ''}
-                                                            label="Género"
-                                                            sx={{ 
-                                                                '& .MuiOutlinedInput-root': {
-                                                                    fontSize: '0.875rem'
-                                                                }
-                                                            }}
-                                                        >
-                                                            {state.userOptions.genders.map((gender) => (
-                                                                <MenuItem key={gender.value} value={gender.value}>
-                                                                    {gender.label}
-                                                                </MenuItem>
-                                                            ))}
-                                                        </Select>
-                                                    </FormControl>
+                                                    <Controller
+                                                        name="genderId"
+                                                        control={personalDataForm.control}
+                                                        render={({ field, fieldState }) => (
+                                                            <FormControl size="small" sx={{ width: 300 }} error={!!fieldState.error}>
+                                                                <InputLabel>Género</InputLabel>
+                                                                <Select
+                                                                    {...field}
+                                                                    label="Género"
+                                                                    sx={{ 
+                                                                        '& .MuiOutlinedInput-root': {
+                                                                            fontSize: '0.875rem'
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    {state.userOptions.genders.map((gender) => (
+                                                                        <MenuItem key={gender.value} value={gender.value}>
+                                                                            {gender.label}
+                                                                        </MenuItem>
+                                                                    ))}
+                                                                </Select>
+                                                                {fieldState.error && (
+                                                                    <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                                                                        {fieldState.error.message}
+                                                                    </Typography>
+                                                                )}
+                                                            </FormControl>
+                                                        )}
+                                                    />
                                                 ) : (
                                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                                         {state.user.gender.name}
@@ -441,10 +851,22 @@ const UserPage: React.FC = () => {
                                             </Typography>
                                             {isEditingAddress ? (
                                                 <Box sx={{ display: 'flex', gap: 1 }}>
-                                                    <Button type="secondary" onClick={() => setIsEditingAddress(false)}>
+                                                    <Button type="secondary" onClick={() => {
+                                                        // Resetear el formulario a los valores originales
+                                                        if (state.status === UserPageStatus.SUCCESS) {
+                                                            addressForm.reset({
+                                                                address: state.user.address.address,
+                                                                zipCode: state.user.address.zipCode,
+                                                                district: state.user.address.district,
+                                                                city: state.user.address.city,
+                                                                stateId: state.user.address.state.id
+                                                            });
+                                                        }
+                                                        setIsEditingAddress(false);
+                                                    }}>
                                                         Cancelar
                                                     </Button>
-                                                    <Button type="primary" onClick={() => {}}>
+                                                    <Button type="primary" onClick={addressForm.handleSubmit(handleSaveAddress)}>
                                                         Guardar
                                                     </Button>
                                                 </Box>
@@ -455,15 +877,19 @@ const UserPage: React.FC = () => {
                                             )}
                                         </Box>
                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
                                                     Estado:
                                                 </Typography>
                                                 {isEditingAddress ? (
-                                                    <FormControl size="small" sx={{ width: 300 }}>
+                                                    <Controller
+                                                        name="stateId"
+                                                        control={addressForm.control}
+                                                        render={({ field, fieldState }) => (
+                                                            <FormControl size="small" sx={{ width: 300 }} error={!!fieldState.error}>
                                                         <InputLabel>Estado</InputLabel>
                                                         <Select
-                                                            value={state.user.address.state.id}
+                                                                    {...field}
                                                             label="Estado"
                                                             sx={{ 
                                                                 '& .MuiOutlinedInput-root': {
@@ -472,33 +898,48 @@ const UserPage: React.FC = () => {
                                                             }}
                                                         >
                                                             {state.userOptions.states.map((state) => (
-                                                                <MenuItem key={state.value} value={state.value}>
-                                                                    {state.label}
+                                                                        <MenuItem key={state.value} value={state.value}>
+                                                                            {state.label}
                                                                 </MenuItem>
                                                             ))}
                                                         </Select>
+                                                                {fieldState.error && (
+                                                                    <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                                                                        {fieldState.error.message}
+                                                                    </Typography>
+                                                                )}
                                                     </FormControl>
+                                                        )}
+                                                    />
                                                 ) : (
                                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                                         {state.user.address.state.name}
                                                     </Typography>
                                                 )}
                                             </Box>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
                                                     Ciudad:
                                                 </Typography>
                                                 {isEditingAddress ? (
+                                                    <Controller
+                                                        name="city"
+                                                        control={addressForm.control}
+                                                        render={({ field, fieldState }) => (
                                                     <TextField
-                                                        value={state.user.address.city}
+                                                                {...field}
                                                         variant="outlined"
                                                         size="small"
+                                                                error={!!fieldState.error}
+                                                                helperText={fieldState.error?.message}
                                                         sx={{ 
                                                             width: 300,
                                                             '& .MuiOutlinedInput-root': {
                                                                 fontSize: '0.875rem'
                                                             }
                                                         }}
+                                                            />
+                                                        )}
                                                     />
                                                 ) : (
                                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
@@ -506,21 +947,29 @@ const UserPage: React.FC = () => {
                                                     </Typography>
                                                 )}
                                             </Box>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
                                                     Calle y número:
                                                 </Typography>
                                                 {isEditingAddress ? (
+                                                    <Controller
+                                                        name="address"
+                                                        control={addressForm.control}
+                                                        render={({ field, fieldState }) => (
                                                     <TextField
-                                                        value={state.user.address.address}
+                                                                {...field}
                                                         variant="outlined"
                                                         size="small"
+                                                                error={!!fieldState.error}
+                                                                helperText={fieldState.error?.message}
                                                         sx={{ 
                                                             width: 300,
                                                             '& .MuiOutlinedInput-root': {
                                                                 fontSize: '0.875rem'
                                                             }
                                                         }}
+                                                            />
+                                                        )}
                                                     />
                                                 ) : (
                                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
@@ -528,21 +977,29 @@ const UserPage: React.FC = () => {
                                                     </Typography>
                                                 )}
                                             </Box>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
                                                     Colonia:
                                                 </Typography>
                                                 {isEditingAddress ? (
+                                                    <Controller
+                                                        name="district"
+                                                        control={addressForm.control}
+                                                        render={({ field, fieldState }) => (
                                                     <TextField
-                                                        value={state.user.address.district}
+                                                                {...field}
                                                         variant="outlined"
                                                         size="small"
+                                                                error={!!fieldState.error}
+                                                                helperText={fieldState.error?.message}
                                                         sx={{ 
                                                             width: 300,
                                                             '& .MuiOutlinedInput-root': {
                                                                 fontSize: '0.875rem'
                                                             }
                                                         }}
+                                                            />
+                                                        )}
                                                     />
                                                 ) : (
                                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
@@ -550,21 +1007,29 @@ const UserPage: React.FC = () => {
                                                     </Typography>
                                                 )}
                                             </Box>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
                                                     Código Postal:
                                                 </Typography>
                                                 {isEditingAddress ? (
+                                                    <Controller
+                                                        name="zipCode"
+                                                        control={addressForm.control}
+                                                        render={({ field, fieldState }) => (
                                                     <TextField
-                                                        value={state.user.address.zipCode}
+                                                                {...field}
                                                         variant="outlined"
                                                         size="small"
+                                                                error={!!fieldState.error}
+                                                                helperText={fieldState.error?.message}
                                                         sx={{ 
                                                             width: 300,
                                                             '& .MuiOutlinedInput-root': {
                                                                 fontSize: '0.875rem'
                                                             }
                                                         }}
+                                                            />
+                                                        )}
                                                     />
                                                 ) : (
                                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
@@ -584,10 +1049,18 @@ const UserPage: React.FC = () => {
                                         </Typography>
                                         {isEditingAccount ? (
                                             <Box sx={{ display: 'flex', gap: 1 }}>
-                                                <Button type="secondary" onClick={() => setIsEditingAccount(false)}>
+                                                <Button type="secondary" onClick={() => {
+                                                    if (state.status === UserPageStatus.SUCCESS) {
+                                                        accountForm.reset({
+                                                            email: state.user.email,
+                                                            roleId: state.user.role.id
+                                                        });
+                                                    }
+                                                    setIsEditingAccount(false);
+                                                }}>
                                                     Cancelar
                                                 </Button>
-                                                <Button type="primary" onClick={() => {}}>
+                                                <Button type="primary" onClick={accountForm.handleSubmit(() => setAccountModalOpen(true))}>
                                                     Guardar
                                                 </Button>
                                             </Box>
@@ -598,8 +1071,8 @@ const UserPage: React.FC = () => {
                                         )}
                                     </Box>
                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
                                                 ID:
                                             </Typography>
                                             <Typography variant="body2" sx={{ fontWeight: 500 }}>
@@ -611,27 +1084,43 @@ const UserPage: React.FC = () => {
                                                 sx={{ ml: 1 }}
                                             />
                                         </Box>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
+                                                Miembro desde:
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                                {new Date(state.user.registrationDate).toLocaleDateString()}
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
                                                 Email:
                                             </Typography>
                                             {isEditingAccount ? (
+                                                <Controller
+                                                    name="email"
+                                                    control={accountForm.control}
+                                                    render={({ field, fieldState }) => (
                                                 <TextField
-                                                    value={state.user.email}
+                                                            {...field}
                                                     variant="outlined"
                                                     size="small"
+                                                            error={!!fieldState.error}
+                                                            helperText={fieldState.error?.message}
                                                     sx={{ 
                                                         width: 300,
                                                         '& .MuiOutlinedInput-root': {
                                                             fontSize: '0.875rem'
                                                         }
                                                     }}
+                                                        />
+                                                    )}
                                                 />
                                             ) : (
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                        {state.user.email}
-                                                    </Typography>
+                                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                                    {state.user.email}
+                                                </Typography>
                                                     <CopyToClipboard 
                                                         text={state.user.email}
                                                         size="small"
@@ -639,15 +1128,19 @@ const UserPage: React.FC = () => {
                                                 </Box>
                                             )}
                                         </Box>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
                                                 Rol:
                                             </Typography>
                                             {isEditingAccount ? (
-                                                <FormControl size="small" sx={{ width: 300 }}>
+                                                <Controller
+                                                    name="roleId"
+                                                    control={accountForm.control}
+                                                    render={({ field, fieldState }) => (
+                                                        <FormControl size="small" sx={{ width: 300 }} error={!!fieldState.error}>
                                                     <InputLabel>Rol</InputLabel>
                                                     <Select
-                                                        value={state.user.role.id}
+                                                                {...field}
                                                         label="Rol"
                                                         sx={{ 
                                                             '& .MuiOutlinedInput-root': {
@@ -656,38 +1149,140 @@ const UserPage: React.FC = () => {
                                                         }}
                                                     >
                                                         {state.userOptions.roles.map((role) => (
-                                                            <MenuItem key={role.value} value={role.value}>
-                                                                {role.label}
+                                                                    <MenuItem key={role.value} value={role.value}>
+                                                                        {role.label}
                                                             </MenuItem>
                                                         ))}
                                                     </Select>
+                                                            {fieldState.error && (
+                                                                <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                                                                    {fieldState.error.message}
+                                                                </Typography>
+                                                            )}
                                                 </FormControl>
+                                                    )}
+                                                />
                                             ) : (
                                                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                                     {state.user.role.name}
                                                 </Typography>
                                             )}
                                         </Box>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120 }}>
-                                                Miembro desde:
+                                    </Box>
+
+                                    {/* Sección Contraseña */}
+                                    <Box sx={{ mt: 4 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                                Contraseña
                                             </Typography>
-                                            {isEditingAccount ? (
+                                            {isEditingPassword ? (
+                                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                                    <Button type="secondary" onClick={() => {
+                                                        passwordForm.reset({
+                                                            password: '',
+                                                            confirmedPassword: ''
+                                                        });
+                                                        setShowPassword(false);
+                                                        setShowConfirmPassword(false);
+                                                        setIsEditingPassword(false);
+                                                    }}>
+                                                        Cancelar
+                                                    </Button>
+                                                    <Button type="primary" onClick={passwordForm.handleSubmit(() => setPasswordModalOpen(true))}>
+                                                        Guardar
+                                                    </Button>
+                                                </Box>
+                                            ) : (
+                                                <Button type="primary" onClick={() => setIsEditingPassword(true)}>
+                                                    Editar
+                                                </Button>
+                                            )}
+                                        </Box>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
+                                                    Contraseña:
+                                                </Typography>
+                                                {isEditingPassword ? (
+                                                    <Controller
+                                                        name="password"
+                                                        control={passwordForm.control}
+                                                        render={({ field, fieldState }) => (
                                                 <TextField
-                                                    value={new Date(state.user.registrationDate).toLocaleDateString()}
+                                                                {...field}
+                                                                type={showPassword ? 'text' : 'password'}
                                                     variant="outlined"
                                                     size="small"
+                                                                error={!!fieldState.error}
+                                                                helperText={fieldState.error?.message}
                                                     sx={{ 
                                                         width: 300,
                                                         '& .MuiOutlinedInput-root': {
                                                             fontSize: '0.875rem'
                                                         }
                                                     }}
+                                                                InputProps={{
+                                                                    endAdornment: (
+                                                                        <InputAdornment position="end">
+                                                                            <IconButton
+                                                                                onClick={() => setShowPassword(!showPassword)}
+                                                                                edge="end"
+                                                                                size="small"
+                                                                            >
+                                                                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                                            </IconButton>
+                                                                        </InputAdornment>
+                                                                    )
+                                                                }}
+                                                            />
+                                                        )}
                                                 />
                                             ) : (
                                                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                    {new Date(state.user.registrationDate).toLocaleDateString()}
+                                                        ••••••••••••
                                                 </Typography>
+                                            )}
+                                        </Box>
+                                            {isEditingPassword && (
+                                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                                                    <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: 0.5 }}>
+                                                        Confirmar:
+                                                    </Typography>
+                                                    <Controller
+                                                        name="confirmedPassword"
+                                                        control={passwordForm.control}
+                                                        render={({ field, fieldState }) => (
+                                                            <TextField
+                                                                {...field}
+                                                                type={showConfirmPassword ? 'text' : 'password'}
+                                                                variant="outlined"
+                                                                size="small"
+                                                                error={!!fieldState.error}
+                                                                helperText={fieldState.error?.message}
+                                                                sx={{ 
+                                                                    width: 300,
+                                                                    '& .MuiOutlinedInput-root': {
+                                                                        fontSize: '0.875rem'
+                                                                    }
+                                                                }}
+                                                                InputProps={{
+                                                                    endAdornment: (
+                                                                        <InputAdornment position="end">
+                                                                            <IconButton
+                                                                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                                                edge="end"
+                                                                                size="small"
+                                                                            >
+                                                                                {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                                                                            </IconButton>
+                                                                        </InputAdornment>
+                                                                    )
+                                                                }}
+                                                            />
+                                                        )}
+                                                    />
+                                                </Box>
                                             )}
                                         </Box>
                                     </Box>
@@ -822,6 +1417,434 @@ const UserPage: React.FC = () => {
                                     </>
                                 ) : (
                                     'Guardar'
+                                )}
+                            </Button>
+                        </Box>
+                    )}
+                </DialogActions>
+            </Dialog>
+
+            {/* Modal de confirmación para actualizar cuenta */}
+            <Dialog 
+                open={accountModalOpen} 
+                onClose={isUpdatingAccount ? undefined : handleCloseAccountModal}
+                maxWidth="sm"
+                fullWidth
+                disableEscapeKeyDown={isUpdatingAccount}
+            >
+                <DialogTitle>
+                    <Typography variant="h6">
+                        {accountSuccess ? 'Cuenta actualizada' : '¿Actualizar cuenta?'}
+                    </Typography>
+                </DialogTitle>
+                
+                <DialogContent>
+                    {accountError && (
+                        <Alert severity="error" sx={{ mb: 3 }}>
+                            {accountError}
+                        </Alert>
+                    )}
+                    
+                    {accountSuccess && (
+                        <Alert severity="success" sx={{ mb: 3 }}>
+                            ¡Cuenta actualizada exitosamente!
+                        </Alert>
+                    )}
+                    
+                    {(
+                        <Box>
+                            <Typography variant="body1" sx={{ mb: 2 }}>
+                                {accountSuccess 
+                                    ? 'Los siguientes datos han sido actualizados exitosamente:' 
+                                    : '¿Está seguro de que desea actualizar la cuenta del usuario?'
+                                }
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                {accountSuccess ? 'Datos actualizados:' : 'Nuevos datos:'}
+                            </Typography>
+                            <Box sx={{ 
+                                backgroundColor: '#f5f5f5', 
+                                p: 2, 
+                                borderRadius: 1,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 1
+                            }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+                                        Email:
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                        {accountForm.getValues('email')}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+                                        Rol:
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                        {state.status === UserPageStatus.SUCCESS 
+                                            ? state.userOptions.roles.find(r => r.value === accountForm.getValues('roleId'))?.label || 'N/A'
+                                            : 'N/A'
+                                        }
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        </Box>
+                    )}
+                </DialogContent>
+                
+                <DialogActions sx={{ p: 3 }}>
+                    {accountSuccess ? (
+                        <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
+                            <Button type="primary" onClick={handleCloseAccountModal}>
+                                Cerrar
+                            </Button>
+                        </Box>
+                    ) : (
+                        <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
+                            <Button 
+                                type="secondary" 
+                                onClick={handleCloseAccountModal}
+                                disabled={isUpdatingAccount}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button 
+                                type="primary" 
+                                onClick={handleConfirmAccountUpdate}
+                                disabled={isUpdatingAccount}
+                            >
+                                {isUpdatingAccount ? (
+                                    <>
+                                        <CircularProgress size={16} sx={{ color: 'white', mr: 1 }} />
+                                        Guardando...
+                                    </>
+                                ) : (
+                                    'Guardar'
+                                )}
+                            </Button>
+                        </Box>
+                    )}
+                </DialogActions>
+            </Dialog>
+            {/* Modal de confirmación para actualizar datos personales */}
+            <Dialog 
+                open={personalDataModalOpen} 
+                onClose={isUpdatingPersonalData ? undefined : handleClosePersonalDataModal}
+                maxWidth="sm"
+                fullWidth
+                disableEscapeKeyDown={isUpdatingPersonalData}
+            >
+                <DialogTitle>
+                    <Typography variant="h6">
+                        {personalDataSuccess ? 'Datos actualizados' : '¿Actualizar datos personales?'}
+                    </Typography>
+                </DialogTitle>
+                
+                <DialogContent>
+                    {personalDataError && (
+                        <Alert severity="error" sx={{ mb: 3 }}>
+                            {personalDataError}
+                        </Alert>
+                    )}
+                    
+                    {personalDataSuccess && (
+                        <Alert severity="success" sx={{ mb: 3 }}>
+                            ¡Datos personales actualizados exitosamente!
+                        </Alert>
+                    )}
+                    
+                    {(
+                        <Box>
+                            <Typography variant="body1" sx={{ mb: 2 }}>
+                                {personalDataSuccess 
+                                    ? 'Los siguientes datos han sido actualizados exitosamente:' 
+                                    : '¿Está seguro de que desea actualizar los datos personales del usuario?'
+                                }
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                {personalDataSuccess ? 'Datos actualizados:' : 'Nuevos datos:'}
+                            </Typography>
+                            <Box sx={{ 
+                                backgroundColor: '#f5f5f5', 
+                                p: 2, 
+                                borderRadius: 1,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 1
+                            }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="body2" color="text.secondary" sx={{ minWidth: 80 }}>
+                                        Nombre:
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                        {personalDataForm.getValues('firstName')}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="body2" color="text.secondary" sx={{ minWidth: 80 }}>
+                                        Apellido:
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                        {personalDataForm.getValues('lastName')}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="body2" color="text.secondary" sx={{ minWidth: 80 }}>
+                                        Teléfono:
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                        {personalDataForm.getValues('phone')}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="body2" color="text.secondary" sx={{ minWidth: 80 }}>
+                                        Género:
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                        {state.status === UserPageStatus.SUCCESS 
+                                            ? state.userOptions.genders.find(g => g.value === personalDataForm.getValues('genderId'))?.label || 'N/A'
+                                            : 'N/A'
+                                        }
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        </Box>
+                    )}
+                </DialogContent>
+                
+                <DialogActions sx={{ p: 3 }}>
+                    {personalDataSuccess ? (
+                        <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
+                            <Button type="primary" onClick={handleClosePersonalDataModal}>
+                                Cerrar
+                            </Button>
+                        </Box>
+                    ) : (
+                        <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
+                            <Button 
+                                type="secondary" 
+                                onClick={handleClosePersonalDataModal}
+                                disabled={isUpdatingPersonalData}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button 
+                                type="primary" 
+                                onClick={handleConfirmPersonalDataUpdate}
+                                disabled={isUpdatingPersonalData}
+                            >
+                                {isUpdatingPersonalData ? (
+                                    <>
+                                        <CircularProgress size={16} sx={{ color: 'white', mr: 1 }} />
+                                        Guardando...
+                                    </>
+                                ) : (
+                                    'Guardar'
+                                )}
+                            </Button>
+                        </Box>
+                    )}
+                </DialogActions>
+            </Dialog>
+
+            {/* Modal de confirmación para actualizar domicilio */}
+            <Dialog 
+                open={addressModalOpen} 
+                onClose={isUpdatingAddress ? undefined : handleCloseAddressModal}
+                maxWidth="sm"
+                fullWidth
+                disableEscapeKeyDown={isUpdatingAddress}
+            >
+                <DialogTitle>
+                    <Typography variant="h6">
+                        {addressSuccess ? 'Domicilio actualizado' : '¿Actualizar domicilio?'}
+                    </Typography>
+                </DialogTitle>
+                
+                <DialogContent>
+                    {addressError && (
+                        <Alert severity="error" sx={{ mb: 3 }}>
+                            {addressError}
+                        </Alert>
+                    )}
+                    
+                    {addressSuccess && (
+                        <Alert severity="success" sx={{ mb: 3 }}>
+                            ¡Domicilio actualizado exitosamente!
+                        </Alert>
+                    )}
+                    
+                    {(
+                        <Box>
+                            <Typography variant="body1" sx={{ mb: 2 }}>
+                                {addressSuccess 
+                                    ? 'Los siguientes datos han sido actualizados exitosamente:' 
+                                    : '¿Está seguro de que desea actualizar el domicilio del usuario?'
+                                }
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                {addressSuccess ? 'Datos actualizados:' : 'Nuevos datos:'}
+                            </Typography>
+                            <Box sx={{ 
+                                backgroundColor: '#f5f5f5', 
+                                p: 2, 
+                                borderRadius: 1,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 1
+                            }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+                                        Estado:
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                        {state.status === UserPageStatus.SUCCESS 
+                                            ? state.userOptions.states.find(s => s.value === addressForm.getValues('stateId'))?.label || 'N/A'
+                                            : 'N/A'
+                                        }
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+                                        Ciudad:
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                        {addressForm.getValues('city')}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+                                        Calle y número:
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                        {addressForm.getValues('address')}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+                                        Colonia:
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                        {addressForm.getValues('district')}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+                                        Código Postal:
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                        {addressForm.getValues('zipCode')}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        </Box>
+                    )}
+                </DialogContent>
+                
+                <DialogActions sx={{ p: 3 }}>
+                    {addressSuccess ? (
+                        <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
+                            <Button type="primary" onClick={handleCloseAddressModal}>
+                                Cerrar
+                            </Button>
+                        </Box>
+                    ) : (
+                        <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
+                            <Button 
+                                type="secondary" 
+                                onClick={handleCloseAddressModal}
+                                disabled={isUpdatingAddress}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button 
+                                type="primary" 
+                                onClick={handleConfirmAddressUpdate}
+                                disabled={isUpdatingAddress}
+                            >
+                                {isUpdatingAddress ? (
+                                    <>
+                                        <CircularProgress size={16} sx={{ color: 'white', mr: 1 }} />
+                                        Guardando...
+                                    </>
+                                ) : (
+                                    'Guardar'
+                                )}
+                            </Button>
+                        </Box>
+                    )}
+                </DialogActions>
+            </Dialog>
+
+            {/* Modal de confirmación para cambiar contraseña */}
+            <Dialog 
+                open={passwordModalOpen} 
+                onClose={isUpdatingPassword ? undefined : handleClosePasswordModal}
+                maxWidth="sm"
+                fullWidth
+                disableEscapeKeyDown={isUpdatingPassword}
+            >
+                <DialogTitle>
+                    <Typography variant="h6">
+                        {passwordSuccess ? 'Contraseña actualizada' : '¿Cambiar contraseña?'}
+                    </Typography>
+                </DialogTitle>
+                
+                <DialogContent>
+                    {passwordError && (
+                        <Alert severity="error" sx={{ mb: 3 }}>
+                            {passwordError}
+                        </Alert>
+                    )}
+                    
+                    {passwordSuccess && (
+                        <Alert severity="success" sx={{ mb: 3 }}>
+                            ¡Contraseña cambiada exitosamente!
+                        </Alert>
+                    )}
+                    
+                    {!passwordSuccess && (
+                        <Box>
+                            <Typography variant="body1" sx={{ mb: 2 }}>
+                                ¿Está seguro de que desea cambiar la contraseña del usuario?
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Esta acción no se puede deshacer.
+                            </Typography>
+                        </Box>
+                    )}
+                </DialogContent>
+                
+                <DialogActions sx={{ p: 3 }}>
+                    {passwordSuccess ? (
+                        <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
+                            <Button type="primary" onClick={handleClosePasswordModal}>
+                                Cerrar
+                            </Button>
+                        </Box>
+                    ) : (
+                        <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
+                            <Button 
+                                type="secondary" 
+                                onClick={handleClosePasswordModal}
+                                disabled={isUpdatingPassword}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button 
+                                type="primary" 
+                                onClick={handleConfirmPasswordUpdate}
+                                disabled={isUpdatingPassword}
+                            >
+                                {isUpdatingPassword ? (
+                                    <>
+                                        <CircularProgress size={16} sx={{ color: 'white', mr: 1 }} />
+                                        Cambiando...
+                                    </>
+                                ) : (
+                                    'Cambiar'
                                 )}
                             </Button>
                         </Box>

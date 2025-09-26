@@ -13,12 +13,14 @@ import type { PersonalDataRequest } from "../models/PersonalDataRequest";
 import type { PersonalDataResponse } from "../models/PersonalDataResponse";
 import type { UserAddressRequest } from "../models/UserAddressRequest";
 import type { UserAddressResponse } from "../models/UserAddressResponse";
-import type { AccountRequest } from "../models/AccountRequest";
+import type { CreateAccountRequest } from "../models/CreateAccountRequest";
 import type { AccountResponse } from "../models/AccountResponse";
 import type { CreateUserRequest } from "../models/CreateUserRequest";
 import type { CreateUserResponse } from "../models/CreateUserResponse";
 import type { UpdateProfilePictureRequest } from "../models/UpdateProfilePictureRequest";
 import type { UpdateProfilePictureResponse } from "../models/UpdateProfilePictureResponse";
+import type { UpdateAccountRequest } from "../models/UpdateAccountRequest";
+import type { ChangePasswordRequest } from "../models/ChangePasswordRequest";
 
 class UserService {
     async getUsersPreviews(query: UserPreviewsQuery, pagination: PaginationRequest): Promise<PaginationResponse<UserPreview>> {
@@ -135,7 +137,7 @@ class UserService {
         return data;
     }
 
-    async updateUserAccount(id: string, request: AccountRequest): Promise<AccountResponse> {
+    async updateUserAccount(id: string, request: UpdateAccountRequest): Promise<AccountResponse> {
         const url = `${appConfig.apiUrl}/api/v1/users/${id}/account`;
         
         const response = await fetch(url, {
@@ -260,6 +262,25 @@ class UserService {
           console.error(error);
         }
       }
+
+    async changePassword(id: string, request: ChangePasswordRequest): Promise<void> {
+        const url = `${appConfig.apiUrl}/api/v1/users/${id}/password`;
+        
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${authenticationHelper.getAuthentication()?.accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(request)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Error al cambiar contraseña: ${response.statusText}`);
+        }
+
+        return;
+    }
 }
 
 function userPreviewsQueryString(query: UserPreviewsQuery, pagination: PaginationRequest): string {

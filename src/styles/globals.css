@@ -54,6 +54,17 @@
   cursor: not-allowed;
 }
 
-.btn:disabled:hover {
-  background-color: inherit;
+.btn-primary:disabled:hover {
+  background-color: var(--primary-color) !important;
+  opacity: 0.6 !important;
+}
+
+.btn-secondary:disabled:hover {
+  background-color: rgb(221, 221, 221) !important;
+  opacity: 0.6 !important;
+}
+
+.btn-error:disabled:hover {
+  background-color: #dc2626 !important;
+  opacity: 0.6 !important;
 }

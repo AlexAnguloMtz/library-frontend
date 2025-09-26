@@ -1,4 +1,4 @@
-export type AccountRequest = {
+export type CreateAccountRequest = {
     email: string;
     roleId: string;
     password: string;
