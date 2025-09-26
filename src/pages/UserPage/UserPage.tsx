@@ -687,18 +687,18 @@ const UserPage: React.FC = () => {
                                 {/* Botón de editar foto */}
                                 <Box sx={{ mt: 2 }}>
                                     {hasEditPermission() && (
-                                        <Button 
-                                            type="secondary" 
-                                            onClick={handleEditProfilePicture}
-                                            startIcon={<CameraAlt />}
-                                            sx={{ 
-                                                fontSize: '0.75rem',
-                                                padding: '6px 12px',
-                                                minWidth: 'auto'
-                                            }}
-                                        >
-                                            Cambiar foto
-                                        </Button>
+                                    <Button 
+                                        type="secondary" 
+                                        onClick={handleEditProfilePicture}
+                                        startIcon={<CameraAlt />}
+                                        sx={{ 
+                                            fontSize: '0.75rem',
+                                            padding: '6px 12px',
+                                            minWidth: 'auto'
+                                        }}
+                                    >
+                                        Cambiar foto
+                                    </Button>
                                     )}
                                 </Box>
                             </Box>
@@ -752,8 +752,8 @@ const UserPage: React.FC = () => {
                                                         await loadUserOptions();
                                                         setIsEditingBasicInfo(true);
                                                     }}>
-                                                        Editar
-                                                    </Button>
+                                                    Editar
+                                                </Button>
                                                 )
                                             )}
                                         </Box>
@@ -930,8 +930,8 @@ const UserPage: React.FC = () => {
                                                         await loadUserOptions();
                                                         setIsEditingAddress(true);
                                                     }}>
-                                                        Editar
-                                                    </Button>
+                                                    Editar
+                                                </Button>
                                                 )
                                             )}
                                         </Box>
@@ -1129,8 +1129,8 @@ const UserPage: React.FC = () => {
                                                     await loadUserOptions();
                                                     setIsEditingAccount(true);
                                                 }}>
-                                                    Editar
-                                                </Button>
+                                                Editar
+                                            </Button>
                                             )
                                         )}
                                     </Box>
@@ -1259,9 +1259,9 @@ const UserPage: React.FC = () => {
                                                 </Box>
                                             ) : (
                                                 hasEditPermission() && (
-                                                    <Button type="primary" onClick={() => setIsEditingPassword(true)}>
-                                                        Editar
-                                                    </Button>
+                                                <Button type="primary" onClick={() => setIsEditingPassword(true)}>
+                                                    Editar
+                                                </Button>
                                                 )
                                             )}
                                         </Box>

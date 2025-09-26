@@ -951,7 +951,7 @@ const Users: React.FC = () => {
                           <Icon name={Icons.eye} className='edit-icon' />
                         </button>
                       )}
-                      {auth && authenticationHelper.hasAnyPermission(auth, ['users:delete']) && (
+                      {auth && authenticationHelper.hasAnyPermission(auth, ['users:delete']) && user.permissions.includes('delete') && (
                         <button 
                           className='action-button delete-button'
                           onClick={() => handleDeleteClick(user)}
