@@ -1,10 +1,10 @@
-import type { RoleDTO } from "./RoleDTO";
+import type { RoleResponse } from "./RoleResponse";
 
 export type UserPreview = {
     id: string;
     name: string;
     email: string;
-    role: RoleDTO;
+    role: RoleResponse;
     phone: string;
     registrationDate: string;
     activeLoans: string;

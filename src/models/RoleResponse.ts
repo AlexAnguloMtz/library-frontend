@@ -1,4 +1,4 @@
-export type RoleDTO = {
+export type RoleResponse = {
     id: string;
     name: string;
     slug: string;

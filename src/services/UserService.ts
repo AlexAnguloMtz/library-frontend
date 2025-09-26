@@ -9,12 +9,14 @@ import * as URLSearchParamsHelpers from '../util/URLSearchParamsHelpers';
 import authenticationHelper from "../util/AuthenticationHelper";
 import type { UserOptionsResponse } from "../models/UserOptionsResponse";
 import type { FullUser } from "../models/FullUser";
-import type { UserPersonalDataUpdateRequest } from "../models/UserPersonalDataUpdateRequest";
-import type { UserPersonalDataResponse } from "../models/UserPersonalDataResponse";
-import type { UserAddressUpdateRequest } from "../models/UserAddressUpdateRequest";
+import type { PersonalDataRequest } from "../models/PersonalDataRequest";
+import type { PersonalDataResponse } from "../models/PersonalDataResponse";
+import type { UserAddressRequest } from "../models/UserAddressRequest";
 import type { UserAddressResponse } from "../models/UserAddressResponse";
-import type { UserAccountUpdateRequest } from "../models/UserAccountUpdateRequest";
-import type { UserAccountResponse } from "../models/UserAccountResponse";
+import type { AccountRequest } from "../models/AccountRequest";
+import type { AccountResponse } from "../models/AccountResponse";
+import type { CreateUserRequest } from "../models/CreateUserRequest";
+import type { CreateUserResponse } from "../models/CreateUserResponse";
 
 class UserService {
     async getUsersPreviews(query: UserPreviewsQuery, pagination: PaginationRequest): Promise<PaginationResponse<UserPreview>> {
@@ -91,7 +93,7 @@ class UserService {
         return;
     }
 
-    async updateUserPersonalData(id: string, request: UserPersonalDataUpdateRequest): Promise<UserPersonalDataResponse> {
+    async updateUserPersonalData(id: string, request: PersonalDataRequest): Promise<PersonalDataResponse> {
         const url = `${appConfig.apiUrl}/api/v1/users/${id}/personal-data`;
         
         const response = await fetch(url, {
@@ -107,11 +109,11 @@ class UserService {
             throw new Error(`Error al actualizar datos personales: ${response.statusText}`);
         }
 
-        const data: UserPersonalDataResponse = await response.json();
+        const data: PersonalDataResponse = await response.json();
         return data;
     }
 
-    async updateUserAddress(id: string, request: UserAddressUpdateRequest): Promise<UserAddressResponse> {
+    async updateUserAddress(id: string, request: UserAddressRequest): Promise<UserAddressResponse> {
         const url = `${appConfig.apiUrl}/api/v1/users/${id}/address`;
         
         const response = await fetch(url, {
@@ -131,7 +133,7 @@ class UserService {
         return data;
     }
 
-    async updateUserAccount(id: string, request: UserAccountUpdateRequest): Promise<UserAccountResponse> {
+    async updateUserAccount(id: string, request: AccountRequest): Promise<AccountResponse> {
         const url = `${appConfig.apiUrl}/api/v1/users/${id}/account`;
         
         const response = await fetch(url, {
@@ -147,9 +149,31 @@ class UserService {
             throw new Error(`Error al actualizar cuenta: ${response.statusText}`);
         }
 
-        const data: UserAccountResponse = await response.json();
+        const data: AccountResponse = await response.json();
         return data;
     }
+
+    async createUser(request: CreateUserRequest): Promise<CreateUserResponse> {
+        const url = `${appConfig.apiUrl}/api/v1/users`;
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authenticationHelper.getAuthentication()?.accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(request)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error al crear usuario: ${response.statusText}`);
+        }
+
+        const data: CreateUserResponse = await response.json();
+ 
+        return data;
+    }
+
 
     async exportUsers (ids: string[]): Promise<void> {
         try {

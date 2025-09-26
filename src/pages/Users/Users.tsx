@@ -13,7 +13,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { Dayjs } from 'dayjs';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, Pagination, MenuItem, Box, Typography, Chip, Divider, CircularProgress, Stepper, Step, StepLabel, Button as MuiButton, Checkbox, IconButton } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, Pagination, MenuItem, Box, Typography, Chip, Divider, CircularProgress, Stepper, Step, StepLabel, Button as MuiButton, Checkbox, IconButton, Alert } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
@@ -32,6 +32,8 @@ import type { OptionResponse } from '../../models/OptionResponse';
 import type { UserOptionsResponse } from '../../models/UserOptionsResponse';
 import authenticationHelper from '../../util/AuthenticationHelper';
 import type { AuthenticationResponse } from '../../models/AuthenticationResponse';
+import type { CreateUserRequest } from '../../models/CreateUserRequest';
+import type { CreateUserResponse } from '../../models/CreateUserResponse';
 
 const loanOptions = Array.from({ length: 20 }, (_, i) => i + 1);
 
@@ -160,11 +162,12 @@ const Users: React.FC = () => {
   // Estados del modal de creación de usuario
   const [createUserModalOpen, setCreateUserModalOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
-  const [profileImage, setProfileImage] = useState<File | null>(null);
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [createdUser, setCreatedUser] = useState<CreateUserResponse | null>(null);
+  const [createUserError, setCreateUserError] = useState<string | null>(null);
 
   // React Hook Form setup
   const {
@@ -200,15 +203,15 @@ const Users: React.FC = () => {
   const handleCreateUserClick = () => {
     setCreateUserModalOpen(true);
     setActiveStep(0);
-    setProfileImage(null);
     setProfileImagePreview(null);
+    setCreatedUser(null);
+    setCreateUserError(null);
     reset();
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setProfileImage(file);
       const reader = new FileReader();
       reader.onload = (e) => {
         setProfileImagePreview(e.target?.result as string);
@@ -218,7 +221,6 @@ const Users: React.FC = () => {
   };
 
   const handleRemoveImage = () => {
-    setProfileImage(null);
     setProfileImagePreview(null);
   };
 
@@ -231,30 +233,57 @@ const Users: React.FC = () => {
 
   const handleBack = () => {
     setActiveStep(0);
+    setCreateUserError(null); // Limpiar el error al volver atrás
   };
 
   const handleCloseModal = () => {
     setCreateUserModalOpen(false);
     setActiveStep(0);
-    setProfileImage(null);
     setProfileImagePreview(null);
+    setCreatedUser(null);
+    setCreateUserError(null);
     reset();
+  };
+
+  const handleViewCreatedUser = () => {
+    if (createdUser) {
+      navigate(`/dashboard/users/${createdUser.id}`);
+    }
   };
 
   const onSubmit = async (data: CreateUserFormData) => {
     setIsCreating(true);
+    setCreateUserError(null);
+    
     try {
-      // Aquí iría la llamada al servicio para crear el usuario
-      console.log('Creating user with data:', data);
-      console.log('Profile image:', profileImage);
-      
-      // Simular llamada al API
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Cerrar modal y limpiar formulario
-      handleCloseModal();
-    } catch (error) {
+      // Mapear los datos del formulario a CreateUserRequest
+      const createUserRequest: CreateUserRequest = {
+        personalData: {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone,
+          genderId: data.gender
+        },
+        address: {
+          address: data.address,
+          stateId: data.state,
+          city: data.city,
+          district: data.district,
+          zipCode: data.zipCode
+        },
+        account: {
+          email: data.email,
+          roleId: data.role,
+          password: data.password
+        }
+      };
+
+      const response = await userService.createUser(createUserRequest);
+      setCreatedUser(response);
+      setActiveStep(1); // Ir al step de confirmación/éxito
+    } catch (error: any) {
       console.error('Error creating user:', error);
+      setCreateUserError(error.message || 'Error al crear el usuario');
     } finally {
       setIsCreating(false);
     }
@@ -1194,19 +1223,22 @@ const Users: React.FC = () => {
       {/* Modal de creación de usuario */}
       <Dialog 
         open={createUserModalOpen} 
-        onClose={handleCloseModal}
+        onClose={isCreating ? undefined : handleCloseModal}
         maxWidth="md"
         fullWidth
-         PaperProps={{
-           sx: { maxHeight: '90vh', overflow: 'auto' }
-         }}
+        disableEscapeKeyDown={isCreating}
+        PaperProps={{
+          sx: { maxHeight: '90vh', overflow: 'auto' }
+        }}
       >
         <DialogTitle>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography variant="h6">
-              {activeStep === 0 ? 'Crear Usuario' : 'Confirmar creación de usuario'}
+              {activeStep === 0 ? 'Crear Usuario' : 
+               createdUser ? 'Usuario creado' : 
+               'Confirmar creación de usuario'}
             </Typography>
-            <MuiButton onClick={handleCloseModal} sx={{ minWidth: 'auto', p: 1 }}>
+            <MuiButton onClick={handleCloseModal} disabled={isCreating} sx={{ minWidth: 'auto', p: 1 }}>
               ✕
             </MuiButton>
           </Box>
@@ -1781,7 +1813,24 @@ const Users: React.FC = () => {
               </Box>
             </Box>
           )}
+
         </DialogContent>
+
+        {/* Alerts arriba de las actions */}
+        {(createUserError || createdUser) && (
+          <Box sx={{ px: 3, pb: 1 }}>
+            {createUserError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {createUserError}
+              </Alert>
+            )}
+            {createdUser && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                ¡Usuario creado exitosamente! ID: {createdUser.id}
+              </Alert>
+            )}
+          </Box>
+        )}
 
          <DialogActions sx={{ p: 3 }}>
            {activeStep === 0 ? (
@@ -1799,21 +1848,41 @@ const Users: React.FC = () => {
              </Box>
            ) : (
              <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'space-between' }}>
-               <Button type="secondary" onClick={handleBack} disabled={isCreating}>
-                 Atrás
-               </Button>
-               <Box sx={{ display: 'flex', gap: 1 }}>
-                 <Button type="secondary" onClick={handleCloseModal} disabled={isCreating}>
-                   Cancelar
-                 </Button>
-                 <Button 
-                   type="primary" 
-                   onClick={handleSubmit(onSubmit)}
-                   disabled={isCreating}
-                 >
-                   {isCreating ? 'Creando...' : 'Crear Usuario'}
-                 </Button>
-               </Box>
+               {!createdUser ? (
+                 <>
+                   <Button type="secondary" onClick={handleBack} disabled={isCreating}>
+                     Atrás
+                   </Button>
+                   <Box sx={{ display: 'flex', gap: 1 }}>
+                     <Button type="secondary" onClick={handleCloseModal} disabled={isCreating}>
+                       Cancelar
+                     </Button>
+                     <Button 
+                       type="primary" 
+                       onClick={handleSubmit(onSubmit)}
+                       disabled={isCreating}
+                     >
+                       {isCreating ? (
+                         <>
+                           <CircularProgress size={16} sx={{ color: 'white', mr: 1 }} />
+                           Creando...
+                         </>
+                       ) : (
+                         'Crear Usuario'
+                       )}
+                     </Button>
+                   </Box>
+                 </>
+               ) : (
+                 <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
+                   <Button type="secondary" onClick={handleCloseModal}>
+                     Cerrar
+                   </Button>
+                   <Button type="primary" onClick={handleViewCreatedUser}>
+                     Ver Usuario
+                   </Button>
+                 </Box>
+               )}
              </Box>
            )}
          </DialogActions>

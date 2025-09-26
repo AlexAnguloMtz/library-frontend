@@ -1,5 +1,5 @@
 import type { GenderResponse } from "./GenderResponse";
-import type { RoleDTO } from "./RoleDTO";
+import type { RoleResponse } from "./RoleResponse";
 import type { UserAddressResponse } from "./UserAddressResponse";
 
 export type FullUser = {
@@ -9,7 +9,7 @@ export type FullUser = {
     fullName: string;
     email: string;
     phone: string;
-    role: RoleDTO;
+    role: RoleResponse;
     address: UserAddressResponse;
     gender: GenderResponse;
     registrationDate: string;
