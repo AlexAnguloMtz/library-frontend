@@ -158,6 +158,8 @@ const Users: React.FC = () => {
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [isAllSelected, setIsAllSelected] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportErrorOpen, setExportErrorOpen] = useState(false);
+  const [exportErrorMessage, setExportErrorMessage] = useState('');
   const [userOptions, setUserOptions] = useState<UserOptionsResponse | null>(null);
 
   // Estados del modal de creación de usuario
@@ -329,8 +331,10 @@ const Users: React.FC = () => {
       setIsExporting(true);
       const selectedIds = Array.from(selectedUsers);
       await userService.exportUsers(selectedIds);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al exportar usuarios:', error);
+      setExportErrorMessage(error.message || 'Error desconocido al exportar usuarios');
+      setExportErrorOpen(true);
     } finally {
       setIsExporting(false);
     }
@@ -612,7 +616,7 @@ const Users: React.FC = () => {
             value={filters.search}
             onChange={(e) => handleFilterChange('search', e.target.value)}
             label="Buscar usuarios"
-            placeholder='Nombre, email, teléfono...'
+            placeholder='ID, nombre, email, teléfono...'
             variant="outlined"
             fullWidth
             size='small'
@@ -976,6 +980,17 @@ const Users: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button type='primary' onClick={(e: any) => closeError(e)}>Cerrar</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Export Error Modal */}
+      <Dialog open={exportErrorOpen} onClose={() => setExportErrorOpen(false)}>
+        <DialogTitle>Error al Exportar</DialogTitle>
+        <DialogContent>
+          {exportErrorMessage}
+        </DialogContent>
+        <DialogActions>
+          <Button type='primary' onClick={() => setExportErrorOpen(false)}>Cerrar</Button>
         </DialogActions>
       </Dialog>
 

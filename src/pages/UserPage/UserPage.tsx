@@ -318,9 +318,9 @@ const UserPage: React.FC = () => {
         try {
             await userService.deleteUserById(userId);
             setDeleteSuccess(true);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error deleting user:', error);
-            setDeleteError('Error al eliminar el usuario. Inténtalo de nuevo.');
+            setDeleteError(error.message || 'Error al eliminar el usuario. Inténtalo de nuevo.');
         } finally {
             setIsDeletingUser(false);
         }
@@ -408,9 +408,9 @@ const UserPage: React.FC = () => {
 
             setPersonalDataSuccess(true);
             setIsEditingBasicInfo(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error updating personal data:', error);
-            setPersonalDataError('Error al actualizar los datos personales. Inténtalo de nuevo.');
+            setPersonalDataError(error.message || 'Error al actualizar los datos personales. Inténtalo de nuevo.');
         } finally {
             setIsUpdatingPersonalData(false);
         }
@@ -464,9 +464,9 @@ const UserPage: React.FC = () => {
 
             setAddressSuccess(true);
             setIsEditingAddress(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error updating address:', error);
-            setAddressError('Error al actualizar el domicilio. Inténtalo de nuevo.');
+            setAddressError(error.message || 'Error al actualizar el domicilio. Inténtalo de nuevo.');
         } finally {
             setIsUpdatingAddress(false);
         }
@@ -511,9 +511,9 @@ const UserPage: React.FC = () => {
 
             setAccountSuccess(true);
             setIsEditingAccount(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error updating account:', error);
-            setAccountError('Error al actualizar la cuenta. Inténtalo de nuevo.');
+            setAccountError(error.message || 'Error al actualizar la cuenta. Inténtalo de nuevo.');
         } finally {
             setIsUpdatingAccount(false);
         }
@@ -554,9 +554,9 @@ const UserPage: React.FC = () => {
             });
             setShowPassword(false);
             setShowConfirmPassword(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error updating password:', error);
-            setPasswordError('Error al cambiar la contraseña. Inténtalo de nuevo.');
+            setPasswordError(error.message || 'Error al cambiar la contraseña. Inténtalo de nuevo.');
         } finally {
             setIsUpdatingPassword(false);
         }
