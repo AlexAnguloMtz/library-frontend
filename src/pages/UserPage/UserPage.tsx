@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Tabs, Tab, Box, Typography, IconButton, TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Tabs, Tab, Box, Typography, IconButton, TextField, FormControl, InputLabel, Select, MenuItem, Skeleton } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import './styles.css';
 import userService from '../../services/UserService';
@@ -82,7 +82,65 @@ const UserPage: React.FC = () => {
                 return <div>Iniciando...</div>;
             
             case UserPageStatus.LOADING:
-                return <div>Cargando usuario...</div>;
+                return (
+                    <Box sx={{ width: '100%' }}>
+                        {/* Sección Superior - Skeleton */}
+                        <Box sx={{ 
+                            display: 'flex', 
+                            gap: 3, 
+                            mb: 4,
+                            p: 3
+                        }}>
+                            {/* Caja Izquierda - Foto Skeleton */}
+                            <Box sx={{ 
+                                width: 240, 
+                                height: 274,
+                                backgroundColor: '#f5f5f5',
+                                borderRadius: 1
+                            }}>
+                                <Skeleton variant="rectangular" width="100%" height="100%" />
+                            </Box>
+
+                            {/* Caja Derecha - Información Skeleton */}
+                            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                {/* Nombre y ID */}
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                    <Skeleton variant="text" width="60%" height={32} />
+                                    <Skeleton variant="text" width="40%" height={20} />
+                                </Box>
+                                
+                                {/* Información de contacto */}
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                    <Skeleton variant="text" width="70%" height={20} />
+                                    <Skeleton variant="text" width="50%" height={20} />
+                                </Box>
+                                
+                                {/* Rol */}
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Skeleton variant="text" width="30%" height={20} />
+                                    <Skeleton variant="rectangular" width={60} height={24} sx={{ borderRadius: 3 }} />
+                                </Box>
+                                
+                                {/* Fecha de registro */}
+                                <Skeleton variant="text" width="45%" height={20} />
+                            </Box>
+                        </Box>
+
+                        {/* Tabs Skeleton */}
+                        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+                            <Box sx={{ display: 'flex', gap: 3, px: 3 }}>
+                                <Skeleton variant="text" width={80} height={40} />
+                                <Skeleton variant="text" width={120} height={40} />
+                                <Skeleton variant="text" width={100} height={40} />
+                            </Box>
+                        </Box>
+
+                        {/* Contenido de tabs skeleton */}
+                        <Box sx={{ px: 3 }}>
+                            <Skeleton variant="text" width="100%" height={200} />
+                        </Box>
+                    </Box>
+                );
             
             case UserPageStatus.ERROR:
                 return (
