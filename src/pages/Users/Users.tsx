@@ -1165,8 +1165,8 @@ const Users: React.FC = () => {
                     label={userToDelete.role.name}
                     size="small"
                     sx={{
-                      backgroundColor: userToDelete.role.slug === 'USER' ? '#DCFCE7' : '#f3bd5f',
-                      color: userToDelete.role.slug === 'USER' ? '#166534' : '#000',
+                      backgroundColor: userToDelete.role.slug === 'USER' ? '#16A34A' : '#2563EB',
+                      color: '#ffffff',
                       fontSize: '0.75rem',
                       height: '24px'
                     }}

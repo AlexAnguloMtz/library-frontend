@@ -99,16 +99,16 @@ body {
 }
 
 .user-role-badge.ADMIN {
-  background-color: #D44444;
+  background-color: #DC2626;
 }
 
 .user-role-badge.LIBRARIAN {
-  background-color: #f3bd5f;
+  background-color: #2563EB;
 }
 
 .user-role-badge.USER {
-  color: #166534;
-  background-color: #DCFCE7;
+  color: #ffffff;
+  background-color: #16A34A;
 }
 
 .actions {

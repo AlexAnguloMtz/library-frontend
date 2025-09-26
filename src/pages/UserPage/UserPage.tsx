@@ -504,7 +504,8 @@ const UserPage: React.FC = () => {
                     user: {
                         ...state.user,
                         email: response.email,
-                        role: response.role
+                        role: response.role,
+                        permissions: response.permissions
                     }
                 });
             }
@@ -717,6 +718,7 @@ const UserPage: React.FC = () => {
                                 <Typography variant="h5" component="h1" sx={{ mb: 1 }}>
                                     {state.user.firstName} {state.user.lastName}
                                 </Typography>
+                                
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <Typography variant="body1" color="text.secondary">
                                         ID: {state.user.id}
@@ -726,6 +728,24 @@ const UserPage: React.FC = () => {
                                         size="small" 
                                         sx={{ ml: 1 }}
                                     />
+                                </Box>
+                                
+                                {/* Rol del usuario */}
+                                <Box sx={{ mt: 1 }}>
+                                    <Box
+                                        sx={{
+                                            display: 'inline-block',
+                                            padding: '8px 16px',
+                                            borderRadius: '16px',
+                                            fontSize: '14px',
+                                            fontWeight: 500,
+                                            backgroundColor: state.user.role.slug === 'ADMIN' ? '#DC2626' : 
+                                                           state.user.role.slug === 'LIBRARIAN' ? '#2563EB' : '#16A34A',
+                                            color: '#ffffff'
+                                        }}
+                                    >
+                                        {state.user.role.name}
+                                    </Box>
                                 </Box>
                                 
                                 {/* Botón de editar foto */}

@@ -7,4 +7,5 @@ export type CreateUserResponse = {
     personalData: PersonalDataResponse;
     address: UserAddressResponse;
     account: AccountResponse;
+    permissions: string[];
 }
