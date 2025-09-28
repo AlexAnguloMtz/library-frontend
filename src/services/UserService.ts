@@ -20,7 +20,7 @@ import type { UpdateProfilePictureRequest } from "../models/UpdateProfilePicture
 import type { UpdateProfilePictureResponse } from "../models/UpdateProfilePictureResponse";
 import type { UpdateAccountRequest } from "../models/UpdateAccountRequest";
 import type { ChangePasswordRequest } from "../models/ChangePasswordRequest";
-import { ProblemDetailError } from "../models/ProblemDetail";
+import { ProblemDetailError, unknownErrorProblemDetail } from "../models/ProblemDetail";
 
 class UserService {
     async getUsersPreviews(query: UserPreviewsQuery, pagination: PaginationRequest): Promise<PaginationResponse<UserPreview>> {
@@ -291,7 +291,7 @@ class UserService {
     }
 
 
-    async exportUsers (ids: string[]): Promise<void> {
+    async exportUsers (ids: string[]): Promise<Blob> {
         try {
             const response = await fetch(`${appConfig.apiUrl}/api/v1/users/export`, {
                 method: "POST",
@@ -311,23 +311,8 @@ class UserService {
                 throw new ProblemDetailError(problemDetail);
             }
         
-            const blob = await response.blob();
-        
-            const contentDisposition = response.headers.get("Content-Disposition");
-            let filename = "users_export.pdf"; 
-            if (contentDisposition) {
-                const match = contentDisposition.match(/filename="?([^"]+)"?/);
-                if (match) filename = match[1];
-            }
-        
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(url);
+            return await response.blob();
+
         } catch (error) {
             if (error instanceof ProblemDetailError) {
                 throw error;
@@ -372,13 +357,3 @@ function userPreviewsQueryString(query: UserPreviewsQuery, pagination: Paginatio
 }
 
 export default new UserService();
-
-function unknownErrorProblemDetail(): ProblemDetailError {
-    return new ProblemDetailError({
-        type: "error_desconocido",
-        title: "Error desconocido",
-        status: 500,
-        detail: "Error desconocido",
-        instance: "error_desconocido"
-    });
-}

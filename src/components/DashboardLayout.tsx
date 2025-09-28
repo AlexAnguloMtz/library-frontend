@@ -17,6 +17,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
 import PersonIcon from '@mui/icons-material/Person';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { Icon, Icons } from './Icon';
 import authenticationHelper from '../util/AuthenticationHelper';
 import type { AuthenticationResponse } from '../models/AuthenticationResponse';
@@ -37,7 +38,7 @@ const DashboardLayout: React.FC = () => {
         } else {
             setAuth(authentication);
         }
-    }, []);
+    }, [location.pathname]);
 
     if (auth === null) {
         return null;
@@ -66,6 +67,39 @@ const DashboardLayout: React.FC = () => {
                 </h3>
             </div>
 
+            {/* Información del usuario */}
+            <div style={{ padding: '0px 16px 12px 16px', color: 'white', textAlign: 'center' }}>
+                {/* Avatar del usuario */}
+                <div style={{ marginBottom: '12px' }}>
+                    <img 
+                        src={auth.profilePictureUrl} 
+                        alt="Avatar" 
+                        style={{
+                            width: '56px',
+                            height: '56px',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            border: '2px solid white'
+                        }}
+                    />
+                </div>
+                <div style={{ fontSize: '0.75em', marginBottom: '8px', opacity: 0.9 }}>
+                    {auth.fullName}
+                </div>
+                <div style={{ 
+                    display: 'inline-block',
+                    padding: '4px 8px',
+                    borderRadius: '12px',
+                    fontSize: '0.7em',
+                    fontWeight: 500,
+                    backgroundColor: 'transparent',
+                    border: '1px solid white',
+                    color: 'white'
+                }}>
+                    {auth.role}
+                </div>
+            </div>
+
             <div style={{ width: '96%', height: '1px', margin: '0px auto 8px auto', backgroundColor: '#D8BCE3' }}>
             </div>
 
@@ -73,6 +107,7 @@ const DashboardLayout: React.FC = () => {
                 <List sx={{ flexGrow: 1 }}>
                     {[
                         { text: 'Usuarios', icon: <PeopleAltOutlinedIcon />, path: '/dashboard/users', permission: 'users:read' },
+                        { text: 'Autores', icon: <PersonAddIcon />, path: '/dashboard/authors', permission: 'authors:read' },
                         { text: 'Mi perfil', icon: <PersonIcon />, path: '/dashboard/profile', permission: 'users:read:self' },
                     ].filter((item) => {
                         return !item.permission || authenticationHelper.hasAnyPermission(auth, [item.permission]);

@@ -35,6 +35,7 @@ import type { AuthenticationResponse } from '../../models/AuthenticationResponse
 import type { CreateUserRequest } from '../../models/CreateUserRequest';
 import type { CreateUserResponse } from '../../models/CreateUserResponse';
 import { CopyToClipboard } from '../../components/CopyToClipboard/CopyToClipboard';
+import * as blobHelpers from '../../util/BlobHelpers';
 
 const loanOptions = Array.from({ length: 20 }, (_, i) => i + 1);
 
@@ -330,7 +331,8 @@ const Users: React.FC = () => {
     try {
       setIsExporting(true);
       const selectedIds = Array.from(selectedUsers);
-      await userService.exportUsers(selectedIds);
+      const blob: Blob = await userService.exportUsers(selectedIds);
+      blobHelpers.downloadBlob(blob, "usuarios.pdf");
     } catch (error: any) {
       console.error('Error al exportar usuarios:', error);
       setExportErrorMessage(error.message || 'Error desconocido al exportar usuarios');
@@ -606,6 +608,8 @@ const Users: React.FC = () => {
         onNewClick={handleCreateUserClick}
         selectedCount={selectedUsers.size}
         isExporting={isExporting}
+        auth={auth}
+        newPermission="users:create"
       />
 
       {/* Filters */}

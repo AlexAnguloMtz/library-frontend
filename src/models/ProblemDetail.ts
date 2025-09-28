@@ -56,3 +56,13 @@ export const isProblemDetailErrors = (value: any): value is ProblemDetailErrors 
         Object.values(value).every(errors => Array.isArray(errors))
     );
 }
+
+export function unknownErrorProblemDetail(): ProblemDetailError {
+    return new ProblemDetailError({
+        type: "error_desconocido",
+        title: "Error desconocido",
+        status: 500,
+        detail: "Error desconocido",
+        instance: "error_desconocido"
+    });
+}
