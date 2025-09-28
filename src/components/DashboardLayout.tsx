@@ -17,7 +17,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
 import PersonIcon from '@mui/icons-material/Person';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
 import { Icon, Icons } from './Icon';
 import authenticationHelper from '../util/AuthenticationHelper';
 import type { AuthenticationResponse } from '../models/AuthenticationResponse';
@@ -107,7 +107,7 @@ const DashboardLayout: React.FC = () => {
                 <List sx={{ flexGrow: 1 }}>
                     {[
                         { text: 'Usuarios', icon: <PeopleAltOutlinedIcon />, path: '/dashboard/users', permission: 'users:read' },
-                        { text: 'Autores', icon: <PersonAddIcon />, path: '/dashboard/authors', permission: 'authors:read' },
+                        { text: 'Autores', icon: <MenuBookIcon />, path: '/dashboard/authors', permission: 'authors:read' },
                         { text: 'Mi perfil', icon: <PersonIcon />, path: '/dashboard/profile', permission: 'users:read:self' },
                     ].filter((item) => {
                         return !item.permission || authenticationHelper.hasAnyPermission(auth, [item.permission]);

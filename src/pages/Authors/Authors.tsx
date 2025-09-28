@@ -742,11 +742,11 @@ const Authors: React.FC = () => {
         {/* Libros (mín) */}
         <div className='filter-item'>
           <FormControl fullWidth size="small">
-            <InputLabel>Libros (mín)</InputLabel>
+            <InputLabel>Libros registrados (mín)</InputLabel>
             <Select
               value={filters.booksMin}
               onChange={(e) => handleFilterChange('booksMin', e.target.value)}
-              label="Libros (mín)"
+              label="Libros registrados (mín)"
               size='small'
             >
               <MenuItem value="">
@@ -772,11 +772,11 @@ const Authors: React.FC = () => {
         {/* Libros (máx) */}
         <div className='filter-item'>
           <FormControl fullWidth size="small">
-            <InputLabel>Libros (máx)</InputLabel>
+            <InputLabel>Libros registrados (máx)</InputLabel>
             <Select
               value={filters.booksMax}
               onChange={(e) => handleFilterChange('booksMax', e.target.value)}
-              label="Libros (máx)"
+              label="Libros registrados (máx)"
               size='small'
             >
               <MenuItem value="">
@@ -984,7 +984,7 @@ const Authors: React.FC = () => {
                     <span className='author-country'>{author.country.name}</span>
                   </td>
                   <td>
-                    <span className='author-date-of-birth'>{author.dateOfBirth}</span>
+                    <span className='author-date-of-birth'>{dayjs(author.dateOfBirth).format('DD/MMM/YYYY')}</span>
                   </td>
                   <td>
                     <span className='author-book-count'>{author.bookCount}</span>
