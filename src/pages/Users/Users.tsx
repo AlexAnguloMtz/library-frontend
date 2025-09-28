@@ -918,7 +918,7 @@ const Users: React.FC = () => {
                     <div className='user-name-and-id'>
                       <span className='user-name'>{user.name}</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span className='user-id'>{user.id}</span>
+                        <span className='user-id'>ID: {user.id}</span>
                         <CopyToClipboard 
                           text={user.id}
                           size="tiny"
