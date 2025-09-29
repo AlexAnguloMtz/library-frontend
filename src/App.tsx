@@ -3,6 +3,7 @@ import DashboardLayout from './components/DashboardLayout';
 import Users from './pages/Users/Users';
 import UserPage from './pages/UserPage/UserPage';
 import Authors from './pages/Authors/Authors';
+import Books from './pages/Books/Books';
 import BookCategories from './pages/BookCategories/BookCategories';
 import { Login } from './pages/Login/Login';
 
@@ -15,6 +16,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardLayout />} >
             <Route path="/dashboard/users" element={<Users />} ></Route>
             <Route path="/dashboard/users/:id" element={<UserPage key="user-specific" />} ></Route>
+            <Route path="/dashboard/books" element={<Books />} ></Route>
             <Route path="/dashboard/authors" element={<Authors />} ></Route>
             <Route path="/dashboard/book-categories" element={<BookCategories />} ></Route>
             <Route path="/dashboard/profile" element={<UserPage key="user-profile" />} ></Route>

@@ -905,7 +905,7 @@ const Authors: React.FC = () => {
                   />
                 </SortableColumnHeader>
                 <SortableColumnHeader
-                  title='Nombre'
+                  title='Autor'
                   active={paginationState.sort === 'name'}
                   order={paginationState.order}
                   onClick={() => { setPaginationState(nextPagination("name")) }}

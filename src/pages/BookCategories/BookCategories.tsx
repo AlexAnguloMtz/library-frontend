@@ -704,7 +704,7 @@ const BookCategories: React.FC = () => {
                   />
                 </SortableColumnHeader>
                 <SortableColumnHeader
-                  title='Nombre'
+                  title='Categoría'
                   active={paginationState.sort === 'name'}
                   order={paginationState.order}
                   onClick={() => { setPaginationState(nextPagination("name")) }}
