@@ -809,7 +809,7 @@ const Books: React.FC = () => {
                     <span className='author-book-count'>{book.isbn}</span>
                   </td>
                   <td>
-                    <span className='author-book-count'>{book.category}</span>
+                    <span className='author-book-count'>{book.category || '---'}</span>
                   </td>
                   <td>
                     <span className='author-book-count'>{book.year}</span>

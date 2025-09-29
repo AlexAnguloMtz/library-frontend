@@ -4,7 +4,7 @@ import { Icon, Icons } from '../Icon';
 import authenticationHelper from '../../util/AuthenticationHelper';
 import type { AuthenticationResponse } from '../../models/AuthenticationResponse';
 
-export const DashboardModuleTopBar = ({ title, onExportClick, onNewClick, selectedCount, isExporting, auth, exportPermission, newPermission }: {
+export const DashboardModuleTopBar = ({ title, onExportClick, onNewClick, selectedCount, isExporting, auth, exportPermission, newPermission, additionalActions }: {
     title: string;
     onExportClick: () => void | Promise<void>;
     onNewClick: () => void;
@@ -13,11 +13,13 @@ export const DashboardModuleTopBar = ({ title, onExportClick, onNewClick, select
     auth?: AuthenticationResponse | null;
     exportPermission?: string;
     newPermission?: string;
+    additionalActions?: React.ReactNode;
 }) => {
     return (
         <div className='dashboard-module-top-bar'>
             <h1 className='dashboard-module-top-bar-title'>{title}</h1>
             <div className='dashboard-module-top-bar-actions'>
+                {additionalActions}
                 {(!exportPermission || (auth && authenticationHelper.hasAnyPermission(auth, [exportPermission]))) && (
                     <Button 
                         onClick={onExportClick} 
