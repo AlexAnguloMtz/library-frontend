@@ -6,4 +6,5 @@ export type PersonalDataResponse = {
     phone: string;
     gender: GenderResponse;
     dateOfBirth: string;
+    age: number;
 }

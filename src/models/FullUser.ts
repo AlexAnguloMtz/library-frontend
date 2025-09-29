@@ -15,5 +15,6 @@ export type FullUser = {
     registrationDate: string;
     profilePictureUrl: string;
     dateOfBirth: string;
+    age: number;
     permissions: string[];
 }

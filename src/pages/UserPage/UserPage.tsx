@@ -109,6 +109,8 @@ const UserPage: React.FC = () => {
     const [userOptions, setUserOptions] = useState<UserOptionsResponse | null>(null);
     const [isLoadingOptions, setIsLoadingOptions] = useState(false);
     
+    const [ageState, setAgeState] = useState<number>(0);
+
     // Calcular userId una vez para usar en todas las funciones
     const getUserId = (): string | null => {
         if (id) return id;
@@ -279,6 +281,7 @@ const UserPage: React.FC = () => {
                 status: UserPageStatus.SUCCESS, 
                 user
             });
+            setAgeState(user.age);
         } catch (error) {
             setState({ 
                 status: UserPageStatus.ERROR, 
@@ -400,7 +403,7 @@ const UserPage: React.FC = () => {
             };
 
             const response = await userService.updateUserPersonalData(userId, request);
-            
+            setAgeState(response.age);
             // Actualizar el estado del usuario con los nuevos datos
         if (state.status === UserPageStatus.SUCCESS) {
                 setState({
@@ -1006,6 +1009,14 @@ const UserPage: React.FC = () => {
                                                     {(dayjs(personalDataForm.getValues('dateOfBirth')).format('DD/MMM/YYYY'))}
                                                 </Typography>
                                             )}
+                                            </Box>
+                                            <Box sx={{ display: 'flex', alignItems: isEditingBasicInfo ? 'flex-start' : 'center', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: isEditingBasicInfo ? 0.5 : 0 }}>
+                                                    Edad:
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                                    {ageState} años
+                                                </Typography>
                                             </Box>
                                         </Box>
                                     </Box>
