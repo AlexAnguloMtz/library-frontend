@@ -21,6 +21,7 @@ import type { UpdateProfilePictureResponse } from "../models/UpdateProfilePictur
 import type { UpdateAccountRequest } from "../models/UpdateAccountRequest";
 import type { ChangePasswordRequest } from "../models/ChangePasswordRequest";
 import { ProblemDetailError, unknownErrorProblemDetail } from "../models/ProblemDetail";
+import { datePartString } from "../util/DateHelper";
 
 class UserService {
     async getUsersPreviews(query: UserPreviewsQuery, pagination: PaginationRequest): Promise<PaginationResponse<UserPreview>> {
@@ -41,9 +42,15 @@ class UserService {
                 throw new ProblemDetailError(problemDetail);
             }
 
-            const users: PaginationResponse<UserPreview> = await response.json();
+            const usersJson: PaginationResponse<any> = await response.json();
             
-            return users;
+            return {
+                ...usersJson,
+                items: usersJson.items.map(user => ({
+                    ...user,
+                    dateOfBirth: new Date(user.dateOfBirth)
+                }))
+            };
         } catch (error) {
             if (error instanceof ProblemDetailError) {
                 throw error;
@@ -214,26 +221,40 @@ class UserService {
     }
 
     async createUser(request: CreateUserRequest): Promise<CreateUserResponse> {
+        const requestToSend = {
+            account: {
+                ...request.account,
+            },
+            address: {
+                ...request.address,
+            },
+            personalData: {
+                ...request.personalData,
+                dateOfBirth: datePartString(request.personalData.dateOfBirth)
+            }
+        }
+        
         try {
             const url = `${appConfig.apiUrl}/api/v1/users`;
             
             const formData = new FormData();
             
-            formData.append('personalData.firstName', request.personalData.firstName);
-            formData.append('personalData.lastName', request.personalData.lastName);
-            formData.append('personalData.phone', request.personalData.phone);
-            formData.append('personalData.genderId', request.personalData.genderId);
+            formData.append('personalData.firstName', requestToSend.personalData.firstName);
+            formData.append('personalData.lastName', requestToSend.personalData.lastName);
+            formData.append('personalData.phone', requestToSend.personalData.phone);
+            formData.append('personalData.genderId', requestToSend.personalData.genderId);
+            formData.append('personalData.dateOfBirth', requestToSend.personalData.dateOfBirth);
             
-            formData.append('address.address', request.address.address);
-            formData.append('address.stateId', request.address.stateId);
-            formData.append('address.city', request.address.city);
-            formData.append('address.district', request.address.district);
-            formData.append('address.zipCode', request.address.zipCode);
+            formData.append('address.address', requestToSend.address.address);
+            formData.append('address.stateId', requestToSend.address.stateId);
+            formData.append('address.city', requestToSend.address.city);
+            formData.append('address.district', requestToSend.address.district);
+            formData.append('address.zipCode', requestToSend.address.zipCode);
             
-            formData.append('account.email', request.account.email);
-            formData.append('account.roleId', request.account.roleId);
-            formData.append('account.password', request.account.password);
-            formData.append('account.profilePicture', request.account.profilePicture);
+            formData.append('account.email', requestToSend.account.email);
+            formData.append('account.roleId', requestToSend.account.roleId);
+            formData.append('account.password', requestToSend.account.password);
+            formData.append('account.profilePicture', requestToSend.account.profilePicture);
             
             const response = await fetch(url, {
                 method: 'POST',

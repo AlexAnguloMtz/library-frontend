@@ -3,4 +3,5 @@ export type PersonalDataRequest = {
   lastName: string;
   phone: string;
   genderId: string;
+  dateOfBirth: Date;
 }

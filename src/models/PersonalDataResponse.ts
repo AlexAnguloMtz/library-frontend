@@ -5,4 +5,5 @@ export type PersonalDataResponse = {
     lastName: string;
     phone: string;
     gender: GenderResponse;
+    dateOfBirth: string;
 }

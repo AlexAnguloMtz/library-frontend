@@ -33,7 +33,7 @@ class AuthorService {
             }
 
             const authors: PaginationResponse<AuthorPreview> = await response.json();
-            
+
             return authors;
         } catch (error) {
             if (error instanceof ProblemDetailError) {

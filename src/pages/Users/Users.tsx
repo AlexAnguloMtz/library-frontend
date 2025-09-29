@@ -12,7 +12,7 @@ import Select from "@mui/material/Select";
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { Dayjs } from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, Pagination, MenuItem, Box, Typography, Chip, Divider, CircularProgress, Stepper, Step, StepLabel, Button as MuiButton, Checkbox, IconButton, Alert } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -45,6 +45,9 @@ const createUserSchema = z.object({
   lastName: z.string().min(1, 'El apellido es requerido'),
   phone: z.string().min(1, 'El teléfono es requerido').regex(/^\d{10}$/, 'El teléfono debe tener exactamente 10 dígitos'),
   gender: z.string().min(1, 'El género es requerido'),
+  dateOfBirth: z.date("La fecha de nacimiento es requerida")
+    .min(new Date('1900-01-01'), 'La fecha de nacimiento debe ser mayor a 1900')
+    .max(new Date(), 'La fecha de nacimiento no puede ser mayor a la fecha actual'),
   state: z.string().min(1, 'El estado es requerido'),
   city: z.string().min(1, 'La ciudad es requerida'),
   address: z.string().min(1, 'La dirección es requerida'),
@@ -60,6 +63,10 @@ const createUserSchema = z.object({
 });
 
 type CreateUserFormData = z.infer<typeof createUserSchema>;
+
+const formatDatePart = (date: Date) => {
+  return dayjs(date).format('DD/MMM/YYYY');
+}
 
 const dropdownLabelStyles = {
   transform: 'translate(14px, 9px) scale(1)',
@@ -174,14 +181,7 @@ const Users: React.FC = () => {
   const [createdUser, setCreatedUser] = useState<CreateUserResponse | null>(null);
   const [createUserError, setCreateUserError] = useState<string | null>(null);
 
-  // React Hook Form setup
-  const {
-    control,
-    handleSubmit,
-    formState: { errors, isValid },
-    reset,
-    watch
-  } = useForm<CreateUserFormData>({
+  const createUserForm = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserSchema),
     mode: 'onChange',
     reValidateMode: 'onChange',
@@ -190,6 +190,7 @@ const Users: React.FC = () => {
       lastName: '',
       phone: '',
       gender: '',
+      dateOfBirth: undefined, 
       state: '',
       city: '',
       address: '',
@@ -212,7 +213,7 @@ const Users: React.FC = () => {
     setProfileImageFile(null);
     setCreatedUser(null);
     setCreateUserError(null);
-    reset();
+    createUserForm.reset();
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -251,7 +252,7 @@ const Users: React.FC = () => {
     setProfileImageFile(null);
     setCreatedUser(null);
     setCreateUserError(null);
-    reset();
+    createUserForm.reset();
   };
 
   const handleViewCreatedUser = () => {
@@ -271,7 +272,8 @@ const Users: React.FC = () => {
           firstName: data.firstName,
           lastName: data.lastName,
           phone: data.phone,
-          genderId: data.gender
+          genderId: data.gender,
+          dateOfBirth: data.dateOfBirth!
         },
         address: {
           address: data.address,
@@ -1379,7 +1381,7 @@ const Users: React.FC = () => {
                      <Box sx={{ display: 'flex', gap: 2 }}>
                        <Controller
                          name="firstName"
-                         control={control}
+                         control={createUserForm.control}
                          render={({ field }) => (
                            <TextField
                              {...field}
@@ -1387,15 +1389,15 @@ const Users: React.FC = () => {
                              variant="outlined"
                              size="small"
                              fullWidth
-                             error={!!errors.firstName}
-                             helperText={errors.firstName?.message}
+                             error={!!createUserForm.formState.errors.firstName}
+                             helperText={createUserForm.formState.errors.firstName?.message}
                              disabled={isCreating}
                            />
                          )}
                        />
                        <Controller
                          name="lastName"
-                         control={control}
+                         control={createUserForm.control}
                          render={({ field }) => (
                            <TextField
                              {...field}
@@ -1403,8 +1405,8 @@ const Users: React.FC = () => {
                              variant="outlined"
                              size="small"
                              fullWidth
-                             error={!!errors.lastName}
-                             helperText={errors.lastName?.message}
+                             error={!!createUserForm.formState.errors.lastName}
+                             helperText={createUserForm.formState.errors.lastName?.message}
                              disabled={isCreating}
                            />
                          )}
@@ -1413,7 +1415,7 @@ const Users: React.FC = () => {
                      <Box sx={{ display: 'flex', gap: 2 }}>
                        <Controller
                          name="phone"
-                         control={control}
+                         control={createUserForm.control}
                          render={({ field }) => (
                            <TextField
                              {...field}
@@ -1421,8 +1423,8 @@ const Users: React.FC = () => {
                              variant="outlined"
                              size="small"
                              fullWidth
-                             error={!!errors.phone}
-                             helperText={errors.phone?.message}
+                             error={!!createUserForm.formState.errors.phone}
+                             helperText={createUserForm.formState.errors.phone?.message}
                              disabled={isCreating}
                              inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 10 }}
                              onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
@@ -1431,9 +1433,9 @@ const Users: React.FC = () => {
                        />
                        <Controller
                          name="gender"
-                         control={control}
+                         control={createUserForm.control}
                          render={({ field }) => (
-                           <FormControl fullWidth size="small" error={!!errors.gender}>
+                           <FormControl fullWidth size="small" error={!!createUserForm.formState.errors.gender}>
                              <InputLabel>Género</InputLabel>
                              <Select
                                {...field}
@@ -1446,14 +1448,36 @@ const Users: React.FC = () => {
                                  </MenuItem>
                                ))}
                              </Select>
-                             {errors.gender && (
+                             {createUserForm.formState.errors.gender && (
                                <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
-                                 {errors.gender.message}
+                                 {createUserForm.formState.errors.gender.message}
                                </Typography>
                              )}
                            </FormControl>
                          )}
                        />
+                       
+                     </Box>
+                     <Box>  
+                          <LocalizationProvider dateAdapter={AdapterDayjs}> 
+                           <DatePicker
+                             label="Fecha de nacimiento"
+                             format="DD/MM/YYYY"
+                            value={createUserForm.getValues('dateOfBirth') ? dayjs(createUserForm.getValues('dateOfBirth')) : undefined}
+                            onChange={(date) => {
+                              createUserForm.setValue('dateOfBirth', date?.toDate() ?? new Date());
+                            }}      
+                            minDate={dayjs('1900-01-01')}
+                             maxDate={dayjs(new Date())}
+                             disabled={isCreating}
+                             slotProps={{
+                              textField: {
+                                size: 'small',
+                                fullWidth: true,
+                              }
+                            }}
+                           />
+                           </LocalizationProvider>
                      </Box>
                    </Box>
                  </Box>
@@ -1467,9 +1491,9 @@ const Users: React.FC = () => {
                      <Box sx={{ display: 'flex', gap: 2 }}>
                        <Controller
                          name="state"
-                         control={control}
+                         control={createUserForm.control}
                          render={({ field }) => (
-                           <FormControl fullWidth size="small" error={!!errors.state}>
+                           <FormControl fullWidth size="small" error={!!createUserForm.formState.errors.state}>
                              <InputLabel>Estado</InputLabel>
                              <Select
                                {...field}
@@ -1482,9 +1506,9 @@ const Users: React.FC = () => {
                                  </MenuItem>
                                ))}
                              </Select>
-                             {errors.state && (
+                             {createUserForm.formState.errors.state && (
                                <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
-                                 {errors.state.message}
+                                 {createUserForm.formState.errors.state.message}
                                </Typography>
                              )}
                            </FormControl>
@@ -1492,7 +1516,7 @@ const Users: React.FC = () => {
                        />
                        <Controller
                          name="city"
-                         control={control}
+                         control={createUserForm.control}
                          render={({ field }) => (
                            <TextField
                              {...field}
@@ -1500,8 +1524,8 @@ const Users: React.FC = () => {
                              variant="outlined"
                              size="small"
                              fullWidth
-                             error={!!errors.city}
-                             helperText={errors.city?.message}
+                             error={!!createUserForm.formState.errors.city}
+                             helperText={createUserForm.formState.errors.city?.message}
                              disabled={isCreating}
                            />
                          )}
@@ -1509,7 +1533,7 @@ const Users: React.FC = () => {
                      </Box>
                      <Controller
                        name="address"
-                       control={control}
+                       control={createUserForm.control}
                        render={({ field }) => (
                          <TextField
                            {...field}
@@ -1517,8 +1541,8 @@ const Users: React.FC = () => {
                            variant="outlined"
                            size="small"
                            fullWidth
-                           error={!!errors.address}
-                           helperText={errors.address?.message}
+                           error={!!createUserForm.formState.errors.address}
+                           helperText={createUserForm.formState.errors.address?.message}
                            disabled={isCreating}
                          />
                        )}
@@ -1526,7 +1550,7 @@ const Users: React.FC = () => {
                      <Box sx={{ display: 'flex', gap: 2 }}>
                        <Controller
                          name="district"
-                         control={control}
+                         control={createUserForm.control}
                          render={({ field }) => (
                            <TextField
                              {...field}
@@ -1534,15 +1558,15 @@ const Users: React.FC = () => {
                              variant="outlined"
                              size="small"
                              fullWidth
-                             error={!!errors.district}
-                             helperText={errors.district?.message}
+                             error={!!createUserForm.formState.errors.district}
+                             helperText={createUserForm.formState.errors.district?.message}
                              disabled={isCreating}
                            />
                          )}
                        />
                        <Controller
                          name="zipCode"
-                         control={control}
+                         control={createUserForm.control}
                          render={({ field }) => (
                            <TextField
                              {...field}
@@ -1550,8 +1574,8 @@ const Users: React.FC = () => {
                              variant="outlined"
                              size="small"
                              fullWidth
-                             error={!!errors.zipCode}
-                             helperText={errors.zipCode?.message}
+                             error={!!createUserForm.formState.errors.zipCode}
+                             helperText={createUserForm.formState.errors.zipCode?.message}
                              disabled={isCreating}
                              inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 5 }}
                              onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
@@ -1571,7 +1595,7 @@ const Users: React.FC = () => {
                      <Box sx={{ display: 'flex', gap: 2 }}>
                        <Controller
                          name="email"
-                         control={control}
+                         control={createUserForm.control}
                          render={({ field }) => (
                            <TextField
                              {...field}
@@ -1580,17 +1604,17 @@ const Users: React.FC = () => {
                              variant="outlined"
                              size="small"
                              fullWidth
-                             error={!!errors.email}
-                             helperText={errors.email?.message}
+                             error={!!createUserForm.formState.errors.email}
+                             helperText={createUserForm.formState.errors.email?.message}
                              disabled={isCreating}
                            />
                          )}
                        />
                        <Controller
                          name="role"
-                         control={control}
+                         control={createUserForm.control}
                          render={({ field }) => (
-                           <FormControl fullWidth size="small" error={!!errors.role}>
+                           <FormControl fullWidth size="small" error={!!createUserForm.formState.errors.role}>
                              <InputLabel>Rol</InputLabel>
                              <Select
                                {...field}
@@ -1603,9 +1627,9 @@ const Users: React.FC = () => {
                                  </MenuItem>
                                ))}
                              </Select>
-                             {errors.role && (
+                             {createUserForm.formState.errors.role && (
                                <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
-                                 {errors.role.message}
+                                 {createUserForm.formState.errors.role.message}
                                </Typography>
                              )}
                            </FormControl>
@@ -1615,7 +1639,7 @@ const Users: React.FC = () => {
                      <Box sx={{ display: 'flex', gap: 2 }}>
                        <Controller
                          name="password"
-                         control={control}
+                         control={createUserForm.control}
                          render={({ field }) => (
                            <TextField
                              {...field}
@@ -1624,8 +1648,8 @@ const Users: React.FC = () => {
                              variant="outlined"
                              size="small"
                              fullWidth
-                             error={!!errors.password}
-                             helperText={errors.password?.message}
+                             error={!!createUserForm.formState.errors.password}
+                             helperText={createUserForm.formState.errors.password?.message}
                              disabled={isCreating}
                              InputProps={{
                                endAdornment: (
@@ -1645,7 +1669,7 @@ const Users: React.FC = () => {
                        />
                        <Controller
                          name="confirmPassword"
-                         control={control}
+                         control={createUserForm.control}
                          render={({ field }) => (
                            <TextField
                              {...field}
@@ -1654,8 +1678,8 @@ const Users: React.FC = () => {
                              variant="outlined"
                              size="small"
                              fullWidth
-                             error={!!errors.confirmPassword}
-                             helperText={errors.confirmPassword?.message}
+                             error={!!createUserForm.formState.errors.confirmPassword}
+                             helperText={createUserForm.formState.errors.confirmPassword?.message}
                              disabled={isCreating}
                              InputProps={{
                                endAdornment: (
@@ -1735,7 +1759,7 @@ const Users: React.FC = () => {
                         Nombre:
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {watch('firstName') || 'No especificado'}
+                        {createUserForm.getValues('firstName') || 'No especificado'}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
@@ -1743,7 +1767,7 @@ const Users: React.FC = () => {
                         Apellido:
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {watch('lastName') || 'No especificado'}
+                        {createUserForm.getValues('lastName') || 'No especificado'}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
@@ -1751,7 +1775,7 @@ const Users: React.FC = () => {
                         Teléfono:
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {watch('phone') || 'No especificado'}
+                        {createUserForm.getValues('phone') || 'No especificado'}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
@@ -1759,7 +1783,15 @@ const Users: React.FC = () => {
                         Género:
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {userOptions?.genders.find(g => g.value === watch('gender'))?.label || 'No especificado'}
+                        {userOptions?.genders.find(g => g.value === createUserForm.getValues('gender'))?.label || 'No especificado'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
+                      <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
+                        Fecha de nacimiento:
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {createUserForm.getValues('dateOfBirth') ? formatDatePart(createUserForm.getValues('dateOfBirth')) : 'No especificado'}
                       </Typography>
                     </Box>
                   </Box>
@@ -1776,7 +1808,7 @@ const Users: React.FC = () => {
                         Estado:
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {userOptions?.states.find(s => s.value === watch('state'))?.label || 'No especificado'}
+                        {userOptions?.states.find(s => s.value === createUserForm.getValues('state'))?.label || 'No especificado'}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
@@ -1784,7 +1816,7 @@ const Users: React.FC = () => {
                         Ciudad:
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {watch('city') || 'No especificado'}
+                        {createUserForm.getValues('city') || 'No especificado'}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
@@ -1792,7 +1824,7 @@ const Users: React.FC = () => {
                         Dirección:
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {watch('address') || 'No especificado'}
+                        {createUserForm.getValues('address') || 'No especificado'}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
@@ -1800,7 +1832,7 @@ const Users: React.FC = () => {
                         Colonia:
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {watch('district') || 'No especificado'}
+                        {createUserForm.getValues('district') || 'No especificado'}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
@@ -1808,7 +1840,7 @@ const Users: React.FC = () => {
                         Código Postal:
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {watch('zipCode') || 'No especificado'}
+                        {createUserForm.getValues('zipCode') || 'No especificado'}
                       </Typography>
                     </Box>
                   </Box>
@@ -1825,7 +1857,7 @@ const Users: React.FC = () => {
                         Email:
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {watch('email') || 'No especificado'}
+                        {createUserForm.getValues('email') || 'No especificado'}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
@@ -1833,7 +1865,7 @@ const Users: React.FC = () => {
                         Rol:
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {userOptions?.roles.find(r => r.value === watch('role'))?.label || 'No especificado'}
+                        {userOptions?.roles.find(r => r.value === createUserForm.getValues('role'))?.label || 'No especificado'}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
@@ -1841,7 +1873,7 @@ const Users: React.FC = () => {
                         Contraseña:
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {watch('password') ? '••••••••' : 'No especificado'}
+                        {createUserForm.getValues('password') ? '••••••••' : 'No especificado'}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
@@ -1849,7 +1881,7 @@ const Users: React.FC = () => {
                         Confirmar Contraseña:
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {watch('confirmPassword') ? '••••••••' : 'No especificado'}
+                        {createUserForm.getValues('confirmPassword') ? '••••••••' : 'No especificado'}
                       </Typography>
                     </Box>
                   </Box>
@@ -1885,7 +1917,7 @@ const Users: React.FC = () => {
                <Button 
                  type="primary" 
                  onClick={handleNext}
-                 disabled={!isValid || isCreating || !profileImageFile}
+                 disabled={!createUserForm.formState.isValid || isCreating || !profileImageFile}
                >
                  Siguiente
                </Button>
@@ -1903,7 +1935,7 @@ const Users: React.FC = () => {
                      </Button>
                      <Button 
                        type="primary" 
-                       onClick={handleSubmit(onSubmit)}
+                       onClick={createUserForm.handleSubmit(onSubmit)}
                        disabled={isCreating}
                      >
                        {isCreating ? (

@@ -17,6 +17,11 @@ import type { ChangePasswordRequest } from '../../models/ChangePasswordRequest';
 import { Button } from '../../components/Button';
 import { CopyToClipboard } from '../../components/CopyToClipboard/CopyToClipboard';
 import authenticationHelper from '../../util/AuthenticationHelper';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import dayjs from 'dayjs';
+import * as dateHelper from '../../util/DateHelper';
 
 // Schema de validación para datos personales
 const personalDataSchema = z.object({
@@ -29,7 +34,10 @@ const personalDataSchema = z.object({
     phone: z.string()
         .min(1, 'El teléfono es requerido')
         .regex(/^\d{10}$/, 'El teléfono debe tener exactamente 10 dígitos numéricos'),
-    genderId: z.string().min(1, 'El género es requerido')
+    genderId: z.string().min(1, 'El género es requerido'),
+    dateOfBirth: z.date("La fecha de nacimiento es requerida")
+        .min(new Date('1900-01-01'), 'La fecha de nacimiento debe ser mayor a 1900')
+        .max(new Date(), 'La fecha de nacimiento no puede ser mayor a la fecha actual')
 });
 
 type PersonalDataFormData = z.infer<typeof personalDataSchema>;
@@ -192,7 +200,8 @@ const UserPage: React.FC = () => {
             firstName: '',
             lastName: '',
             phone: '',
-            genderId: ''
+            genderId: '',
+            dateOfBirth: new Date()
         }
     });
 
@@ -226,14 +235,15 @@ const UserPage: React.FC = () => {
         }
     });
 
-    // Actualizar valores del formulario cuando se carga el usuario
     useEffect(() => {
         if (state.status === UserPageStatus.SUCCESS) {
+            const localDate = dateHelper.parseLocalDate(state.user.dateOfBirth);
             personalDataForm.reset({
                 firstName: state.user.firstName,
                 lastName: state.user.lastName,
                 phone: state.user.phone,
-                genderId: state.user.gender.id
+                genderId: state.user.gender.id,
+                dateOfBirth: localDate
             });
             
             addressForm.reset({
@@ -264,9 +274,7 @@ const UserPage: React.FC = () => {
         setState({ status: UserPageStatus.LOADING });
         
         try {
-            // Solo cargar el usuario, no los options
             const user = await userService.getFullUserById(userId);
-            
             setState({ 
                 status: UserPageStatus.SUCCESS, 
                 user
@@ -387,7 +395,8 @@ const UserPage: React.FC = () => {
                 firstName: formData.firstName,
                 lastName: formData.lastName,
                 phone: formData.phone,
-                genderId: formData.genderId
+                genderId: formData.genderId,
+                dateOfBirth: formData.dateOfBirth
             };
 
             const response = await userService.updateUserPersonalData(userId, request);
@@ -401,7 +410,8 @@ const UserPage: React.FC = () => {
                         firstName: response.firstName,
                         lastName: response.lastName,
                         phone: response.phone,
-                        gender: response.gender
+                        gender: response.gender,
+                        dateOfBirth: response.dateOfBirth
                     }
                 });
             }
@@ -602,6 +612,8 @@ const UserPage: React.FC = () => {
         loadUserData();
     }, [location.pathname]); // Se ejecuta cuando cambia la ruta completa
 
+    const dateOfBirth = personalDataForm.watch("dateOfBirth");
+
     const renderContent = () => {
         switch (state.status) {
             case UserPageStatus.IDLE:
@@ -677,6 +689,11 @@ const UserPage: React.FC = () => {
                 );
             
             case UserPageStatus.SUCCESS:
+                function log(arg0: any): any {
+                    alert(arg0);
+                    return arg0;
+                }
+
                 return (
                     <Box sx={{ width: '100%' }}>
                         {/* Sección Superior */}
@@ -799,7 +816,8 @@ const UserPage: React.FC = () => {
                                                                 firstName: state.user.firstName,
                                                                 lastName: state.user.lastName,
                                                                 phone: state.user.phone,
-                                                                genderId: state.user.gender.id
+                                                                genderId: state.user.gender.id,
+                                                                dateOfBirth: new Date(state.user.dateOfBirth)
                                                             });
                                                         }
                                                         setIsEditingBasicInfo(false);
@@ -957,6 +975,37 @@ const UserPage: React.FC = () => {
                                                         {state.user.gender.name}
                                                     </Typography>
                                                 )}
+                                            </Box>
+                                            <Box sx={{ display: 'flex', alignItems: isEditingBasicInfo ? 'flex-start' : 'center', gap: 1 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: isEditingBasicInfo ? 0.5 : 0 }}>
+                                                    Fecha nacimiento:
+                                                </Typography>
+                                            {isEditingBasicInfo ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                                <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+                                                <DatePicker
+                                                slotProps={{ textField: { size: 'small', sx: { width: '300px' } } }} 
+                                                  label="Fecha de nacimiento"
+                                                  value={
+                                                    dateOfBirth ? (dayjs(dateOfBirth)) : null 
+                                                  }
+                                                  onChange={(date) => {
+                                                    personalDataForm.setValue(
+                                                      "dateOfBirth",
+                                                      date?.toDate() ?? new Date()
+                                                    );
+                                                  }}
+                                                />
+                                              </LocalizationProvider>
+                                              <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                                                {personalDataForm.formState.errors.dateOfBirth?.message}
+                                               </Typography>
+                                               </div>
+                                            ) : (
+                                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                                    {(dayjs(personalDataForm.getValues('dateOfBirth')).format('DD/MMM/YYYY'))}
+                                                </Typography>
+                                            )}
                                             </Box>
                                         </Box>
                                     </Box>
@@ -1759,6 +1808,14 @@ const UserPage: React.FC = () => {
                                             ? userOptions?.genders.find(g => g.value === personalDataForm.getValues('genderId'))?.label || 'N/A'
                                             : 'N/A'
                                         }
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="body2" color="text.secondary" sx={{ minWidth: 80 }}>
+                                        F. nacim.:
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                        {dayjs(personalDataForm.getValues('dateOfBirth')).format('DD/MMM/YYYY')}
                                     </Typography>
                                 </Box>
                             </Box>

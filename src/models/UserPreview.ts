@@ -9,5 +9,6 @@ export type UserPreview = {
     registrationDate: string;
     activeLoans: string;
     profilePictureUrl: string;
+    dateOfBirth: Date;
     permissions: string[];
 }
