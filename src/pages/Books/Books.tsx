@@ -394,6 +394,13 @@ const Books: React.FC = () => {
   };
 
   const renderAuthors = (authors: string[]) => {
+    if (authors.length === 0) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <span>---</span>
+        </div>
+      );
+    }
     if (authors.length <= 2) {
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>

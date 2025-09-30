@@ -5,194 +5,53 @@ import type { GetAuthorPreviewsRequest } from "../models/GetAuthorPreviewsReques
 import type { AuthorOptions } from "../models/AuthorOptions";
 import type { UpdateAuthorRequest } from "../models/UpdateAuthorRequest";
 import type { AuthorResponse } from "../models/AuthorResponse";
-import { appConfig } from "../config/AppConfig"; 
 import * as paginationRequest from '../models/PaginationRequest';
 import * as getAuthorPreviewsRequest from '../models/GetAuthorPreviewsRequest';
 import * as URLSearchParamsHelpers from '../util/URLSearchParamsHelpers';
-import authenticationHelper from "../util/AuthenticationHelper";
-import { ProblemDetailError, unknownErrorProblemDetail } from "../models/ProblemDetail";
 import { datePartString } from "../util/DateHelper";
+import apiClient from "./ApiClient";
 
 class AuthorService {
     async getAuthorPreviews(filters: GetAuthorPreviewsRequest, pagination: PaginationRequest): Promise<PaginationResponse<AuthorPreview>> {
-        try {   
-            const queryString = authorPreviewsQueryString(filters, pagination);
-
-            const url = `${appConfig.apiUrl}/api/v1/authors?${queryString}`;
-
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${authenticationHelper.getAuthentication()?.accessToken}`
-                },
-                credentials: 'include'
-            });
-
-            if (!response.ok) {
-                const problemDetail = await response.json();
-                throw new ProblemDetailError(problemDetail);
-            }
-
-            const authors: PaginationResponse<AuthorPreview> = await response.json();
-
-            return authors;
-        } catch (error) {
-            if (error instanceof ProblemDetailError) {
-                throw error;
-            }
-            throw unknownErrorProblemDetail();
-        }
+        const queryString = authorPreviewsQueryString(filters, pagination);
+        return apiClient.get(`/api/v1/authors?${queryString}`);
     }
 
     async getAuthorOptions(): Promise<AuthorOptions> {
-        try {
-            const url = `${appConfig.apiUrl}/api/v1/authors/options`;
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${authenticationHelper.getAuthentication()?.accessToken}`
-                },
-                credentials: 'include'
-            });
-
-            if (!response.ok) {
-                const problemDetail = await response.json();
-                throw new ProblemDetailError(problemDetail);
-            }
-
-            const options: AuthorOptions = await response.json();
-            
-            return options;
-        } catch (error) {
-            if (error instanceof ProblemDetailError) {
-                throw error;
-            }
-            throw unknownErrorProblemDetail();
-        }
+        return apiClient.get(`/api/v1/authors/options`);
     }
 
     async updateAuthor(id: string, request: UpdateAuthorRequest): Promise<AuthorResponse> {
-        try {
-            const url = `${appConfig.apiUrl}/api/v1/authors/${id}`;
-            
-            const response = await fetch(url, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${authenticationHelper.getAuthentication()?.accessToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    firstName: request.firstName,
-                    lastName: request.lastName,
-                    dateOfBirth: datePartString(request.dateOfBirth),
-                    countryId: request.countryId
-                }),
-                credentials: 'include'
-            });
-
-            if (!response.ok) {
-                const problemDetail = await response.json();
-                throw new ProblemDetailError(problemDetail);
-            }
-
-            const author: AuthorResponse = await response.json();
-            
-            return author;
-        } catch (error) {
-            if (error instanceof ProblemDetailError) {
-                throw error;
-            }
-            throw unknownErrorProblemDetail();
+        const requestToSend = {
+            firstName: request.firstName,
+            lastName: request.lastName,
+            dateOfBirth: datePartString(request.dateOfBirth),
+            countryId: request.countryId
         }
+        return apiClient.put(`/api/v1/authors/${id}`, requestToSend);
     }
 
     async createAuthor(request: UpdateAuthorRequest): Promise<AuthorResponse> {
-        try {
-            const url = `${appConfig.apiUrl}/api/v1/authors`;
-            
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${authenticationHelper.getAuthentication()?.accessToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    firstName: request.firstName,
-                    lastName: request.lastName,
-                    dateOfBirth: datePartString(request.dateOfBirth),
-                    countryId: request.countryId
-                }),
-                credentials: 'include'
-            });
-
-            if (!response.ok) {
-                const problemDetail = await response.json();
-                throw new ProblemDetailError(problemDetail);
-            }
-
-            const author: AuthorResponse = await response.json();
-            
-            return author;
-        } catch (error) {
-            if (error instanceof ProblemDetailError) {
-                throw error;
-            }
-            throw unknownErrorProblemDetail();
+        const requestToSend = {
+            firstName: request.firstName,
+            lastName: request.lastName,
+            dateOfBirth: datePartString(request.dateOfBirth),
+            countryId: request.countryId
         }
+        return apiClient.post(`/api/v1/authors`, requestToSend);
     }
 
     async deleteById(id: string): Promise<void> {
-        try {
-            const url = `${appConfig.apiUrl}/api/v1/authors/${id}`;
-            
-            const response = await fetch(url, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${authenticationHelper.getAuthentication()?.accessToken}`
-                },
-                credentials: 'include'
-            });
-
-            if (!response.ok) {
-                const problemDetail = await response.json();
-                throw new ProblemDetailError(problemDetail);
-            }
-
-            // No hay body en la respuesta, solo código 2XX
-        } catch (error) {
-            if (error instanceof ProblemDetailError) {
-                throw error;
-            }
-            throw unknownErrorProblemDetail();
-        }
+        return apiClient.delete(`/api/v1/authors/${id}`);
     }
 
     async exportAuthors(ids: string[]): Promise<Blob> {
-        try {
-            const response = await fetch(`${appConfig.apiUrl}/api/v1/authors/export`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${authenticationHelper.getAuthentication()?.accessToken}`
-                },
-                body: JSON.stringify({
-                    format: "pdf",
-                    ids
-                }),
-                credentials: 'include'
-            });
-        
-            if (!response.ok) {
-                const problemDetail = await response.json();
-                throw new ProblemDetailError(problemDetail);
-            }
-        
-            return await response.blob();
-
-        } catch (error) {
-            if (error instanceof ProblemDetailError) {
-                throw error;
-            }
-            throw unknownErrorProblemDetail();
+        const request = {
+            format: "pdf",
+            ids
         }
+        const response = await apiClient.post<Response>(`/api/v1/authors/export`, request);
+        return response.blob();
     }
 }
 
