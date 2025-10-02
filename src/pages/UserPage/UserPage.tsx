@@ -251,11 +251,11 @@ const UserPage: React.FC = () => {
             });
             
             addressForm.reset({
-                address: state.user.address?.address,
-                zipCode: state.user.address?.zipCode,
-                district: state.user.address?.district,
-                city: state.user.address?.city,
-                stateId: state.user.address?.state.id
+                address: state.user.address?.address || '',
+                zipCode: state.user.address?.zipCode || '',
+                district: state.user.address?.district || '',
+                city: state.user.address?.city || '',
+                stateId: state.user.address?.state.id || ''
             });
 
             accountForm.reset({
