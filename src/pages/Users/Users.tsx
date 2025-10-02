@@ -168,8 +168,6 @@ const Users: React.FC = () => {
   // Estados del modal de creación de usuario
   const [createUserModalOpen, setCreateUserModalOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
-  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
-  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -199,28 +197,9 @@ const Users: React.FC = () => {
   const handleCreateUserClick = () => {
     setCreateUserModalOpen(true);
     setActiveStep(0);
-    setProfileImagePreview(null);
-    setProfileImageFile(null);
     setCreatedUser(null);
     setCreateUserError(null);
     createUserForm.reset();
-  };
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setProfileImageFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setProfileImagePreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemoveImage = () => {
-    setProfileImagePreview(null);
-    setProfileImageFile(null);
   };
 
   const handleTogglePasswordVisibility = () => setShowPassword(prev => !prev);
@@ -232,14 +211,12 @@ const Users: React.FC = () => {
 
   const handleBack = () => {
     setActiveStep(0);
-    setCreateUserError(null); // Limpiar el error al volver atrás
+    setCreateUserError(null); 
   };
 
   const handleCloseModal = () => {
     setCreateUserModalOpen(false);
     setActiveStep(0);
-    setProfileImagePreview(null);
-    setProfileImageFile(null);
     setCreatedUser(null);
     setCreateUserError(null);
     createUserForm.reset();
@@ -269,7 +246,6 @@ const Users: React.FC = () => {
           email: data.email,
           roleId: data.role,
           password: data.password,
-          profilePicture: profileImageFile!
         }
       };
 
@@ -1284,75 +1260,7 @@ const Users: React.FC = () => {
           </Stepper>
 
           {activeStep === 0 && (
-            <Box sx={{ display: 'flex', gap: 3, minHeight: '400px' }}>
-              {/* Sección izquierda - Imagen */}
-              <Box sx={{ width: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                {!profileImagePreview ? (
-                   <Box
-                     sx={{
-                       width: '100%',
-                       height: '300px',
-                       border: '2px dashed #d1d5db',
-                       borderRadius: '8px',
-                       display: 'flex',
-                       flexDirection: 'column',
-                       alignItems: 'center',
-                       justifyContent: 'center',
-                       cursor: 'pointer',
-                       '&:hover': {
-                         borderColor: '#4F46E5',
-                         backgroundColor: '#f8fafc'
-                       }
-                     }}
-                     onClick={() => document.getElementById('image-upload')?.click()}
-                   >
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      Subir imagen
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Click para seleccionar
-                    </Typography>
-                    <input
-                      id="image-upload"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      style={{ display: 'none' }}
-                    />
-                  </Box>
-                ) : (
-                  <Box sx={{ width: '100%', textAlign: 'center' }}>
-                     <Box
-                       component="img"
-                       src={profileImagePreview}
-                       alt="Preview"
-                       sx={{
-                         width: '100%',
-                         height: '300px',
-                         objectFit: 'cover',
-                         borderRadius: '8px',
-                         mb: 2
-                       }}
-                     />
-                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                      <Button type="secondary" onClick={handleRemoveImage}>
-                        Borrar
-                      </Button>
-                      <Button type="primary" onClick={() => document.getElementById('image-upload')?.click()}>
-                        Cambiar
-                      </Button>
-                    </Box>
-                    <input
-                      id="image-upload"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      style={{ display: 'none' }}
-                    />
-                  </Box>
-                )}
-              </Box>
-
+            <Box sx={{ minHeight: '400px' }}>
               {/* Sección derecha - Formulario */}
               <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
                  {/* Información Básica */}
@@ -1584,42 +1492,7 @@ const Users: React.FC = () => {
           )}
 
           {activeStep === 1 && (
-            <Box sx={{ display: 'flex', gap: 3, minHeight: '400px' }}>
-              {/* Sección izquierda - Imagen preview */}
-              <Box sx={{ width: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                {profileImagePreview ? (
-                  <Box
-                    component="img"
-                    src={profileImagePreview}
-                    alt="Preview"
-                    sx={{
-                      width: '100%',
-                      height: '300px',
-                      objectFit: 'cover',
-                      borderRadius: '8px',
-                      mb: 2
-                    }}
-                  />
-                ) : (
-                  <Box
-                    sx={{
-                      width: '100%',
-                      height: '300px',
-                      border: '2px dashed #d1d5db',
-                      borderRadius: '8px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      bgcolor: '#f8fafc'
-                    }}
-                  >
-                    <Typography variant="body2" color="text.secondary">
-                      Sin imagen
-                    </Typography>
-                  </Box>
-                )}
-              </Box>
+            <Box sx={{ minHeight: '400px' }}>
 
               {/* Sección derecha - Resumen de datos */}
               <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -1747,7 +1620,7 @@ const Users: React.FC = () => {
                <Button 
                  type="primary" 
                  onClick={handleNext}
-                 disabled={!createUserForm.formState.isValid || isCreating || !profileImageFile}
+                 disabled={!createUserForm.formState.isValid || isCreating }
                >
                  Siguiente
                </Button>

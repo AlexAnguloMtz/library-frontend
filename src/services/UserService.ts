@@ -63,9 +63,6 @@ class UserService {
             account: {
                 ...request.account,
             },
-            address: {
-                ...request.address,
-            },
             personalData: {
                 ...request.personalData,
                 dateOfBirth: datePartString(request.personalData.dateOfBirth)
@@ -80,16 +77,9 @@ class UserService {
         formData.append('personalData.genderId', requestToSend.personalData.genderId);
         formData.append('personalData.dateOfBirth', requestToSend.personalData.dateOfBirth);
         
-        formData.append('address.address', requestToSend.address.address);
-        formData.append('address.stateId', requestToSend.address.stateId);
-        formData.append('address.city', requestToSend.address.city);
-        formData.append('address.district', requestToSend.address.district);
-        formData.append('address.zipCode', requestToSend.address.zipCode);
-        
         formData.append('account.email', requestToSend.account.email);
         formData.append('account.roleId', requestToSend.account.roleId);
         formData.append('account.password', requestToSend.account.password);
-        formData.append('account.profilePicture', requestToSend.account.profilePicture);
     
         return apiClient.post(`/api/v1/users`, formData);
     }
