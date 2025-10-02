@@ -23,6 +23,8 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import * as dateHelper from '../../util/DateHelper';
 
+const EMPTY_FIELD_TEXT = '---';
+
 // Schema de validación para datos personales
 const personalDataSchema = z.object({
     firstName: z.string()
@@ -249,11 +251,11 @@ const UserPage: React.FC = () => {
             });
             
             addressForm.reset({
-                address: state.user.address.address,
-                zipCode: state.user.address.zipCode,
-                district: state.user.address.district,
-                city: state.user.address.city,
-                stateId: state.user.address.state.id
+                address: state.user.address?.address,
+                zipCode: state.user.address?.zipCode,
+                district: state.user.address?.district,
+                city: state.user.address?.city,
+                stateId: state.user.address?.state.id
             });
 
             accountForm.reset({
@@ -1030,14 +1032,13 @@ const UserPage: React.FC = () => {
                                             {isEditingAddress ? (
                                                 <Box sx={{ display: 'flex', gap: 1 }}>
                                                     <Button type="secondary" onClick={() => {
-                                                        // Resetear el formulario a los valores originales
                                                         if (state.status === UserPageStatus.SUCCESS) {
                                                             addressForm.reset({
-                                                                address: state.user.address.address,
-                                                                zipCode: state.user.address.zipCode,
-                                                                district: state.user.address.district,
-                                                                city: state.user.address.city,
-                                                                stateId: state.user.address.state.id
+                                                                address: state.user.address?.address,
+                                                                zipCode: state.user.address?.zipCode,
+                                                                district: state.user.address?.district,
+                                                                city: state.user.address?.city,
+                                                                stateId: state.user.address?.state.id
                                                             });
                                                         }
                                                         setIsEditingAddress(false);
@@ -1096,7 +1097,7 @@ const UserPage: React.FC = () => {
                                                     />
                                                 ) : (
                                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                        {state.user.address.state.name}
+                                                        {state.user.address?.state.name || EMPTY_FIELD_TEXT}
                                                     </Typography>
                                                 )}
                                             </Box>
@@ -1126,7 +1127,7 @@ const UserPage: React.FC = () => {
                                                     />
                                                 ) : (
                                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                        {state.user.address.city}
+                                                        {state.user.address?.city || EMPTY_FIELD_TEXT}
                                                     </Typography>
                                                 )}
                                             </Box>
@@ -1156,7 +1157,7 @@ const UserPage: React.FC = () => {
                                                     />
                                                 ) : (
                                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                        {state.user.address.address}
+                                                        {state.user.address?.address || EMPTY_FIELD_TEXT}
                                                     </Typography>
                                                 )}
                                             </Box>
@@ -1186,7 +1187,7 @@ const UserPage: React.FC = () => {
                                                     />
                                                 ) : (
                                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                        {state.user.address.district}
+                                                        {state.user.address?.district || EMPTY_FIELD_TEXT}
                                                     </Typography>
                                                 )}
                                             </Box>
@@ -1216,7 +1217,7 @@ const UserPage: React.FC = () => {
                                                     />
                                                 ) : (
                                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                        {state.user.address.zipCode}
+                                                        {state.user.address?.zipCode || EMPTY_FIELD_TEXT}
                                                     </Typography>
                                                 )}
                                             </Box>

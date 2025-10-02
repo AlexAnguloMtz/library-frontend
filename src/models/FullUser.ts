@@ -10,7 +10,7 @@ export type FullUser = {
     email: string;
     phone: string;
     role: RoleResponse;
-    address: UserAddressResponse;
+    address: UserAddressResponse | null;
     gender: GenderResponse;
     registrationDate: string;
     profilePictureUrl: string;

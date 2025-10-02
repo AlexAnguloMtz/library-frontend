@@ -20,6 +20,7 @@ import bookService from '../../services/BookService';
 import type { BookResponse } from '../../models/BookResponse';
 import type { OptionResponse } from '../../models/OptionResponse';
 import type { BookOptionsResponse } from '../../models/BookOptionsResponse';
+import { BookFormModal } from '../../components/BookFormModal/BookFormModal';
 
 type BookFilters = {
   search: string;
@@ -1086,49 +1087,6 @@ const Books: React.FC = () => {
               </Button>
             </>
           )}
-        </DialogActions>
-      </Dialog>
-
-      {/* Modal de crear libro */}
-      <Dialog 
-        open={createModalOpen} 
-        onClose={handleCloseCreateModal}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          textAlign: 'left', 
-          pb: 1,
-          fontSize: '1.25rem',
-          fontWeight: 600,
-          color: '#1f2937'
-        }}>
-          Crear libro
-        </DialogTitle>
-        
-        <DialogContent sx={{ pt: 2, pb: 3, paddingTop: '14px' }}>
-          {/* Contenido en blanco como solicitado */}
-        </DialogContent>
-
-        <DialogActions sx={{ 
-          p: 3, 
-          pt: 1,
-          gap: 0.5,
-          justifyContent: 'flex-end'
-        }}>
-          <Button 
-            type='secondary' 
-            onClick={handleCloseCreateModal}
-            className='small-button'
-          >
-            Cerrar
-          </Button>
         </DialogActions>
       </Dialog>
     </div>

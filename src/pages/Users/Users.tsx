@@ -48,11 +48,6 @@ const createUserSchema = z.object({
   dateOfBirth: z.date("La fecha de nacimiento es requerida")
     .min(new Date('1900-01-01'), 'La fecha de nacimiento debe ser mayor a 1900')
     .max(new Date(), 'La fecha de nacimiento no puede ser mayor a la fecha actual'),
-  state: z.string().min(1, 'El estado es requerido'),
-  city: z.string().min(1, 'La ciudad es requerida'),
-  address: z.string().min(1, 'La dirección es requerida'),
-  district: z.string().min(1, 'La colonia es requerida'),
-  zipCode: z.string().min(1, 'El código postal es requerido').regex(/^\d{5}$/, 'El código postal debe tener exactamente 5 dígitos'),
   email: z.string().min(1, 'El email es requerido').email('El email no es válido'),
   role: z.string().min(1, 'El rol es requerido'),
   password: z.string().min(1, 'La contraseña es requerida').min(8, 'La contraseña debe tener al menos 8 caracteres'),
@@ -191,11 +186,6 @@ const Users: React.FC = () => {
       phone: '',
       gender: '',
       dateOfBirth: undefined, 
-      state: '',
-      city: '',
-      address: '',
-      district: '',
-      zipCode: '',
       email: '',
       role: '',
       password: '',
@@ -274,13 +264,6 @@ const Users: React.FC = () => {
           phone: data.phone,
           genderId: data.gender,
           dateOfBirth: data.dateOfBirth!
-        },
-        address: {
-          address: data.address,
-          stateId: data.state,
-          city: data.city,
-          district: data.district,
-          zipCode: data.zipCode
         },
         account: {
           email: data.email,
@@ -1482,110 +1465,6 @@ const Users: React.FC = () => {
                    </Box>
                  </Box>
 
-                 {/* Domicilio */}
-                 <Box>
-                   <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                     Domicilio
-                   </Typography>
-                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                     <Box sx={{ display: 'flex', gap: 2 }}>
-                       <Controller
-                         name="state"
-                         control={createUserForm.control}
-                         render={({ field }) => (
-                           <FormControl fullWidth size="small" error={!!createUserForm.formState.errors.state}>
-                             <InputLabel>Estado</InputLabel>
-                             <Select
-                               {...field}
-                               label="Estado"
-                               disabled={isCreating}
-                             >
-                               {userOptions?.states.map((state) => (
-                                 <MenuItem key={state.value} value={state.value}>
-                                   {state.label}
-                                 </MenuItem>
-                               ))}
-                             </Select>
-                             {createUserForm.formState.errors.state && (
-                               <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
-                                 {createUserForm.formState.errors.state.message}
-                               </Typography>
-                             )}
-                           </FormControl>
-                         )}
-                       />
-                       <Controller
-                         name="city"
-                         control={createUserForm.control}
-                         render={({ field }) => (
-                           <TextField
-                             {...field}
-                             label="Ciudad"
-                             variant="outlined"
-                             size="small"
-                             fullWidth
-                             error={!!createUserForm.formState.errors.city}
-                             helperText={createUserForm.formState.errors.city?.message}
-                             disabled={isCreating}
-                           />
-                         )}
-                       />
-                     </Box>
-                     <Controller
-                       name="address"
-                       control={createUserForm.control}
-                       render={({ field }) => (
-                         <TextField
-                           {...field}
-                           label="Calle y número"
-                           variant="outlined"
-                           size="small"
-                           fullWidth
-                           error={!!createUserForm.formState.errors.address}
-                           helperText={createUserForm.formState.errors.address?.message}
-                           disabled={isCreating}
-                         />
-                       )}
-                     />
-                     <Box sx={{ display: 'flex', gap: 2 }}>
-                       <Controller
-                         name="district"
-                         control={createUserForm.control}
-                         render={({ field }) => (
-                           <TextField
-                             {...field}
-                             label="Colonia"
-                             variant="outlined"
-                             size="small"
-                             fullWidth
-                             error={!!createUserForm.formState.errors.district}
-                             helperText={createUserForm.formState.errors.district?.message}
-                             disabled={isCreating}
-                           />
-                         )}
-                       />
-                       <Controller
-                         name="zipCode"
-                         control={createUserForm.control}
-                         render={({ field }) => (
-                           <TextField
-                             {...field}
-                             label="Código Postal"
-                             variant="outlined"
-                             size="small"
-                             fullWidth
-                             error={!!createUserForm.formState.errors.zipCode}
-                             helperText={createUserForm.formState.errors.zipCode?.message}
-                             disabled={isCreating}
-                             inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 5 }}
-                             onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
-                           />
-                         )}
-                       />
-                     </Box>
-                   </Box>
-                 </Box>
-
                  {/* Cuenta */}
                  <Box>
                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
@@ -1792,55 +1671,6 @@ const Users: React.FC = () => {
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
                         {createUserForm.getValues('dateOfBirth') ? formatDatePart(createUserForm.getValues('dateOfBirth')) : 'No especificado'}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
-
-                {/* Domicilio */}
-                <Box>
-                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                    Domicilio
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
-                      <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
-                        Estado:
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {userOptions?.states.find(s => s.value === createUserForm.getValues('state'))?.label || 'No especificado'}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
-                      <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
-                        Ciudad:
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {createUserForm.getValues('city') || 'No especificado'}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
-                      <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
-                        Dirección:
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {createUserForm.getValues('address') || 'No especificado'}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
-                      <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
-                        Colonia:
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {createUserForm.getValues('district') || 'No especificado'}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
-                      <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
-                        Código Postal:
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {createUserForm.getValues('zipCode') || 'No especificado'}
                       </Typography>
                     </Box>
                   </Box>
