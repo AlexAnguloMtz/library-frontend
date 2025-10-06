@@ -852,6 +852,13 @@ const Books: React.FC = () => {
         )}
       </div>
 
+      {/* Create Modal */}
+       <BookFormModal
+         open={createModalOpen}
+         onCloseModal={handleCloseCreateModal}
+         categories={bookOptions?.categories || []}
+       />
+
       {/* Error Modal */}
       <Dialog open={errorOpen} onClose={closeError}>
         <DialogTitle>Error</DialogTitle>

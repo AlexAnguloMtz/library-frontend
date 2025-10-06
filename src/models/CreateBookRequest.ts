@@ -4,5 +4,5 @@ export type CreateBookRequest = {
     authorIds: string[];
     categoryId: string;
     year: number;
-    image: File;
+    bookPicture: File;
 }

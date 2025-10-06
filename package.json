@@ -18,6 +18,7 @@
     "@mui/x-date-pickers": "^8.11.2",
     "@tailwindcss/vite": "^4.1.13",
     "dayjs": "^1.11.18",
+    "isbn3": "^1.2.15",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-hook-form": "^7.63.0",

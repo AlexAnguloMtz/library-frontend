@@ -7,6 +7,8 @@ import * as paginationRequest from "../models/PaginationRequest";
 import * as URLSearchParamsHelpers from "../util/URLSearchParamsHelpers";
 import type { BookOptionsResponse } from "../models/BookOptionsResponse";
 import apiClient from "./ApiClient";
+import type { CreateBookResponse } from "../models/CreateBookResponse";
+import type { CreateBookRequest } from "../models/CreateBookRequest";
 
 class BookService {
     async getBooks(request: GetBooksRequest, pagination: PaginationRequest): Promise<PaginationResponse<BookResponse>> {
@@ -17,6 +19,18 @@ class BookService {
 
     async getBookOptions(): Promise<BookOptionsResponse> {
         return apiClient.get(`/api/v1/books/options`);
+    }
+
+    async createBook(request: CreateBookRequest): Promise<CreateBookResponse> {
+        const formData = new FormData();
+        formData.append('title', request.title);
+        formData.append('isbn', request.isbn);
+        formData.append('authorIds', request.authorIds.join(','));
+        formData.append('categoryId', request.categoryId);
+        formData.append('year', request.year.toString());
+        formData.append('bookPicture', request.bookPicture);
+
+        return apiClient.post(`/api/v1/books`, formData);
     }
 
     async deleteById(id: string): Promise<void> {
