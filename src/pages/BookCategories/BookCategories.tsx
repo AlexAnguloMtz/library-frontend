@@ -60,12 +60,12 @@ type UpdateBookCategoryFormData = z.infer<typeof updateBookCategorySchema>;
 // Generate book counts: 0-900 by 10s (cached)
 const generateBookCounts = (() => {
   const counts = [];
-  
+
   // Add 0-900 by 10s
   for (let i = 0; i <= 900; i += 10) {
     counts.push(i);
   }
-  
+
   return counts;
 })();
 
@@ -214,7 +214,7 @@ const BookCategories: React.FC = () => {
     if (bookCategoriesState.status === 'success' && bookCategoriesState.response) {
       const totalBookCategories = bookCategoriesState.response.items.length;
       const selectedCount = selectedBookCategories.size;
-      
+
       if (selectedCount === 0) {
         setIsAllSelected(false);
       } else if (selectedCount === totalBookCategories) {
@@ -293,21 +293,21 @@ const BookCategories: React.FC = () => {
   const handleFilterChange = (field: keyof typeof filters, value: any) => {
     setFilters(prev => {
       const newFilters = { ...prev, [field]: value };
-      
+
       // Validar que bookCountMin no sea mayor que bookCountMax
       if (field === 'bookCountMin' && value && prev.bookCountMax) {
         if (parseInt(value) > parseInt(prev.bookCountMax)) {
           newFilters.bookCountMax = value; // Ajustar bookCountMax al nuevo bookCountMin
         }
       }
-      
+
       // Validar que bookCountMax no sea menor que bookCountMin
       if (field === 'bookCountMax' && value && prev.bookCountMin) {
         if (parseInt(value) < parseInt(prev.bookCountMin)) {
           newFilters.bookCountMin = value; // Ajustar bookCountMin al nuevo bookCountMax
         }
       }
-      
+
       return newFilters;
     });
   };
@@ -343,16 +343,16 @@ const BookCategories: React.FC = () => {
 
 
   const handleEditBookCategory = (bookCategoryId: string) => {
-    const bookCategory = bookCategoriesState.status === 'success' 
+    const bookCategory = bookCategoriesState.status === 'success'
       ? bookCategoriesState.response.items.find(bc => bc.id === bookCategoryId)
       : null;
-    
+
     if (bookCategory) {
       setBookCategoryToEdit(bookCategory);
       setEditModalOpen(true);
       setUpdateSuccess(false);
       setUpdateError(null);
-      
+
       // Llenar el formulario con los datos de la categoría
       setEditValue('name', bookCategory.name);
     }
@@ -381,13 +381,13 @@ const BookCategories: React.FC = () => {
 
   const handleDeleteConfirm = async () => {
     if (!bookCategoryToDelete) return;
-    
+
     setIsDeleting(true);
     setDeleteError(null);
-    
+
     try {
       await bookCategoryService.deleteById(bookCategoryToDelete.id);
-      
+
       // Remove book category from table
       if (bookCategoriesState.status === 'success') {
         const updatedItems = bookCategoriesState.response.items.filter(bookCategory => bookCategory.id !== bookCategoryToDelete.id);
@@ -398,7 +398,7 @@ const BookCategories: React.FC = () => {
         };
         setBookCategoriesState({ status: 'success', response: updatedResponse });
       }
-      
+
       setDeleteSuccess(true);
     } catch (error: any) {
       console.error('Error deleting book category:', error);
@@ -442,20 +442,20 @@ const BookCategories: React.FC = () => {
 
   const onEditSubmit = async (data: UpdateBookCategoryFormData) => {
     if (!bookCategoryToEdit) return;
-    
+
     setIsUpdating(true);
     setUpdateError(null);
-    
+
     try {
       const updateRequest: BookCategoryRequest = {
         name: data.name
       };
 
       const updatedBookCategory = await bookCategoryService.updateBookCategory(bookCategoryToEdit.id, updateRequest);
-      
+
       // Actualizar la fila en la tabla
       if (bookCategoriesState.status === 'success') {
-        const updatedItems = bookCategoriesState.response.items.map(bookCategory => 
+        const updatedItems = bookCategoriesState.response.items.map(bookCategory =>
           bookCategory.id === bookCategoryToEdit.id ? updatedBookCategory : bookCategory
         );
         const updatedResponse = {
@@ -464,7 +464,7 @@ const BookCategories: React.FC = () => {
         };
         setBookCategoriesState({ status: 'success', response: updatedResponse });
       }
-      
+
       setUpdateSuccess(true);
     } catch (error: any) {
       console.error('Error updating book category:', error);
@@ -477,14 +477,14 @@ const BookCategories: React.FC = () => {
   const onCreateSubmit = async (data: UpdateBookCategoryFormData) => {
     setIsCreating(true);
     setCreateError(null);
-    
+
     try {
       const createRequest: BookCategoryRequest = {
         name: data.name
       };
 
       const newBookCategory = await bookCategoryService.createBookCategory(createRequest);
-      
+
       // Agregar la nueva categoría a la tabla (al inicio)
       if (bookCategoriesState.status === 'success') {
         const updatedItems = [newBookCategory, ...bookCategoriesState.response.items];
@@ -495,7 +495,7 @@ const BookCategories: React.FC = () => {
         };
         setBookCategoriesState({ status: 'success', response: updatedResponse });
       }
-      
+
       setCreatedBookCategory(newBookCategory);
       setCreateSuccess(true);
     } catch (error: any) {
@@ -540,14 +540,14 @@ const BookCategories: React.FC = () => {
           />
         </div>
 
-        {/* Libros registrados (mín) */}
+        {/* Libros (mín) */}
         <div className='filter-item'>
           <FormControl fullWidth size="small">
-            <InputLabel>Libros registrados (mín)</InputLabel>
+            <InputLabel>Libros (mín)</InputLabel>
             <Select
               value={filters.bookCountMin}
               onChange={(e) => handleFilterChange('bookCountMin', e.target.value)}
-              label="Libros registrados (mín)"
+              label="Libros (mín)"
             >
               <MenuItem value="">
                 <em>Todos</em>
@@ -555,8 +555,8 @@ const BookCategories: React.FC = () => {
               {generateBookCounts.map(count => {
                 const isDisabled = Boolean(filters.bookCountMax && filters.bookCountMax !== '' && parseInt(filters.bookCountMax) < count);
                 return (
-                  <MenuItem 
-                    key={count} 
+                  <MenuItem
+                    key={count}
                     value={count.toString()}
                     disabled={isDisabled}
                     sx={isDisabled ? { opacity: 0.5 } : {}}
@@ -569,14 +569,14 @@ const BookCategories: React.FC = () => {
           </FormControl>
         </div>
 
-        {/* Libros registrados (máx) */}
+        {/* Libros (máx) */}
         <div className='filter-item'>
           <FormControl fullWidth size="small">
-            <InputLabel>Libros registrados (máx)</InputLabel>
+            <InputLabel>Libros (máx)</InputLabel>
             <Select
               value={filters.bookCountMax}
               onChange={(e) => handleFilterChange('bookCountMax', e.target.value)}
-              label="Libros registrados (máx)"
+              label="Libros (máx)"
             >
               <MenuItem value="">
                 <em>Todos</em>
@@ -584,8 +584,8 @@ const BookCategories: React.FC = () => {
               {generateBookCounts.map(count => {
                 const isDisabled = Boolean(filters.bookCountMin && filters.bookCountMin !== '' && parseInt(filters.bookCountMin) > count);
                 return (
-                  <MenuItem 
-                    key={count} 
+                  <MenuItem
+                    key={count}
                     value={count.toString()}
                     disabled={isDisabled}
                     sx={isDisabled ? { opacity: 0.5 } : {}}
@@ -604,19 +604,19 @@ const BookCategories: React.FC = () => {
         <Button type='secondary' onClick={clearFilters} className='small-button'>
           Limpiar filtros
         </Button>
-        
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {/* Element Count */}
           {displayCount && (
-            <span style={{ 
-              fontSize: '12px', 
+            <span style={{
+              fontSize: '12px',
               color: '#6B7280',
               marginRight: '0.5rem'
             }}>
               {displayCount.start} - {displayCount.end} de {displayCount.total}
             </span>
           )}
-          
+
           {/* Page Size Selector */}
           <FormControl size="small" sx={{ minWidth: 100 }}>
             <InputLabel sx={{ fontSize: '12px' }}>Items</InputLabel>
@@ -711,7 +711,7 @@ const BookCategories: React.FC = () => {
                   style={{ width: '70%' }}
                 />
                 <SortableColumnHeader
-                  title='Libros registrados'
+                  title='Libros'
                   active={paginationState.sort === 'bookCount'}
                   order={paginationState.order}
                   onClick={() => { setPaginationState(nextPagination("bookCount")) }}
@@ -738,10 +738,10 @@ const BookCategories: React.FC = () => {
                 ))
               )}
               {bookCategoriesState.status === 'success' && bookCategoriesState.response.items.map((bookCategory: BookCategoryResponse) => (
-                <tr 
+                <tr
                   key={bookCategory.id}
-                  style={{ 
-                    backgroundColor: selectedBookCategories.has(bookCategory.id) ? '#f0f9ff' : 'transparent' 
+                  style={{
+                    backgroundColor: selectedBookCategories.has(bookCategory.id) ? '#f0f9ff' : 'transparent'
                   }}
                 >
                   <td style={{ textAlign: 'center' }}>
@@ -756,7 +756,7 @@ const BookCategories: React.FC = () => {
                       <span className='author-name'>{bookCategory.name}</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span className='author-id'>ID: {bookCategory.id}</span>
-                        <CopyToClipboard 
+                        <CopyToClipboard
                           text={bookCategory.id}
                           size="tiny"
                         />
@@ -769,7 +769,7 @@ const BookCategories: React.FC = () => {
                   <td>
                     <div className='actions'>
                       {auth && authenticationHelper.hasAnyPermission(auth, ['book-categories:update']) && (
-                        <button 
+                        <button
                           className='action-button edit-button'
                           onClick={() => handleEditBookCategory(bookCategory.id)}
                         >
@@ -777,7 +777,7 @@ const BookCategories: React.FC = () => {
                         </button>
                       )}
                       {auth && authenticationHelper.hasAnyPermission(auth, ['book-categories:delete']) && (
-                        <button 
+                        <button
                           className='action-button delete-button'
                           onClick={() => handleDeleteClick(bookCategory)}
                         >
@@ -816,8 +816,8 @@ const BookCategories: React.FC = () => {
       </Dialog>
 
       {/* Delete Confirmation Modal */}
-      <Dialog 
-        open={deleteModalOpen} 
+      <Dialog
+        open={deleteModalOpen}
         onClose={isDeleting ? undefined : handleDeleteCancel}
         maxWidth="sm"
         fullWidth
@@ -829,8 +829,8 @@ const BookCategories: React.FC = () => {
           }
         }}
       >
-        <DialogTitle sx={{ 
-          textAlign: 'left', 
+        <DialogTitle sx={{
+          textAlign: 'left',
           pb: 1,
           fontSize: '1.25rem',
           fontWeight: 600,
@@ -838,7 +838,7 @@ const BookCategories: React.FC = () => {
         }}>
           ¿Eliminar esta categoría?
         </DialogTitle>
-        
+
         <DialogContent sx={{ pt: 2, pb: 3 }}>
           {/* Alerts */}
           {deleteSuccess && (
@@ -853,28 +853,28 @@ const BookCategories: React.FC = () => {
           )}
 
           {!deleteSuccess && bookCategoryToDelete && (
-            <Box sx={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
               gap: 1.5,
               width: '100%'
             }}>
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'flex-start', 
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
                 alignItems: 'center',
                 py: 0.5,
                 gap: 2
               }}>
-                <Typography variant="body2" sx={{ 
-                  fontWeight: 400, 
+                <Typography variant="body2" sx={{
+                  fontWeight: 400,
                   color: '#9ca3af',
                   minWidth: '120px',
                   textAlign: 'left'
                 }}>
                   ID:
                 </Typography>
-                <Typography variant="body2" sx={{ 
+                <Typography variant="body2" sx={{
                   fontWeight: 600,
                   color: '#1f2937',
                   textAlign: 'right',
@@ -884,22 +884,22 @@ const BookCategories: React.FC = () => {
                 </Typography>
               </Box>
 
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'flex-start', 
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
                 alignItems: 'center',
                 py: 0.5,
                 gap: 2
               }}>
-                <Typography variant="body2" sx={{ 
-                  fontWeight: 400, 
+                <Typography variant="body2" sx={{
+                  fontWeight: 400,
                   color: '#9ca3af',
                   minWidth: '120px',
                   textAlign: 'left'
                 }}>
                   Nombre:
                 </Typography>
-                <Typography variant="body2" sx={{ 
+                <Typography variant="body2" sx={{
                   fontWeight: 600,
                   color: '#1f2937',
                   textAlign: 'right',
@@ -909,22 +909,22 @@ const BookCategories: React.FC = () => {
                 </Typography>
               </Box>
 
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'flex-start', 
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
                 alignItems: 'center',
                 py: 0.5,
                 gap: 2
               }}>
-                <Typography variant="body2" sx={{ 
-                  fontWeight: 400, 
+                <Typography variant="body2" sx={{
+                  fontWeight: 400,
                   color: '#9ca3af',
                   minWidth: '120px',
                   textAlign: 'left'
                 }}>
-                  Libros registrados:
+                  Libros:
                 </Typography>
-                <Typography variant="body2" sx={{ 
+                <Typography variant="body2" sx={{
                   fontWeight: 600,
                   color: '#1f2937',
                   textAlign: 'right',
@@ -937,15 +937,15 @@ const BookCategories: React.FC = () => {
           )}
         </DialogContent>
 
-        <DialogActions sx={{ 
-          p: 3, 
+        <DialogActions sx={{
+          p: 3,
           pt: 1,
           gap: 0.5,
           justifyContent: 'flex-end'
         }}>
           {deleteSuccess ? (
-            <Button 
-              type='primary' 
+            <Button
+              type='primary'
               onClick={handleDeleteClose}
               className='small-button'
             >
@@ -953,16 +953,16 @@ const BookCategories: React.FC = () => {
             </Button>
           ) : (
             <>
-              <Button 
-                type='secondary' 
+              <Button
+                type='secondary'
                 onClick={handleDeleteCancel}
                 className='small-button'
                 disabled={isDeleting}
               >
                 Cancelar
               </Button>
-              <Button 
-                type='error' 
+              <Button
+                type='error'
                 onClick={handleDeleteConfirm}
                 className='small-button'
                 disabled={isDeleting}
@@ -982,8 +982,8 @@ const BookCategories: React.FC = () => {
       </Dialog>
 
       {/* Modal de editar autor */}
-      <Dialog 
-        open={editModalOpen} 
+      <Dialog
+        open={editModalOpen}
         onClose={isUpdating ? undefined : handleCloseEditModal}
         maxWidth="sm"
         fullWidth
@@ -995,8 +995,8 @@ const BookCategories: React.FC = () => {
           }
         }}
       >
-        <DialogTitle sx={{ 
-          textAlign: 'left', 
+        <DialogTitle sx={{
+          textAlign: 'left',
           pb: 1,
           fontSize: '1.25rem',
           fontWeight: 600,
@@ -1004,7 +1004,7 @@ const BookCategories: React.FC = () => {
         }}>
           Editar Categoría
         </DialogTitle>
-        
+
         <DialogContent sx={{ pt: 2, pb: 3, paddingTop: '14px' }}>
           {/* Alerts */}
           {updateSuccess && (
@@ -1013,8 +1013,8 @@ const BookCategories: React.FC = () => {
             </Alert>
           )}
           {updateError && (
-            <Alert 
-              severity="error" 
+            <Alert
+              severity="error"
               sx={{ mb: 2 }}
               action={
                 <Button type="secondary" onClick={handleRetryUpdate} className="small-button">
@@ -1055,15 +1055,15 @@ const BookCategories: React.FC = () => {
           )}
         </DialogContent>
 
-        <DialogActions sx={{ 
-          p: 3, 
+        <DialogActions sx={{
+          p: 3,
           pt: 1,
           gap: 0.5,
           justifyContent: 'flex-end'
         }}>
           {updateSuccess ? (
-            <Button 
-              type='secondary' 
+            <Button
+              type='secondary'
               onClick={handleCloseEditModal}
               className='small-button'
             >
@@ -1071,16 +1071,16 @@ const BookCategories: React.FC = () => {
             </Button>
           ) : (
             <>
-              <Button 
-                type='secondary' 
+              <Button
+                type='secondary'
                 onClick={handleCloseEditModal}
                 className='small-button'
                 disabled={isUpdating}
               >
                 Cancelar
               </Button>
-              <Button 
-                type='primary' 
+              <Button
+                type='primary'
                 onClick={handleEditSubmit(onEditSubmit)}
                 className='small-button'
                 disabled={!isEditValid || isUpdating}
@@ -1100,8 +1100,8 @@ const BookCategories: React.FC = () => {
       </Dialog>
 
       {/* Modal de crear autor */}
-      <Dialog 
-        open={createModalOpen} 
+      <Dialog
+        open={createModalOpen}
         onClose={isCreating ? undefined : handleCloseCreateModal}
         maxWidth="sm"
         fullWidth
@@ -1113,8 +1113,8 @@ const BookCategories: React.FC = () => {
           }
         }}
       >
-        <DialogTitle sx={{ 
-          textAlign: 'left', 
+        <DialogTitle sx={{
+          textAlign: 'left',
           pb: 1,
           fontSize: '1.25rem',
           fontWeight: 600,
@@ -1122,7 +1122,7 @@ const BookCategories: React.FC = () => {
         }}>
           Crear Categoría
         </DialogTitle>
-        
+
         <DialogContent sx={{ pt: 2, pb: 3, paddingTop: '14px' }}>
           {/* Alerts */}
           {createSuccess && (
@@ -1131,8 +1131,8 @@ const BookCategories: React.FC = () => {
             </Alert>
           )}
           {createError && (
-            <Alert 
-              severity="error" 
+            <Alert
+              severity="error"
               sx={{ mb: 2 }}
               action={
                 <Button type="secondary" onClick={handleRetryCreate} className="small-button">
@@ -1173,15 +1173,15 @@ const BookCategories: React.FC = () => {
           )}
         </DialogContent>
 
-        <DialogActions sx={{ 
-          p: 3, 
+        <DialogActions sx={{
+          p: 3,
           pt: 1,
           gap: 0.5,
           justifyContent: 'flex-end'
         }}>
           {createSuccess ? (
-            <Button 
-              type='secondary' 
+            <Button
+              type='secondary'
               onClick={handleCloseCreateModal}
               className='small-button'
             >
@@ -1189,16 +1189,16 @@ const BookCategories: React.FC = () => {
             </Button>
           ) : (
             <>
-              <Button 
-                type='secondary' 
+              <Button
+                type='secondary'
                 onClick={handleCloseCreateModal}
                 className='small-button'
                 disabled={isCreating}
               >
                 Cancelar
               </Button>
-              <Button 
-                type='primary' 
+              <Button
+                type='primary'
                 onClick={handleCreateSubmit(onCreateSubmit)}
                 className='small-button'
                 disabled={!isCreateValid || isCreating}

@@ -82,37 +82,37 @@ type UpdateAuthorFormData = z.infer<typeof updateAuthorSchema>;
 const generateYears = (() => {
   const currentYear = new Date().getFullYear();
   const years = [];
-  
+
   // Add current year first
   years.push(currentYear.toString());
-  
+
   // Find next multiple of 20 below current year
   const nextMultipleOf20 = Math.floor(currentYear / 20) * 20;
-  
+
   // Add multiples of 20 from nextMultipleOf20 down to 20
   for (let year = nextMultipleOf20; year >= 20; year -= 20) {
     if (year !== currentYear) { // Don't repeat current year if it's a multiple of 20
       years.push(year.toString());
     }
   }
-  
+
   return years;
 })();
 
 // Generate book counts: 0-10 individually, then 15-100 by 5s (cached)
 const generateBookCounts = (() => {
   const counts = [];
-  
+
   // Add 0-10 individually
   for (let i = 0; i <= 10; i++) {
     counts.push(i);
   }
-  
+
   // Add 15-100 by 5s
   for (let i = 15; i <= 100; i += 5) {
     counts.push(i);
   }
-  
+
   return counts;
 })();
 
@@ -286,7 +286,7 @@ const Authors: React.FC = () => {
     if (authorsState.status === 'success' && authorsState.response) {
       const totalAuthors = authorsState.response.items.length;
       const selectedCount = selectedAuthors.size;
-      
+
       if (selectedCount === 0) {
         setIsAllSelected(false);
       } else if (selectedCount === totalAuthors) {
@@ -379,35 +379,35 @@ const Authors: React.FC = () => {
   const handleFilterChange = (field: keyof typeof filters, value: any) => {
     setFilters(prev => {
       const newFilters = { ...prev, [field]: value };
-      
+
       // Validar que birthYearMin no sea posterior a birthYearMax
       if (field === 'birthYearMin' && value && prev.birthYearMax) {
         if (parseInt(value) > parseInt(prev.birthYearMax)) {
           newFilters.birthYearMax = value; // Ajustar birthYearMax al nuevo birthYearMin
         }
       }
-      
+
       // Validar que birthYearMax no sea anterior a birthYearMin
       if (field === 'birthYearMax' && value && prev.birthYearMin) {
         if (parseInt(value) < parseInt(prev.birthYearMin)) {
           newFilters.birthYearMin = value; // Ajustar birthYearMin al nuevo birthYearMax
         }
       }
-      
+
       // Validar que booksMin no sea mayor que booksMax
       if (field === 'booksMin' && value && prev.booksMax) {
         if (parseInt(value) > parseInt(prev.booksMax)) {
           newFilters.booksMax = value; // Ajustar booksMax al nuevo booksMin
         }
       }
-      
+
       // Validar que booksMax no sea menor que booksMin
       if (field === 'booksMax' && value && prev.booksMin) {
         if (parseInt(value) < parseInt(prev.booksMin)) {
           newFilters.booksMin = value; // Ajustar booksMin al nuevo booksMax
         }
       }
-      
+
       return newFilters;
     });
   };
@@ -446,16 +446,16 @@ const Authors: React.FC = () => {
 
 
   const handleEditAuthor = (authorId: string) => {
-    const author = authorsState.status === 'success' 
+    const author = authorsState.status === 'success'
       ? authorsState.response.items.find(a => a.id === authorId)
       : null;
-    
+
     if (author) {
       setAuthorToEdit(author);
       setEditModalOpen(true);
       setUpdateSuccess(false);
       setUpdateError(null);
-      
+
       // Llenar el formulario con los datos del autor
       setEditValue('firstName', author.firstName);
       setEditValue('lastName', author.lastName);
@@ -487,13 +487,13 @@ const Authors: React.FC = () => {
 
   const handleDeleteConfirm = async () => {
     if (!authorToDelete) return;
-    
+
     setIsDeleting(true);
     setDeleteError(null);
-    
+
     try {
       await authorService.deleteById(authorToDelete.id);
-      
+
       // Remove author from table
       if (authorsState.status === 'success') {
         const updatedItems = authorsState.response.items.filter(author => author.id !== authorToDelete.id);
@@ -504,7 +504,7 @@ const Authors: React.FC = () => {
         };
         setAuthorsState({ status: 'success', response: updatedResponse });
       }
-      
+
       setDeleteSuccess(true);
     } catch (error: any) {
       console.error('Error deleting author:', error);
@@ -547,10 +547,10 @@ const Authors: React.FC = () => {
 
   const onEditSubmit = async (data: UpdateAuthorFormData) => {
     if (!authorToEdit) return;
-    
+
     setIsUpdating(true);
     setUpdateError(null);
-    
+
     try {
       const updateRequest: UpdateAuthorRequest = {
         firstName: data.firstName,
@@ -560,10 +560,10 @@ const Authors: React.FC = () => {
       };
 
       const updatedAuthor = await authorService.updateAuthor(authorToEdit.id, updateRequest);
-      
+
       // Actualizar la fila en la tabla
       if (authorsState.status === 'success') {
-        const updatedItems = authorsState.response.items.map(author => 
+        const updatedItems = authorsState.response.items.map(author =>
           author.id === authorToEdit.id ? {
             ...author,
             firstName: updatedAuthor.firstName,
@@ -578,7 +578,7 @@ const Authors: React.FC = () => {
         };
         setAuthorsState({ status: 'success', response: updatedResponse });
       }
-      
+
       setUpdateSuccess(true);
     } catch (error: any) {
       console.error('Error updating author:', error);
@@ -591,7 +591,7 @@ const Authors: React.FC = () => {
   const onCreateSubmit = async (data: UpdateAuthorFormData) => {
     setIsCreating(true);
     setCreateError(null);
-    
+
     try {
       const createRequest: UpdateAuthorRequest = {
         firstName: data.firstName,
@@ -601,7 +601,7 @@ const Authors: React.FC = () => {
       };
 
       const newAuthor = await authorService.createAuthor(createRequest);
-      
+
       // Agregar el nuevo autor a la tabla (al inicio)
       if (authorsState.status === 'success') {
         const updatedItems = [newAuthor, ...authorsState.response.items];
@@ -612,7 +612,7 @@ const Authors: React.FC = () => {
         };
         setAuthorsState({ status: 'success', response: updatedResponse });
       }
-      
+
       setCreateSuccess(true);
     } catch (error: any) {
       console.error('Error creating author:', error);
@@ -677,13 +677,13 @@ const Authors: React.FC = () => {
               renderValue={(selected) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {selected.map((value) => {
-                    const country = optionsState.status === 'success' 
+                    const country = optionsState.status === 'success'
                       ? optionsState.countries.find(c => c.value === value)
                       : null;
                     return (
-                      <Chip 
-                        key={value} 
-                        label={country?.label || value} 
+                      <Chip
+                        key={value}
+                        label={country?.label || value}
                         size="small"
                         sx={{ fontSize: '0.75rem', height: '20px' }}
                       />
@@ -742,11 +742,11 @@ const Authors: React.FC = () => {
         {/* Libros (mín) */}
         <div className='filter-item'>
           <FormControl fullWidth size="small">
-            <InputLabel>Libros registrados (mín)</InputLabel>
+            <InputLabel>Libros (mín)</InputLabel>
             <Select
               value={filters.booksMin}
               onChange={(e) => handleFilterChange('booksMin', e.target.value)}
-              label="Libros registrados (mín)"
+              label="Libros (mín)"
               size='small'
             >
               <MenuItem value="">
@@ -755,8 +755,8 @@ const Authors: React.FC = () => {
               {generateBookCounts.map(count => {
                 const isDisabled = Boolean(filters.booksMax && filters.booksMax !== '' && parseInt(filters.booksMax) < count);
                 return (
-                  <MenuItem 
-                    key={count} 
+                  <MenuItem
+                    key={count}
                     value={count.toString()}
                     disabled={isDisabled}
                     sx={isDisabled ? { opacity: 0.5 } : {}}
@@ -772,11 +772,11 @@ const Authors: React.FC = () => {
         {/* Libros (máx) */}
         <div className='filter-item'>
           <FormControl fullWidth size="small">
-            <InputLabel>Libros registrados (máx)</InputLabel>
+            <InputLabel>Libros (máx)</InputLabel>
             <Select
               value={filters.booksMax}
               onChange={(e) => handleFilterChange('booksMax', e.target.value)}
-              label="Libros registrados (máx)"
+              label="Libros (máx)"
               size='small'
             >
               <MenuItem value="">
@@ -785,8 +785,8 @@ const Authors: React.FC = () => {
               {generateBookCounts.map(count => {
                 const isDisabled = Boolean(filters.booksMin && filters.booksMin !== '' && parseInt(filters.booksMin) > count);
                 return (
-                  <MenuItem 
-                    key={count} 
+                  <MenuItem
+                    key={count}
                     value={count.toString()}
                     disabled={isDisabled}
                     sx={isDisabled ? { opacity: 0.5 } : {}}
@@ -805,19 +805,19 @@ const Authors: React.FC = () => {
         <Button type='secondary' onClick={clearFilters} className='small-button'>
           Limpiar filtros
         </Button>
-        
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {/* Element Count */}
           {displayCount && (
-            <span style={{ 
-              fontSize: '12px', 
+            <span style={{
+              fontSize: '12px',
               color: '#6B7280',
               marginRight: '0.5rem'
             }}>
               {displayCount.start} - {displayCount.end} de {displayCount.total}
             </span>
           )}
-          
+
           {/* Page Size Selector */}
           <FormControl size="small" sx={{ minWidth: 100 }}>
             <InputLabel sx={{ fontSize: '12px' }}>Items</InputLabel>
@@ -926,7 +926,7 @@ const Authors: React.FC = () => {
                   style={{ width: '20%' }}
                 />
                 <SortableColumnHeader
-                  title='Libros registrados'
+                  title='Libros'
                   active={paginationState.sort === 'bookCount'}
                   order={paginationState.order}
                   onClick={() => { setPaginationState(nextPagination("bookCount")) }}
@@ -955,10 +955,10 @@ const Authors: React.FC = () => {
                 ))
               )}
               {authorsState.status === 'success' && authorsState.response.items.map((author: AuthorPreview) => (
-                <tr 
+                <tr
                   key={author.id}
-                  style={{ 
-                    backgroundColor: selectedAuthors.has(author.id) ? '#f0f9ff' : 'transparent' 
+                  style={{
+                    backgroundColor: selectedAuthors.has(author.id) ? '#f0f9ff' : 'transparent'
                   }}
                 >
                   <td style={{ textAlign: 'center' }}>
@@ -973,7 +973,7 @@ const Authors: React.FC = () => {
                       <span className='author-name'>{author.lastName}, {author.firstName}</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span className='author-id'>ID: {author.id}</span>
-                        <CopyToClipboard 
+                        <CopyToClipboard
                           text={author.id}
                           size="tiny"
                         />
@@ -992,7 +992,7 @@ const Authors: React.FC = () => {
                   <td>
                     <div className='actions'>
                       {auth && authenticationHelper.hasAnyPermission(auth, ['authors:edit']) && (
-                        <button 
+                        <button
                           className='action-button edit-button'
                           onClick={() => handleEditAuthor(author.id)}
                         >
@@ -1000,7 +1000,7 @@ const Authors: React.FC = () => {
                         </button>
                       )}
                       {auth && authenticationHelper.hasAnyPermission(auth, ['authors:delete']) && (
-                        <button 
+                        <button
                           className='action-button delete-button'
                           onClick={() => handleDeleteClick(author)}
                         >
@@ -1039,8 +1039,8 @@ const Authors: React.FC = () => {
       </Dialog>
 
       {/* Delete Confirmation Modal */}
-      <Dialog 
-        open={deleteModalOpen} 
+      <Dialog
+        open={deleteModalOpen}
         onClose={isDeleting ? undefined : handleDeleteCancel}
         maxWidth="sm"
         fullWidth
@@ -1052,8 +1052,8 @@ const Authors: React.FC = () => {
           }
         }}
       >
-        <DialogTitle sx={{ 
-          textAlign: 'left', 
+        <DialogTitle sx={{
+          textAlign: 'left',
           pb: 1,
           fontSize: '1.25rem',
           fontWeight: 600,
@@ -1061,7 +1061,7 @@ const Authors: React.FC = () => {
         }}>
           ¿Eliminar este autor?
         </DialogTitle>
-        
+
         <DialogContent sx={{ pt: 2, pb: 3 }}>
           {/* Alerts */}
           {deleteSuccess && (
@@ -1076,28 +1076,28 @@ const Authors: React.FC = () => {
           )}
 
           {!deleteSuccess && authorToDelete && (
-            <Box sx={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
               gap: 1.5,
               width: '100%'
             }}>
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'flex-start', 
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
                 alignItems: 'center',
                 py: 0.5,
                 gap: 2
               }}>
-                <Typography variant="body2" sx={{ 
-                  fontWeight: 400, 
+                <Typography variant="body2" sx={{
+                  fontWeight: 400,
                   color: '#9ca3af',
                   minWidth: '120px',
                   textAlign: 'left'
                 }}>
                   ID:
                 </Typography>
-                <Typography variant="body2" sx={{ 
+                <Typography variant="body2" sx={{
                   fontWeight: 600,
                   color: '#1f2937',
                   textAlign: 'right',
@@ -1107,22 +1107,22 @@ const Authors: React.FC = () => {
                 </Typography>
               </Box>
 
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'flex-start', 
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
                 alignItems: 'center',
                 py: 0.5,
                 gap: 2
               }}>
-                <Typography variant="body2" sx={{ 
-                  fontWeight: 400, 
+                <Typography variant="body2" sx={{
+                  fontWeight: 400,
                   color: '#9ca3af',
                   minWidth: '120px',
                   textAlign: 'left'
                 }}>
                   Nombre:
                 </Typography>
-                <Typography variant="body2" sx={{ 
+                <Typography variant="body2" sx={{
                   fontWeight: 600,
                   color: '#1f2937',
                   textAlign: 'right',
@@ -1132,22 +1132,22 @@ const Authors: React.FC = () => {
                 </Typography>
               </Box>
 
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'flex-start', 
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
                 alignItems: 'center',
                 py: 0.5,
                 gap: 2
               }}>
-                <Typography variant="body2" sx={{ 
-                  fontWeight: 400, 
+                <Typography variant="body2" sx={{
+                  fontWeight: 400,
                   color: '#9ca3af',
                   minWidth: '120px',
                   textAlign: 'left'
                 }}>
                   Apellido:
                 </Typography>
-                <Typography variant="body2" sx={{ 
+                <Typography variant="body2" sx={{
                   fontWeight: 600,
                   color: '#1f2937',
                   textAlign: 'right',
@@ -1157,22 +1157,22 @@ const Authors: React.FC = () => {
                 </Typography>
               </Box>
 
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'flex-start', 
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
                 alignItems: 'center',
                 py: 0.5,
                 gap: 2
               }}>
-                <Typography variant="body2" sx={{ 
-                  fontWeight: 400, 
+                <Typography variant="body2" sx={{
+                  fontWeight: 400,
                   color: '#9ca3af',
                   minWidth: '120px',
                   textAlign: 'left'
                 }}>
                   País:
                 </Typography>
-                <Typography variant="body2" sx={{ 
+                <Typography variant="body2" sx={{
                   fontWeight: 600,
                   color: '#1f2937',
                   textAlign: 'right',
@@ -1182,22 +1182,22 @@ const Authors: React.FC = () => {
                 </Typography>
               </Box>
 
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'flex-start', 
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
                 alignItems: 'center',
                 py: 0.5,
                 gap: 2
               }}>
-                <Typography variant="body2" sx={{ 
-                  fontWeight: 400, 
+                <Typography variant="body2" sx={{
+                  fontWeight: 400,
                   color: '#9ca3af',
                   minWidth: '120px',
                   textAlign: 'left'
                 }}>
                   Fecha de Nacimiento:
                 </Typography>
-                <Typography variant="body2" sx={{ 
+                <Typography variant="body2" sx={{
                   fontWeight: 600,
                   color: '#1f2937',
                   textAlign: 'right',
@@ -1210,15 +1210,15 @@ const Authors: React.FC = () => {
           )}
         </DialogContent>
 
-        <DialogActions sx={{ 
-          p: 3, 
+        <DialogActions sx={{
+          p: 3,
           pt: 1,
           gap: 0.5,
           justifyContent: 'flex-end'
         }}>
           {deleteSuccess ? (
-            <Button 
-              type='primary' 
+            <Button
+              type='primary'
               onClick={handleDeleteClose}
               className='small-button'
             >
@@ -1226,16 +1226,16 @@ const Authors: React.FC = () => {
             </Button>
           ) : (
             <>
-              <Button 
-                type='secondary' 
+              <Button
+                type='secondary'
                 onClick={handleDeleteCancel}
                 className='small-button'
                 disabled={isDeleting}
               >
                 Cancelar
               </Button>
-              <Button 
-                type='error' 
+              <Button
+                type='error'
                 onClick={handleDeleteConfirm}
                 className='small-button'
                 disabled={isDeleting}
@@ -1255,8 +1255,8 @@ const Authors: React.FC = () => {
       </Dialog>
 
       {/* Modal de editar autor */}
-      <Dialog 
-        open={editModalOpen} 
+      <Dialog
+        open={editModalOpen}
         onClose={isUpdating ? undefined : handleCloseEditModal}
         maxWidth="sm"
         fullWidth
@@ -1268,8 +1268,8 @@ const Authors: React.FC = () => {
           }
         }}
       >
-        <DialogTitle sx={{ 
-          textAlign: 'left', 
+        <DialogTitle sx={{
+          textAlign: 'left',
           pb: 1,
           fontSize: '1.25rem',
           fontWeight: 600,
@@ -1277,7 +1277,7 @@ const Authors: React.FC = () => {
         }}>
           Editar Autor
         </DialogTitle>
-        
+
         <DialogContent sx={{ pt: 2, pb: 3, paddingTop: '14px' }}>
           {/* Alerts */}
           {updateSuccess && (
@@ -1286,8 +1286,8 @@ const Authors: React.FC = () => {
             </Alert>
           )}
           {updateError && (
-            <Alert 
-              severity="error" 
+            <Alert
+              severity="error"
               sx={{ mb: 2 }}
               action={
                 <Button type="secondary" onClick={handleRetryUpdate} className="small-button">
@@ -1369,22 +1369,22 @@ const Authors: React.FC = () => {
               control={editControl}
               render={({ field }) => (
                 <Box>
-                <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
-                  <DatePicker
-                    label="Fecha de Nacimiento"
-                    value={field.value}
-                    onChange={field.onChange}
-                    minDate={dayjs('0001-01-01')}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        size: 'small',
-                        error: !!editErrors.dateOfBirth,
-                        disabled: isUpdating
-                      }
-                    }}
-                  />
-                </LocalizationProvider>
+                  <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+                    <DatePicker
+                      label="Fecha de Nacimiento"
+                      value={field.value}
+                      onChange={field.onChange}
+                      minDate={dayjs('0001-01-01')}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          size: 'small',
+                          error: !!editErrors.dateOfBirth,
+                          disabled: isUpdating
+                        }
+                      }}
+                    />
+                  </LocalizationProvider>
                   {editErrors.dateOfBirth && (
                     <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
                       {editErrors.dateOfBirth.message as string}
@@ -1396,15 +1396,15 @@ const Authors: React.FC = () => {
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ 
-          p: 3, 
+        <DialogActions sx={{
+          p: 3,
           pt: 1,
           gap: 0.5,
           justifyContent: 'flex-end'
         }}>
           {updateSuccess ? (
-            <Button 
-              type='secondary' 
+            <Button
+              type='secondary'
               onClick={handleCloseEditModal}
               className='small-button'
             >
@@ -1412,16 +1412,16 @@ const Authors: React.FC = () => {
             </Button>
           ) : (
             <>
-              <Button 
-                type='secondary' 
+              <Button
+                type='secondary'
                 onClick={handleCloseEditModal}
                 className='small-button'
                 disabled={isUpdating}
               >
                 Cancelar
               </Button>
-              <Button 
-                type='primary' 
+              <Button
+                type='primary'
                 onClick={handleEditSubmit(onEditSubmit)}
                 className='small-button'
                 disabled={!isEditValid || isUpdating}
@@ -1441,8 +1441,8 @@ const Authors: React.FC = () => {
       </Dialog>
 
       {/* Modal de crear autor */}
-      <Dialog 
-        open={createModalOpen} 
+      <Dialog
+        open={createModalOpen}
         onClose={isCreating ? undefined : handleCloseCreateModal}
         maxWidth="sm"
         fullWidth
@@ -1454,8 +1454,8 @@ const Authors: React.FC = () => {
           }
         }}
       >
-        <DialogTitle sx={{ 
-          textAlign: 'left', 
+        <DialogTitle sx={{
+          textAlign: 'left',
           pb: 1,
           fontSize: '1.25rem',
           fontWeight: 600,
@@ -1463,7 +1463,7 @@ const Authors: React.FC = () => {
         }}>
           Crear Autor
         </DialogTitle>
-        
+
         <DialogContent sx={{ pt: 2, pb: 3, paddingTop: '14px' }}>
           {/* Alerts */}
           {createSuccess && (
@@ -1472,8 +1472,8 @@ const Authors: React.FC = () => {
             </Alert>
           )}
           {createError && (
-            <Alert 
-              severity="error" 
+            <Alert
+              severity="error"
               sx={{ mb: 2 }}
               action={
                 <Button type="secondary" onClick={handleRetryCreate} className="small-button">
@@ -1555,22 +1555,22 @@ const Authors: React.FC = () => {
               control={createControl}
               render={({ field }) => (
                 <Box>
-                <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
-                  <DatePicker
-                    label="Fecha de Nacimiento"
-                    value={field.value}
-                    onChange={field.onChange}
-                    minDate={dayjs('0001-01-01')}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        size: 'small',
-                        error: !!createErrors.dateOfBirth,
-                        disabled: isCreating
-                      }
-                    }}
-                  />
-                </LocalizationProvider>
+                  <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+                    <DatePicker
+                      label="Fecha de Nacimiento"
+                      value={field.value}
+                      onChange={field.onChange}
+                      minDate={dayjs('0001-01-01')}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          size: 'small',
+                          error: !!createErrors.dateOfBirth,
+                          disabled: isCreating
+                        }
+                      }}
+                    />
+                  </LocalizationProvider>
                   {createErrors.dateOfBirth && (
                     <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
                       {createErrors.dateOfBirth.message as string}
@@ -1582,15 +1582,15 @@ const Authors: React.FC = () => {
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ 
-          p: 3, 
+        <DialogActions sx={{
+          p: 3,
           pt: 1,
           gap: 0.5,
           justifyContent: 'flex-end'
         }}>
           {createSuccess ? (
-            <Button 
-              type='secondary' 
+            <Button
+              type='secondary'
               onClick={handleCloseCreateModal}
               className='small-button'
             >
@@ -1598,16 +1598,16 @@ const Authors: React.FC = () => {
             </Button>
           ) : (
             <>
-              <Button 
-                type='secondary' 
+              <Button
+                type='secondary'
                 onClick={handleCloseCreateModal}
                 className='small-button'
                 disabled={isCreating}
               >
                 Cancelar
               </Button>
-              <Button 
-                type='primary' 
+              <Button
+                type='primary'
                 onClick={handleCreateSubmit(onCreateSubmit)}
                 className='small-button'
                 disabled={!isCreateValid || isCreating}
