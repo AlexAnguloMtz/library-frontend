@@ -973,8 +973,8 @@ const Books: React.FC = () => {
                 src={bookToDelete.imageUrl}
                 alt={"preview-" + bookToDelete.id}
                 sx={{
-                  width: '100%',
-                  height: '300px',
+                  width: '90%',
+                  height: '360px',
                   objectFit: 'cover',
                   borderRadius: '8px',
                   mb: 2
@@ -983,133 +983,182 @@ const Books: React.FC = () => {
               <Box sx={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 1.5,
-                width: '100%',
-                padding: '0 20px',
+                width: '700px',
               }}>
                 <Box sx={{
                   display: 'flex',
-                  justifyContent: 'flex-start',
-                  alignItems: 'center',
-                  py: 0.5,
-                  gap: 2
+                  flexDirection: 'column',
+                  gap: 1.5,
+                  width: '100%',
+                  padding: '0 20px',
                 }}>
-                  <Typography variant="body2" sx={{
-                    fontWeight: 400,
-                    color: '#9ca3af',
-                    minWidth: '120px',
-                    textAlign: 'left'
-                  }}>
-                    ID:
-                  </Typography>
-                  <Typography variant="body2" sx={{
+                  <Typography variant='h6' sx={{
                     fontWeight: 600,
                     color: '#1f2937',
-                    textAlign: 'right',
-                    flex: 1
+                    mb: 1
                   }}>
-                    {bookToDelete.id}
+                    Detalles
                   </Typography>
-                </Box>
+                  <Box sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                    alignItems: 'center',
+                    py: 0.5,
+                    gap: 2
+                  }}>
+                    <Typography variant="body2" sx={{
+                      fontWeight: 400,
+                      color: '#9ca3af',
+                      minWidth: '120px',
+                      textAlign: 'left'
+                    }}>
+                      ID:
+                    </Typography>
+                    <Typography variant="body2" sx={{
+                      fontWeight: 600,
+                      color: '#1f2937',
+                      textAlign: 'right',
+                      flex: 1
+                    }}>
+                      {bookToDelete.id}
+                    </Typography>
+                  </Box>
 
+                  <Box sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                    alignItems: 'center',
+                    py: 0.5,
+                    gap: 2
+                  }}>
+                    <Typography variant="body2" sx={{
+                      fontWeight: 400,
+                      color: '#9ca3af',
+                      minWidth: '120px',
+                      textAlign: 'left'
+                    }}>
+                      Título:
+                    </Typography>
+                    <Typography variant="body2" sx={{
+                      fontWeight: 600,
+                      color: '#1f2937',
+                      textAlign: 'right',
+                      flex: 1
+                    }}>
+                      {bookToDelete.title}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                    alignItems: 'center',
+                    py: 0.5,
+                    gap: 2
+                  }}>
+                    <Typography variant="body2" sx={{
+                      fontWeight: 400,
+                      color: '#9ca3af',
+                      minWidth: '120px',
+                      textAlign: 'left'
+                    }}>
+                      ISBN:
+                    </Typography>
+                    <Typography variant="body2" sx={{
+                      fontWeight: 600,
+                      color: '#1f2937',
+                      textAlign: 'right',
+                      flex: 1
+                    }}>
+                      {bookToDelete.isbn}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                    alignItems: 'center',
+                    py: 0.5,
+                    gap: 2
+                  }}>
+                    <Typography variant="body2" sx={{
+                      fontWeight: 400,
+                      color: '#9ca3af',
+                      minWidth: '120px',
+                      textAlign: 'left'
+                    }}>
+                      Categoría:
+                    </Typography>
+                    <Typography variant="body2" sx={{
+                      fontWeight: 600,
+                      color: '#1f2937',
+                      textAlign: 'right',
+                      flex: 1
+                    }}>
+                      {bookToDelete.category}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                    alignItems: 'center',
+                    py: 0.5,
+                    gap: 2
+                  }}>
+                    <Typography variant="body2" sx={{
+                      fontWeight: 400,
+                      color: '#9ca3af',
+                      minWidth: '120px',
+                      textAlign: 'left'
+                    }}>
+                      Año:
+                    </Typography>
+                    <Typography variant="body2" sx={{
+                      fontWeight: 600,
+                      color: '#1f2937',
+                      textAlign: 'right',
+                      flex: 1
+                    }}>
+                      {bookToDelete.year}
+                    </Typography>
+                  </Box>
+                </Box>
                 <Box sx={{
                   display: 'flex',
-                  justifyContent: 'flex-start',
-                  alignItems: 'center',
-                  py: 0.5,
-                  gap: 2
+                  flexDirection: 'column',
+                  gap: 1.5,
+                  width: '100%',
+                  padding: '0 20px',
+                  margin: '20px 0 0 0',
                 }}>
-                  <Typography variant="body2" sx={{
-                    fontWeight: 400,
-                    color: '#9ca3af',
-                    minWidth: '120px',
-                    textAlign: 'left'
-                  }}>
-                    Título:
-                  </Typography>
-                  <Typography variant="body2" sx={{
+                  <Typography variant='h6' sx={{
                     fontWeight: 600,
                     color: '#1f2937',
-                    textAlign: 'right',
-                    flex: 1
+                    mb: 1
                   }}>
-                    {bookToDelete.title}
+                    Autores ({bookToDelete.authors.length})
                   </Typography>
-                </Box>
-
-                <Box sx={{
-                  display: 'flex',
-                  justifyContent: 'flex-start',
-                  alignItems: 'center',
-                  py: 0.5,
-                  gap: 2
-                }}>
-                  <Typography variant="body2" sx={{
-                    fontWeight: 400,
-                    color: '#9ca3af',
-                    minWidth: '120px',
-                    textAlign: 'left'
-                  }}>
-                    ISBN:
-                  </Typography>
-                  <Typography variant="body2" sx={{
-                    fontWeight: 600,
-                    color: '#1f2937',
-                    textAlign: 'right',
-                    flex: 1
-                  }}>
-                    {bookToDelete.isbn}
-                  </Typography>
-                </Box>
-
-                <Box sx={{
-                  display: 'flex',
-                  justifyContent: 'flex-start',
-                  alignItems: 'center',
-                  py: 0.5,
-                  gap: 2
-                }}>
-                  <Typography variant="body2" sx={{
-                    fontWeight: 400,
-                    color: '#9ca3af',
-                    minWidth: '120px',
-                    textAlign: 'left'
-                  }}>
-                    Categoría:
-                  </Typography>
-                  <Typography variant="body2" sx={{
-                    fontWeight: 600,
-                    color: '#1f2937',
-                    textAlign: 'right',
-                    flex: 1
-                  }}>
-                    {bookToDelete.category}
-                  </Typography>
-                </Box>
-
-                <Box sx={{
-                  display: 'flex',
-                  justifyContent: 'flex-start',
-                  alignItems: 'center',
-                  py: 0.5,
-                  gap: 2
-                }}>
-                  <Typography variant="body2" sx={{
-                    fontWeight: 400,
-                    color: '#9ca3af',
-                    minWidth: '120px',
-                    textAlign: 'left'
-                  }}>
-                    Año:
-                  </Typography>
-                  <Typography variant="body2" sx={{
-                    fontWeight: 600,
-                    color: '#1f2937',
-                    textAlign: 'right',
-                    flex: 1
-                  }}>
-                    {bookToDelete.year}
-                  </Typography>
+                  {
+                    bookToDelete.authors.map((author, index) => (
+                      <Box key={index} sx={{
+                        display: 'flex',
+                        justifyContent: 'flex-start',
+                        alignItems: 'center',
+                        py: 0.5,
+                        gap: 2
+                      }}>
+                        <Typography variant="body2" sx={{
+                          fontWeight: 400,
+                          color: 'black',
+                          minWidth: '120px',
+                          textAlign: 'left'
+                        }}>
+                          {author}
+                        </Typography>
+                      </Box>
+                    ))
+                  }
                 </Box>
               </Box>
             </Box>
