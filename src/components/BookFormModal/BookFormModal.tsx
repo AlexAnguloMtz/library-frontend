@@ -9,7 +9,6 @@ import type { BookDetailsResponse } from '../../models/BookDetailsResponse';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import bookService from '../../services/BookService';
-import type { CreateBookRequest } from '../../models/CreateBookRequest';
 import type { OptionResponse } from '../../models/OptionResponse';
 import ISBN from 'isbn3';
 import { Controller } from "react-hook-form";
@@ -112,6 +111,7 @@ export const BookFormModal = ({
   const [searchedAuthors, setSearchedAuthors] = useState<AuthorCardModel[]>([]);
   const [addingAuthor, setAddingAuthor] = useState(false);
   const [initialValuesState, setInitialValuesState] = useState<InitialValuesState>({ status: 'idle' });
+  const [canContinue, setCanContinue] = useState(false);
 
   const form = useForm<BookFormData>({
     resolver: zodResolver(bookFormSchema),
@@ -137,6 +137,13 @@ export const BookFormModal = ({
       form.reset(initialValuesState.values);
     }
   }, [initialValuesState]);
+
+  useEffect(() => {
+    const isValid = form.formState.isValid;
+    const hasImage = !!imageFile;
+    const hasAuthors = form.getValues('authors').length > 0;
+    setCanContinue(isValid && hasImage && hasAuthors);
+  }, [form.formState.isValid, imageFile]);
 
   const fetchInitialData = async () => {
     try {
@@ -191,11 +198,11 @@ export const BookFormModal = ({
     if (alreadySelected) {
       return;
     }
-    form.setValue('authors', [...form.getValues('authors'), author]);
+    form.setValue('authors', [...form.getValues('authors'), author], { shouldValidate: true });
   };
 
   const handleRemoveAuthor = (author: AuthorCardModel) => {
-    form.setValue('authors', form.getValues('authors').filter((a) => a.id !== author.id));
+    form.setValue('authors', form.getValues('authors').filter((a) => a.id !== author.id), { shouldValidate: true });
   };
 
   const toAuthorCardModel = (author: AuthorPreview): AuthorCardModel => {
@@ -218,22 +225,6 @@ export const BookFormModal = ({
       setSearchedAuthors([]);
     }
   };
-
-  const continueActionDisabled = () => {
-    if (!form.formState.isValid) {
-      return true;
-    }
-    if (saveBookState.status === 'saving') {
-      return true;
-    }
-    if (!imageFile) {
-      return true;
-    }
-    if (form.watch('authors').length === 0) {
-      return true;
-    }
-    return false;
-  }
 
   function handleGoBack(): void {
     setSaveBookState({ status: 'idle' });
@@ -613,7 +604,7 @@ export const BookFormModal = ({
             <Button
               type="primary"
               onClick={() => setActiveStep(BookFormModalStep.Confirmation)}
-              disabled={continueActionDisabled()}
+              disabled={!canContinue}
             >
               Siguiente
             </Button>

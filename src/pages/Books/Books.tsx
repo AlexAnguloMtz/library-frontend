@@ -983,7 +983,7 @@ const Books: React.FC = () => {
               <Box sx={{
                 display: 'flex',
                 flexDirection: 'column',
-                width: '700px',
+                width: '900px',
               }}>
                 <Box sx={{
                   display: 'flex',
