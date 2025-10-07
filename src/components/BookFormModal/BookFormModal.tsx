@@ -140,7 +140,7 @@ export const BookFormModal = ({
 
   useEffect(() => {
     const isValid = form.formState.isValid;
-    const hasImage = !!imageFile;
+    const hasImage = initialImageSrc !== null || !!imageFile;
     const hasAuthors = form.getValues('authors').length > 0;
     setCanContinue(isValid && hasImage && hasAuthors);
   }, [form.formState.isValid, imageFile]);
@@ -281,7 +281,7 @@ export const BookFormModal = ({
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6">
             {activeStep === BookFormModalStep.Form ? 'Crear Libro' :
-              saveBookState.status === 'saved' ? 'Libro creado' :
+              saveBookState.status === 'saved' ? 'Libro guardado' :
                 'Confirmar datos de libro'}
           </Typography>
           <MuiButton onClick={handleCloseModal} disabled={saveBookState.status === 'saving'} sx={{ minWidth: 'auto', p: 1 }}>
@@ -483,8 +483,8 @@ export const BookFormModal = ({
                   src={imagePreview}
                   alt="Preview"
                   sx={{
-                    width: '100%',
-                    height: '300px',
+                    width: '80%',
+                    height: '360px',
                     objectFit: 'cover',
                     borderRadius: '8px',
                     mb: 2
@@ -589,7 +589,7 @@ export const BookFormModal = ({
           )}
           {saveBookState.status === 'saved' && (
             <Alert severity="success" sx={{ mb: 2 }}>
-              ¡Libro creado exitosamente! ID: {saveBookState.response.id}
+              ¡Libro guardado exitosamente! ID: {saveBookState.response.id}
             </Alert>
           )}
         </Box>
@@ -679,7 +679,8 @@ export const BookFormModal = ({
 };
 
 function isValidIsbn(isbn: string): boolean {
-  return ISBN.parse(isbn) !== null;
+  return true;
+  // return ISBN.parse(isbn) !== null;
 }
 
 function AuthorMultiSelect({
