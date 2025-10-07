@@ -1,11 +1,11 @@
-import { useState, type JSX } from 'react';
+import { useEffect, useState, type JSX } from 'react';
 import './styles.css';
 import { Dialog, DialogTitle, Button as MuiButton, DialogContent, Stepper, Step, StepLabel, Alert, DialogActions, CircularProgress, Autocomplete, Card, CardContent, IconButton } from '@mui/material';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { TextField } from '@mui/material';
 import { Button } from '../Button';
-import type { CreateBookResponse } from '../../models/CreateBookResponse';
+import type { BookDetailsResponse } from '../../models/BookDetailsResponse';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import bookService from '../../services/BookService';
@@ -26,12 +26,18 @@ import type { PaginationResponse } from '../../models/PaginationResponse';
 import type { AuthorPreview } from '../../models/AuthorPreview';
 import CloseIcon from "@mui/icons-material/Close";
 
+type InitialValuesState =
+  { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'success'; values: BookFormData }
+  | { status: 'error'; error: string };
+
 const MAX_AUTHORS: number = 10;
 
 type SaveBookState =
   | { status: 'idle' }
   | { status: 'saving' }
-  | { status: 'saved'; response: CreateBookResponse }
+  | { status: 'saved'; response: BookDetailsResponse }
   | { status: 'error'; error: string };
 
 enum BookFormModalStep {
@@ -70,16 +76,32 @@ const bookFormSchema = z.object({
     .min(1, 'La categoría es requerida'),
 });
 
-type BookFormData = z.infer<typeof bookFormSchema>;
+export type BookFormData = z.infer<typeof bookFormSchema>;
+
+const DEFAULT_INITIAL_VALUES: BookFormData = {
+  title: '',
+  year: '',
+  isbn: '',
+  authors: [],
+  categoryId: '',
+};
 
 export const BookFormModal = ({
   open,
   onCloseModal,
   categories,
+  getInitialFormValues = () => Promise.resolve(DEFAULT_INITIAL_VALUES),
+  save,
+  initialImageSrc = null,
+  onSaveSuccess = () => { }
 }: {
   open: boolean;
   onCloseModal: () => void;
   categories: OptionResponse[];
+  getInitialFormValues?: () => Promise<BookFormData>;
+  save: (data: BookFormData, imageFile: File | null) => Promise<BookDetailsResponse>;
+  initialImageSrc?: string | null;
+  onSaveSuccess?: () => void;
 }): JSX.Element => {
 
   const navigate = useNavigate();
@@ -89,19 +111,42 @@ export const BookFormModal = ({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [searchedAuthors, setSearchedAuthors] = useState<AuthorCardModel[]>([]);
   const [addingAuthor, setAddingAuthor] = useState(false);
+  const [initialValuesState, setInitialValuesState] = useState<InitialValuesState>({ status: 'idle' });
 
   const form = useForm<BookFormData>({
     resolver: zodResolver(bookFormSchema),
     mode: 'onChange',
     reValidateMode: 'onChange',
-    defaultValues: {
-      title: '',
-      year: '',
-      isbn: '',
-      authors: [],
-      categoryId: '',
-    }
+    defaultValues: DEFAULT_INITIAL_VALUES,
   });
+
+  useEffect(() => {
+    if (initialImageSrc && open === true) {
+      setImagePreview(initialImageSrc);
+    }
+  }, [open, initialImageSrc]);
+
+  useEffect(() => {
+    if (open) {
+      fetchInitialData();
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (initialValuesState.status === 'success') {
+      form.reset(initialValuesState.values);
+    }
+  }, [initialValuesState]);
+
+  const fetchInitialData = async () => {
+    try {
+      setInitialValuesState({ status: 'loading' });
+      const initialValues = await getInitialFormValues();
+      setInitialValuesState({ status: 'success', values: initialValues });
+    } catch (error) {
+      setInitialValuesState({ status: 'error', error: 'Error al cargar' });
+    }
+  }
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -111,14 +156,11 @@ export const BookFormModal = ({
     }
   };
 
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
-  };
-
   const handleViewSavedBook = () => {
+    handleCloseModal();
     if (saveBookState.status === 'saved') {
-      navigate(`/dashboard/books/${saveBookState.response.id}`);
+      // TODO 
+      // handle view saved book 
     }
   };
 
@@ -136,12 +178,11 @@ export const BookFormModal = ({
   const handleSubmit = async () => {
     setSaveBookState({ status: 'saving' });
     try {
-      const response = await bookService.createBook(toDto(form.getValues(), imageFile!));
+      const response = await save(form.getValues(), imageFile);
       setSaveBookState({ status: 'saved', response: response });
+      onSaveSuccess();
     } catch (error: any) {
       setSaveBookState({ status: 'error', error: error.message || 'Error al crear el libro' });
-    } finally {
-      setSaveBookState({ status: 'idle' });
     }
   };
 
@@ -192,6 +233,46 @@ export const BookFormModal = ({
       return true;
     }
     return false;
+  }
+
+  function handleGoBack(): void {
+    setSaveBookState({ status: 'idle' });
+    setActiveStep(BookFormModalStep.Form);
+  }
+
+  function handleRetryLoadInitialValues(e: any): void {
+    e.preventDefault();
+    fetchInitialData();
+  }
+
+  if (initialValuesState.status === 'loading' || initialValuesState.status === 'idle') {
+    return (
+      <Dialog
+        open={open}
+        onClose={handleCloseModal}
+      >
+        <CircularProgress size={24} sx={{ color: 'primary.main', m: 3 }} />
+      </Dialog>
+    );
+  }
+
+  if (initialValuesState.status === 'error') {
+    return (
+      <Dialog
+        open={open}
+        onClose={handleCloseModal}
+      >
+        <DialogTitle>Error al cargar</DialogTitle>
+        <DialogContent>
+          <Alert severity="error">{initialValuesState.error}</Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleRetryLoadInitialValues} type={'error'}>
+            Reintentar
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
   }
 
   return (
@@ -274,19 +355,16 @@ export const BookFormModal = ({
                       src={imagePreview}
                       alt="Preview"
                       sx={{
-                        width: '100%',
-                        height: '300px',
+                        width: '80%',
+                        height: '360px',
                         objectFit: 'cover',
                         borderRadius: '8px',
                         mb: 2
                       }}
                     />
                     <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                      <Button type="secondary" onClick={handleRemoveImage}>
-                        Borrar
-                      </Button>
                       <Button type="primary" onClick={() => document.getElementById('image-upload')?.click()}>
-                        Cambiar
+                        Cambiar foto
                       </Button>
                     </Box>
                     <input
@@ -386,7 +464,7 @@ export const BookFormModal = ({
                   </Box>
                 </Box>
                 <Box>
-                  <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>Autores</Typography>
+                  <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>Autores ({form.getValues('authors').length})</Typography>
                   <Box>
                     <AuthorMultiSelect
                       values={form.watch('authors')}
@@ -483,7 +561,7 @@ export const BookFormModal = ({
                       Categoría:
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {form.getValues('categoryId') || 'No especificado'}
+                      {categories.find(c => c.value === form.getValues('categoryId'))?.label || 'No especificado'}
                     </Typography>
                   </Box>
                 </Box>
@@ -541,59 +619,73 @@ export const BookFormModal = ({
             </Button>
           </Box>
         ) : (
-          <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'space-between' }}>
-            {activeStep === BookFormModalStep.Confirmation ? (
-              <>
-                <Button type="secondary" onClick={() => setActiveStep(BookFormModalStep.Form)} disabled={saveBookState.status === 'saving'}>
-                  Atrás
-                </Button>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button type="secondary" onClick={onCloseModal} disabled={saveBookState.status === 'saving'}>
-                    Cancelar
+          <>
+            <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'space-between' }}>
+
+              {activeStep === BookFormModalStep.Confirmation ? (
+                <>
+                  {
+                    saveBookState.status !== 'saved' &&
+                    <Button type="secondary" onClick={handleGoBack} disabled={saveBookState.status === 'saving'}>
+                      Atrás
+                    </Button>
+                  }
+
+                  <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
+
+                    {
+                      saveBookState.status !== 'saved' &&
+                      <Button type="secondary" onClick={handleCloseModal} disabled={saveBookState.status === 'saving'}>
+                        Cancelar
+                      </Button>
+                    }
+                    {
+                      saveBookState.status !== 'saved' && <Button
+                        type="primary"
+                        onClick={handleSubmit}
+                        disabled={saveBookState.status === 'saving'}
+                      >
+                        {saveBookState.status === 'saving' ? (
+                          <>
+                            <CircularProgress size={16} sx={{ color: 'white', mr: 1 }} />
+                            Guardando...
+                          </>
+                        ) : (
+                          'Guardar Libro'
+                        )}
+                      </Button>
+                    }
+                    {
+                      saveBookState.status === 'saved' &&
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button type="secondary" onClick={handleCloseModal}>
+                          Cerrar
+                        </Button>
+                        <Button type="primary" onClick={handleViewSavedBook}>
+                          Ver Libro
+                        </Button>
+                      </Box>
+                    }
+                  </Box>
+                </>
+              ) : (
+                <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
+                  <Button type="secondary" onClick={handleCloseModal}>
+                    Cerrar
                   </Button>
-                  <Button
-                    type="primary"
-                    onClick={handleSubmit}
-                    disabled={saveBookState.status === 'saving'}
-                  >
-                    {saveBookState.status === 'saving' ? (
-                      <>
-                        <CircularProgress size={16} sx={{ color: 'white', mr: 1 }} />
-                        Guardando...
-                      </>
-                    ) : (
-                      'Guardar Libro'
-                    )}
+                  <Button type="primary" onClick={handleViewSavedBook}>
+                    Ver Libro
                   </Button>
                 </Box>
-              </>
-            ) : (
-              <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
-                <Button type="secondary" onClick={handleCloseModal}>
-                  Cerrar
-                </Button>
-                <Button type="primary" onClick={handleViewSavedBook}>
-                  Ver Libro
-                </Button>
-              </Box>
-            )}
-          </Box>
+              )}
+            </Box>
+          </>
+
         )}
       </DialogActions>
     </Dialog>
   );
 };
-
-function toDto(form: BookFormData, imageFile: File): CreateBookRequest {
-  return {
-    title: form.title,
-    year: parseInt(form.year),
-    isbn: form.isbn,
-    authorIds: form.authors.map((author) => author.id),
-    categoryId: form.categoryId,
-    bookPicture: imageFile,
-  };
-}
 
 function isValidIsbn(isbn: string): boolean {
   return ISBN.parse(isbn) !== null;

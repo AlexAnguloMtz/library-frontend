@@ -4,6 +4,7 @@ import { Button } from '../../components/Button';
 import InputAdornment from "@mui/material/InputAdornment";
 import SearchIcon from '@mui/icons-material/Search';
 import DeleteIcon from "@mui/icons-material/DeleteOutline";
+import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, Pagination, MenuItem, Box, Typography, CircularProgress, Checkbox, FormControl, InputLabel, Select, TextField, Alert, Chip } from '@mui/material';
 import { DashboardModuleTopBar } from '../../components/DashboardModuleTopBar/DashboardModuleTopBar';
@@ -17,10 +18,14 @@ import authenticationHelper from '../../util/AuthenticationHelper';
 import type { AuthenticationResponse } from '../../models/AuthenticationResponse';
 import { CopyToClipboard } from '../../components/CopyToClipboard/CopyToClipboard';
 import bookService from '../../services/BookService';
-import type { BookResponse } from '../../models/BookResponse';
+import type { BookSummaryResponse } from '../../models/BookSummaryResponse';
 import type { OptionResponse } from '../../models/OptionResponse';
 import type { BookOptionsResponse } from '../../models/BookOptionsResponse';
-import { BookFormModal } from '../../components/BookFormModal/BookFormModal';
+import { BookFormModal, type BookFormData } from '../../components/BookFormModal/BookFormModal';
+import type { CreateBookRequest } from '../../models/CreateBookRequest';
+import type { UpdateBookRequest } from '../../models/UpdateBookRequest';
+import type { BookDetailsResponse } from '../../models/BookDetailsResponse';
+import type { AuthorResponse } from '../../models/AuthorResponse';
 
 type BookFilters = {
   search: string;
@@ -46,13 +51,13 @@ type BooksState =
   | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'error'; error: string }
-  | { status: 'success'; response: PaginationResponse<BookResponse> };
+  | { status: 'success'; response: PaginationResponse<BookSummaryResponse> };
 
 type FiltersState =
-| { status: 'idle' }
-| { status: 'loading' }
-| { status: 'error' }
-| { status: 'success'; categories: OptionResponse[] };
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'error' }
+  | { status: 'success'; categories: OptionResponse[] };
 
 const Books: React.FC = () => {
   const [filters, setFilters] = useState<BookFilters>({
@@ -82,13 +87,15 @@ const Books: React.FC = () => {
 
   const [errorOpen, setErrorOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [bookToDelete, setBookToDelete] = useState<BookResponse | null>(null);
+  const [bookToDelete, setBookToDelete] = useState<BookSummaryResponse | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Estados del modal de crear libro
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [updateModalOpen, setUpdateModalOpen] = useState(false);
+  const [bookToUpdate, setBookToUpdate] = useState<BookSummaryResponse | null>(null);
 
   // Estados para selección múltiple
   const [selectedBooks, setSelectedBooks] = useState<Set<string>>(new Set());
@@ -164,7 +171,7 @@ const Books: React.FC = () => {
     if (booksState.status === 'success' && booksState.response) {
       const totalBooks = booksState.response.items.length;
       const selectedCount = selectedBooks.size;
-      
+
       if (selectedCount === 0) {
         setIsAllSelected(false);
       } else if (selectedCount === totalBooks) {
@@ -183,7 +190,7 @@ const Books: React.FC = () => {
         const response = await bookService.getBookOptions();
         const sortedOptions = withSortedOptions(response);
         setFiltersState({ status: 'success', categories: sortedOptions.categories });
-        setBookOptions(sortedOptions); 
+        setBookOptions(sortedOptions);
       } catch (error: any) {
         // Fail silently 
         setFiltersState({ status: 'error' });
@@ -215,19 +222,19 @@ const Books: React.FC = () => {
   }, [debouncedSearch, filters.available, debouncedYearMin, debouncedYearMax, filters.categories]);
 
   useEffect(() => {
-    const fetchBooks = async () => {
-      setBooksState({ status: 'loading' });
-      try {
-        const response = await bookService.getBooks(toQuery(filters), pagination(paginationState, paginationControls));
-        setBooksState({ status: 'success', response });
-      } catch (error: any) {
-        setBooksState({ status: 'error', error: error.message || 'Unknown error' });
-        setErrorOpen(true);
-      }
-    };
-
     fetchBooks();
   }, [debouncedSearch, filters.available, debouncedYearMin, debouncedYearMax, filters.categories, paginationState, paginationControls]);
+
+  const fetchBooks = async () => {
+    setBooksState({ status: 'loading' });
+    try {
+      const response = await bookService.getBooks(toQuery(filters), pagination(paginationState, paginationControls));
+      setBooksState({ status: 'success', response });
+    } catch (error: any) {
+      setBooksState({ status: 'error', error: error.message || 'Unknown error' });
+      setErrorOpen(true);
+    }
+  };
 
   const toQuery = (filters: BookFilters): GetBooksRequest => {
     return {
@@ -280,19 +287,19 @@ const Books: React.FC = () => {
   const handleYearInput = (field: 'yearMin' | 'yearMax', value: string) => {
     // Solo permitir dígitos
     const numericValue = value.replace(/\D/g, '');
-    
+
     // No permitir que empiece con 0 si tiene más de 1 dígito
-    const cleanValue = numericValue.length > 1 && numericValue.startsWith('0') 
-      ? numericValue.substring(1) 
+    const cleanValue = numericValue.length > 1 && numericValue.startsWith('0')
+      ? numericValue.substring(1)
       : numericValue;
-    
+
     // Máximo 4 dígitos
     const finalValue = cleanValue.length > 4 ? cleanValue.substring(0, 4) : cleanValue;
-    
+
     // Validar que esté en el rango 1 - año actual
     const currentYear = new Date().getFullYear();
     const yearNum = parseInt(finalValue, 10);
-    
+
     if (finalValue === '' || (yearNum >= 1 && yearNum <= currentYear)) {
       setFilters(prev => ({ ...prev, [field]: finalValue }));
     }
@@ -329,7 +336,12 @@ const Books: React.FC = () => {
     return { sort: column, order: 'asc' };
   };
 
-  const handleDeleteClick = (book: BookResponse) => {
+  const handleEditClick = (book: BookSummaryResponse) => {
+    setBookToUpdate(book);
+    setUpdateModalOpen(true);
+  };
+
+  const handleDeleteClick = (book: BookSummaryResponse) => {
     setBookToDelete(book);
     setDeleteModalOpen(true);
     setDeleteSuccess(false);
@@ -352,13 +364,13 @@ const Books: React.FC = () => {
 
   const handleDeleteConfirm = async () => {
     if (!bookToDelete) return;
-    
+
     setIsDeleting(true);
     setDeleteError(null);
-    
+
     try {
       await bookService.deleteById(bookToDelete.id);
-      
+
       // Remove book from table
       if (booksState.status === 'success') {
         const updatedItems = booksState.response.items.filter(book => book.id !== bookToDelete.id);
@@ -369,7 +381,7 @@ const Books: React.FC = () => {
         };
         setBooksState({ status: 'success', response: updatedResponse });
       }
-      
+
       setDeleteSuccess(true);
     } catch (error: any) {
       console.error('Error deleting book:', error);
@@ -394,6 +406,18 @@ const Books: React.FC = () => {
     setCreateModalOpen(false);
   };
 
+  const handleCloseUpdateModal = () => {
+    setUpdateModalOpen(false);
+  };
+
+  const getBookToUpdateDetails = async (): Promise<BookFormData> => {
+    if (!bookToUpdate) {
+      throw new Error('No book selected for update');
+    }
+    const bookDetails: BookDetailsResponse = await bookService.getBookById(bookToUpdate.id);
+    return fromDtoToFormValues(bookDetails);
+  };
+
   const renderAuthors = (authors: string[]) => {
     if (authors.length === 0) {
       return (
@@ -406,12 +430,12 @@ const Books: React.FC = () => {
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {authors.map((author, index) => (
-            <div key={index} style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+            <div key={index} style={{
+              display: 'flex',
+              alignItems: 'center',
               gap: '6px',
-              fontSize: '12px', 
-              color: '#1f2937' 
+              fontSize: '12px',
+              color: '#1f2937'
             }}>
               <div style={{
                 width: '4px',
@@ -429,12 +453,12 @@ const Books: React.FC = () => {
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {authors.slice(0, 2).map((author, index) => (
-            <div key={index} style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+            <div key={index} style={{
+              display: 'flex',
+              alignItems: 'center',
               gap: '6px',
-              fontSize: '12px', 
-              color: '#1f2937' 
+              fontSize: '12px',
+              color: '#1f2937'
             }}>
               <div style={{
                 width: '4px',
@@ -446,12 +470,12 @@ const Books: React.FC = () => {
               <span>{author}</span>
             </div>
           ))}
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
             gap: '6px',
-            fontSize: '11px', 
-            color: '#6B7280' 
+            fontSize: '11px',
+            color: '#6B7280'
           }}>
             <div style={{
               width: '4px',
@@ -483,8 +507,8 @@ const Books: React.FC = () => {
             }
           }}
         />
-        <span style={{ 
-          fontSize: '11px', 
+        <span style={{
+          fontSize: '11px',
           color: '#6B7280',
           fontWeight: 400
         }}>
@@ -594,8 +618,8 @@ const Books: React.FC = () => {
               renderValue={(selected) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {(selected as string[]).map((value) => (
-                    <Chip 
-                      key={value} 
+                    <Chip
+                      key={value}
                       label={bookOptions?.categories.find(cat => cat.value === value)?.label || value}
                       size="small"
                     />
@@ -618,19 +642,19 @@ const Books: React.FC = () => {
         <Button type='secondary' onClick={clearFilters} className='small-button'>
           Limpiar filtros
         </Button>
-        
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {/* Element Count */}
           {displayCount && (
-            <span style={{ 
-              fontSize: '12px', 
+            <span style={{
+              fontSize: '12px',
               color: '#6B7280',
               marginRight: '0.5rem'
             }}>
               {displayCount.start} - {displayCount.end} de {displayCount.total}
             </span>
           )}
-          
+
           {/* Page Size Selector */}
           <FormControl size="small" sx={{ minWidth: 100 }}>
             <InputLabel sx={{ fontSize: '12px' }}>Items</InputLabel>
@@ -781,11 +805,11 @@ const Books: React.FC = () => {
                   </tr>
                 ))
               )}
-              {booksState.status === 'success' && booksState.response.items.map((book: BookResponse) => (
-                <tr 
+              {booksState.status === 'success' && booksState.response.items.map((book: BookSummaryResponse) => (
+                <tr
                   key={book.id}
-                  style={{ 
-                    backgroundColor: selectedBooks.has(book.id) ? '#f0f9ff' : 'transparent' 
+                  style={{
+                    backgroundColor: selectedBooks.has(book.id) ? '#f0f9ff' : 'transparent'
                   }}
                 >
                   <td style={{ textAlign: 'center' }}>
@@ -803,7 +827,7 @@ const Books: React.FC = () => {
                       <span className='author-name'>{book.title}</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span className='author-id'>ID: {book.id}</span>
-                        <CopyToClipboard 
+                        <CopyToClipboard
                           text={book.id}
                           size="tiny"
                         />
@@ -828,15 +852,23 @@ const Books: React.FC = () => {
                   <td>
                     <div className='actions'>
                       {auth && authenticationHelper.hasAnyPermission(auth, ['books:read']) && (
-                        <button 
+                        <button
                           className='action-button view-button'
-                          onClick={() => {/* TODO: Implement view functionality */}}
+                          onClick={() => {/* TODO: Implement view functionality */ }}
                         >
                           <VisibilityIcon className='view-icon' />
                         </button>
                       )}
+                      {auth && authenticationHelper.hasAnyPermission(auth, ['books:update']) && (
+                        <button
+                          className='action-button edit-button'
+                          onClick={() => handleEditClick(book)}
+                        >
+                          <EditIcon className='edit-icon' />
+                        </button>
+                      )}
                       {auth && authenticationHelper.hasAnyPermission(auth, ['books:delete']) && (
-                        <button 
+                        <button
                           className='action-button delete-button'
                           onClick={() => handleDeleteClick(book)}
                         >
@@ -853,11 +885,24 @@ const Books: React.FC = () => {
       </div>
 
       {/* Create Modal */}
-       <BookFormModal
-         open={createModalOpen}
-         onCloseModal={handleCloseCreateModal}
-         categories={bookOptions?.categories || []}
-       />
+      <BookFormModal
+        open={createModalOpen}
+        onCloseModal={handleCloseCreateModal}
+        categories={bookOptions?.categories || []}
+        save={(data: BookFormData, imageFile: File | null) => bookService.createBook(toCreationDto(data, imageFile))}
+      />
+
+
+      {/* Update Modal */}
+      <BookFormModal
+        open={updateModalOpen}
+        onCloseModal={handleCloseUpdateModal}
+        categories={bookOptions?.categories || []}
+        initialImageSrc={bookToUpdate?.imageUrl || undefined}
+        getInitialFormValues={getBookToUpdateDetails}
+        save={(data: BookFormData, imageFile: File | null) => bookService.updateBook(bookToUpdate!.id, toUpdateDto(data, imageFile))}
+        onSaveSuccess={() => fetchBooks()}
+      />
 
       {/* Error Modal */}
       <Dialog open={errorOpen} onClose={closeError}>
@@ -882,8 +927,8 @@ const Books: React.FC = () => {
       </Dialog>
 
       {/* Delete Confirmation Modal */}
-      <Dialog 
-        open={deleteModalOpen} 
+      <Dialog
+        open={deleteModalOpen}
         onClose={isDeleting ? undefined : handleDeleteCancel}
         maxWidth="sm"
         fullWidth
@@ -895,8 +940,8 @@ const Books: React.FC = () => {
           }
         }}
       >
-        <DialogTitle sx={{ 
-          textAlign: 'left', 
+        <DialogTitle sx={{
+          textAlign: 'left',
           pb: 1,
           fontSize: '1.25rem',
           fontWeight: 600,
@@ -904,7 +949,7 @@ const Books: React.FC = () => {
         }}>
           ¿Eliminar este libro?
         </DialogTitle>
-        
+
         <DialogContent sx={{ pt: 2, pb: 3 }}>
           {/* Alerts */}
           {deleteSuccess && (
@@ -919,149 +964,167 @@ const Books: React.FC = () => {
           )}
 
           {!deleteSuccess && bookToDelete && (
-            <Box sx={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              gap: 1.5,
-              width: '100%'
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'row',
             }}>
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'flex-start', 
-                alignItems: 'center',
-                py: 0.5,
-                gap: 2
-              }}>
-                <Typography variant="body2" sx={{ 
-                  fontWeight: 400, 
-                  color: '#9ca3af',
-                  minWidth: '120px',
-                  textAlign: 'left'
+              <Box
+                component="img"
+                src={bookToDelete.imageUrl}
+                alt={"preview-" + bookToDelete.id}
+                sx={{
+                  width: '100%',
+                  height: '300px',
+                  objectFit: 'cover',
+                  borderRadius: '8px',
+                  mb: 2
                 }}>
-                  ID:
-                </Typography>
-                <Typography variant="body2" sx={{ 
-                  fontWeight: 600,
-                  color: '#1f2937',
-                  textAlign: 'right',
-                  flex: 1
-                }}>
-                  {bookToDelete.id}
-                </Typography>
               </Box>
-
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'flex-start', 
-                alignItems: 'center',
-                py: 0.5,
-                gap: 2
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1.5,
+                width: '100%',
+                padding: '0 20px',
               }}>
-                <Typography variant="body2" sx={{ 
-                  fontWeight: 400, 
-                  color: '#9ca3af',
-                  minWidth: '120px',
-                  textAlign: 'left'
+                <Box sx={{
+                  display: 'flex',
+                  justifyContent: 'flex-start',
+                  alignItems: 'center',
+                  py: 0.5,
+                  gap: 2
                 }}>
-                  Título:
-                </Typography>
-                <Typography variant="body2" sx={{ 
-                  fontWeight: 600,
-                  color: '#1f2937',
-                  textAlign: 'right',
-                  flex: 1
-                }}>
-                  {bookToDelete.title}
-                </Typography>
-              </Box>
+                  <Typography variant="body2" sx={{
+                    fontWeight: 400,
+                    color: '#9ca3af',
+                    minWidth: '120px',
+                    textAlign: 'left'
+                  }}>
+                    ID:
+                  </Typography>
+                  <Typography variant="body2" sx={{
+                    fontWeight: 600,
+                    color: '#1f2937',
+                    textAlign: 'right',
+                    flex: 1
+                  }}>
+                    {bookToDelete.id}
+                  </Typography>
+                </Box>
 
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'flex-start', 
-                alignItems: 'center',
-                py: 0.5,
-                gap: 2
-              }}>
-                <Typography variant="body2" sx={{ 
-                  fontWeight: 400, 
-                  color: '#9ca3af',
-                  minWidth: '120px',
-                  textAlign: 'left'
+                <Box sx={{
+                  display: 'flex',
+                  justifyContent: 'flex-start',
+                  alignItems: 'center',
+                  py: 0.5,
+                  gap: 2
                 }}>
-                  ISBN:
-                </Typography>
-                <Typography variant="body2" sx={{ 
-                  fontWeight: 600,
-                  color: '#1f2937',
-                  textAlign: 'right',
-                  flex: 1
-                }}>
-                  {bookToDelete.isbn}
-                </Typography>
-              </Box>
+                  <Typography variant="body2" sx={{
+                    fontWeight: 400,
+                    color: '#9ca3af',
+                    minWidth: '120px',
+                    textAlign: 'left'
+                  }}>
+                    Título:
+                  </Typography>
+                  <Typography variant="body2" sx={{
+                    fontWeight: 600,
+                    color: '#1f2937',
+                    textAlign: 'right',
+                    flex: 1
+                  }}>
+                    {bookToDelete.title}
+                  </Typography>
+                </Box>
 
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'flex-start', 
-                alignItems: 'center',
-                py: 0.5,
-                gap: 2
-              }}>
-                <Typography variant="body2" sx={{ 
-                  fontWeight: 400, 
-                  color: '#9ca3af',
-                  minWidth: '120px',
-                  textAlign: 'left'
+                <Box sx={{
+                  display: 'flex',
+                  justifyContent: 'flex-start',
+                  alignItems: 'center',
+                  py: 0.5,
+                  gap: 2
                 }}>
-                  Categoría:
-                </Typography>
-                <Typography variant="body2" sx={{ 
-                  fontWeight: 600,
-                  color: '#1f2937',
-                  textAlign: 'right',
-                  flex: 1
-                }}>
-                  {bookToDelete.category}
-                </Typography>
-              </Box>
+                  <Typography variant="body2" sx={{
+                    fontWeight: 400,
+                    color: '#9ca3af',
+                    minWidth: '120px',
+                    textAlign: 'left'
+                  }}>
+                    ISBN:
+                  </Typography>
+                  <Typography variant="body2" sx={{
+                    fontWeight: 600,
+                    color: '#1f2937',
+                    textAlign: 'right',
+                    flex: 1
+                  }}>
+                    {bookToDelete.isbn}
+                  </Typography>
+                </Box>
 
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'flex-start', 
-                alignItems: 'center',
-                py: 0.5,
-                gap: 2
-              }}>
-                <Typography variant="body2" sx={{ 
-                  fontWeight: 400, 
-                  color: '#9ca3af',
-                  minWidth: '120px',
-                  textAlign: 'left'
+                <Box sx={{
+                  display: 'flex',
+                  justifyContent: 'flex-start',
+                  alignItems: 'center',
+                  py: 0.5,
+                  gap: 2
                 }}>
-                  Año:
-                </Typography>
-                <Typography variant="body2" sx={{ 
-                  fontWeight: 600,
-                  color: '#1f2937',
-                  textAlign: 'right',
-                  flex: 1
+                  <Typography variant="body2" sx={{
+                    fontWeight: 400,
+                    color: '#9ca3af',
+                    minWidth: '120px',
+                    textAlign: 'left'
+                  }}>
+                    Categoría:
+                  </Typography>
+                  <Typography variant="body2" sx={{
+                    fontWeight: 600,
+                    color: '#1f2937',
+                    textAlign: 'right',
+                    flex: 1
+                  }}>
+                    {bookToDelete.category}
+                  </Typography>
+                </Box>
+
+                <Box sx={{
+                  display: 'flex',
+                  justifyContent: 'flex-start',
+                  alignItems: 'center',
+                  py: 0.5,
+                  gap: 2
                 }}>
-                  {bookToDelete.year}
-                </Typography>
+                  <Typography variant="body2" sx={{
+                    fontWeight: 400,
+                    color: '#9ca3af',
+                    minWidth: '120px',
+                    textAlign: 'left'
+                  }}>
+                    Año:
+                  </Typography>
+                  <Typography variant="body2" sx={{
+                    fontWeight: 600,
+                    color: '#1f2937',
+                    textAlign: 'right',
+                    flex: 1
+                  }}>
+                    {bookToDelete.year}
+                  </Typography>
+                </Box>
               </Box>
             </Box>
           )}
         </DialogContent>
 
-        <DialogActions sx={{ 
-          p: 3, 
+        <DialogActions sx={{
+          p: 3,
           pt: 1,
           gap: 0.5,
           justifyContent: 'flex-end'
         }}>
           {deleteSuccess ? (
-            <Button 
-              type='primary' 
+            <Button
+              type='primary'
               onClick={handleDeleteClose}
               className='small-button'
             >
@@ -1069,16 +1132,16 @@ const Books: React.FC = () => {
             </Button>
           ) : (
             <>
-              <Button 
-                type='secondary' 
+              <Button
+                type='secondary'
                 onClick={handleDeleteCancel}
                 className='small-button'
                 disabled={isDeleting}
               >
                 Cancelar
               </Button>
-              <Button 
-                type='error' 
+              <Button
+                type='error'
                 onClick={handleDeleteConfirm}
                 className='small-button'
                 disabled={isDeleting}
@@ -1099,5 +1162,47 @@ const Books: React.FC = () => {
     </div>
   );
 };
+
+function toCreationDto(form: BookFormData, imageFile: File | null): CreateBookRequest {
+  if (imageFile === null) {
+    throw new Error("Book image is required");
+  }
+  return {
+    title: form.title,
+    year: parseInt(form.year),
+    isbn: form.isbn,
+    authorIds: form.authors.map((author) => author.id),
+    categoryId: form.categoryId,
+    bookPicture: imageFile,
+  };
+}
+
+function toUpdateDto(form: BookFormData, imageFile: File | null): UpdateBookRequest {
+  return {
+    title: form.title,
+    year: parseInt(form.year),
+    isbn: form.isbn,
+    authorIds: form.authors.map((author) => author.id),
+    categoryId: form.categoryId,
+    bookPicture: imageFile || undefined,
+  };
+}
+
+function fromDtoToFormValues(dto: BookDetailsResponse): BookFormData {
+  return {
+    title: dto.title,
+    year: dto.year.toString(),
+    isbn: dto.isbn,
+    authors: dto.authors.map((author: AuthorResponse) => ({
+      id: author.id,
+      firstName: author.firstName,
+      lastName: author.lastName,
+      country: author.country.name,
+      dateOfBirth: author.dateOfBirth,
+      bookCount: author.bookCount,
+    })),
+    categoryId: dto.category.id,
+  };
+}
 
 export default Books;

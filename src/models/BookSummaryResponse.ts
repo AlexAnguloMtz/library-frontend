@@ -1,6 +1,6 @@
 import type { BookAvailabilityResponse } from "./BookAvailabilityResponse";
 
-export type BookResponse = {
+export type BookSummaryResponse = {
     id: string;
     title: string;
     isbn: string;

@@ -54,25 +54,20 @@ export function Login() {
     formState: { errors }
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    mode: 'onChange',          
-    reValidateMode: 'onChange', 
+    mode: 'onChange',
+    reValidateMode: 'onChange',
     defaultValues: { email: '', password: '' }
   });
 
   const handleTogglePasswordVisibility = () => setShowPassword(prev => !prev);
 
   const onSubmit = async (data: LoginFormData) => {
-    setLoginState({ status: LoginStatus.LoggingIn }); 
+    setLoginState({ status: LoginStatus.LoggingIn });
     try {
       const authentication: AuthenticationResponse = await authService.login({ email: data.email, password: data.password });
       setLoginState({ status: LoginStatus.LoginSuccess });
       authenticationHelper.setAuthentication(authentication);
-      
-      if (authenticationHelper.hasAnyPermission(authentication, ['users:read'])) {
-        navigate('/dashboard/users');
-      } else {
-        navigate('/dashboard/profile');
-      }
+      navigate('/dashboard/books');
     } catch (error: any) {
       setLoginState({
         status: LoginStatus.LoginError,
@@ -165,16 +160,16 @@ export function Login() {
             </Box>
 
             {/* Submit */}
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                disabled={loginState.status === LoginStatus.LoggingIn}
-                className="login-button"
-                startIcon={( loginState.status === LoginStatus.LoggingIn) ? <CircularProgress size={20} /> : undefined}
-              >
-                {(loginState.status === LoginStatus.LoggingIn) ? 'Iniciando sesión...' : 'Iniciar sesión'}
-              </Button>
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              disabled={loginState.status === LoginStatus.LoggingIn}
+              className="login-button"
+              startIcon={(loginState.status === LoginStatus.LoggingIn) ? <CircularProgress size={20} /> : undefined}
+            >
+              {(loginState.status === LoginStatus.LoggingIn) ? 'Iniciando sesión...' : 'Iniciar sesión'}
+            </Button>
           </Box>
         </CardContent>
       </Card>

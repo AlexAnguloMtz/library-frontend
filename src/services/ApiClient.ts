@@ -77,6 +77,18 @@ class ApiClient {
         });
     }
 
+    public patch<T>(endpoint: string, body?: any, options?: RequestInit): Promise<T> {
+        return this.request<T>(endpoint, {
+            ...options,
+            method: 'PATCH',
+            body: body instanceof FormData ? body : JSON.stringify(body),
+            headers: {
+                ...options?.headers,
+                ...(body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+            },
+        });
+    }
+
     public delete<T>(endpoint: string, options?: RequestInit): Promise<T> {
         return this.request<T>(endpoint, { ...options, method: 'DELETE' });
     }
