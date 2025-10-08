@@ -333,24 +333,14 @@ interface StepResultProps {
 }
 const StepResult: React.FC<StepResultProps> = ({ result }) => (
     <Paper elevation={0} sx={{ p: 3, maxWidth: 500 }}>
-        <Box display="grid" gridTemplateColumns="180px 1fr" rowGap={1} alignItems="center">
-            <Box display="flex" alignItems="center">
-                <CheckCircleIcon color="success" sx={{ mr: 1 }} />
-                <Typography>Libros movidos:</Typography>
-            </Box>
-            <Typography><strong>{result.movedBooks}</strong></Typography>
+        <Box display="grid" gridTemplateColumns="50px 1fr" rowGap={1} alignItems="center">
+            <CheckCircleIcon color="success" sx={{ mr: 1 }} />
+            <Typography>Se movieron <strong>{result.movedBooks}</strong> libros a <strong>{result.targetCategory.name}</strong>. Ahora tiene <strong>{result.targetCategory.bookCount}</strong> libros.</Typography>
 
-            <Box display="flex" alignItems="center">
-                <DeleteIcon color="error" sx={{ mr: 1 }} />
-                <Typography>Categorías eliminadas:</Typography>
-            </Box>
-            <Typography><strong>{result.deletedCategories}</strong></Typography>
+            <DeleteIcon color="error" sx={{ mr: 1 }} />
+            <Typography>Se eliminaron <strong>{result.deletedCategories}</strong> categorías.</Typography>
 
-            <Box display="flex" alignItems="center">
-                <CategoryIcon color="primary" sx={{ mr: 1 }} />
-                <Typography>Categoría resultante:</Typography>
-            </Box>
-            <Typography><strong>{result.targetCategory.name}</strong> con <strong>{result.targetCategory.bookCount}</strong> libros</Typography>
+
         </Box>
     </Paper>
 );
