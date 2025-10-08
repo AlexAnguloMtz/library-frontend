@@ -5,7 +5,7 @@ export type BookSummaryResponse = {
     title: string;
     isbn: string;
     authors: string[];
-    category?: string;
+    category: string;
     year: number;
     imageUrl: string;
     availability: BookAvailabilityResponse;
