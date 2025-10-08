@@ -23,7 +23,7 @@ class BookService {
     }
 
     async getBookById(id: string): Promise<BookDetailsResponse> {
-        return apiClient.get(`/api/v1/books/${id}`);
+        return await apiClient.get(`/api/v1/books/${id}`);
     }
 
     async createBook(request: CreateBookRequest): Promise<BookDetailsResponse> {

@@ -5,24 +5,26 @@ import UserPage from './pages/UserPage/UserPage';
 import Authors from './pages/Authors/Authors';
 import Books from './pages/Books/Books';
 import BookCategories from './pages/BookCategories/BookCategories';
+import BookPage from './pages/BookPage/BookPage';
 import { Login } from './pages/Login/Login';
 
 function App() {
   return (
-      <HashRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to="/login" />} ></Route>
-          <Route path="/login" element={<Login />} ></Route>
-          <Route path="/dashboard" element={<DashboardLayout />} >
-            <Route path="/dashboard/users" element={<Users />} ></Route>
-            <Route path="/dashboard/users/:id" element={<UserPage key="user-specific" />} ></Route>
-            <Route path="/dashboard/books" element={<Books />} ></Route>
-            <Route path="/dashboard/authors" element={<Authors />} ></Route>
-            <Route path="/dashboard/book-categories" element={<BookCategories />} ></Route>
-            <Route path="/dashboard/profile" element={<UserPage key="user-profile" />} ></Route>
-          </Route>
-        </Routes>
-      </HashRouter>
+    <HashRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/login" />} ></Route>
+        <Route path="/login" element={<Login />} ></Route>
+        <Route path="/dashboard" element={<DashboardLayout />} >
+          <Route path="/dashboard/users" element={<Users />} ></Route>
+          <Route path="/dashboard/users/:id" element={<UserPage key="user-specific" />} ></Route>
+          <Route path="/dashboard/books" element={<Books />} ></Route>
+          <Route path="/dashboard/books/:id" element={<BookPage />} ></Route>
+          <Route path="/dashboard/authors" element={<Authors />} ></Route>
+          <Route path="/dashboard/book-categories" element={<BookCategories />} ></Route>
+          <Route path="/dashboard/profile" element={<UserPage key="user-profile" />} ></Route>
+        </Route>
+      </Routes>
+    </HashRouter>
   );
 }
 

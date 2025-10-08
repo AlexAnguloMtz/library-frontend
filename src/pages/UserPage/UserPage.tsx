@@ -95,7 +95,7 @@ enum UserPageStatus {
     SUCCESS = 'success'
 }
 
-type UserPageState = 
+type UserPageState =
     | { status: UserPageStatus.IDLE }
     | { status: UserPageStatus.LOADING }
     | { status: UserPageStatus.ERROR; error: string }
@@ -106,22 +106,22 @@ const UserPage: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [state, setState] = useState<UserPageState>({ status: UserPageStatus.IDLE });
-    
+
     // Estado separado para userOptions
     const [userOptions, setUserOptions] = useState<UserOptionsResponse | null>(null);
     const [isLoadingOptions, setIsLoadingOptions] = useState(false);
-    
+
     const [ageState, setAgeState] = useState<number>(0);
 
     // Calcular userId una vez para usar en todas las funciones
     const getUserId = (): string | null => {
         if (id) return id;
-        
+
         const auth = authenticationHelper.getAuthentication();
         if (auth && auth.userId) {
             return auth.userId;
         }
-        
+
         return null;
     };
 
@@ -129,12 +129,12 @@ const UserPage: React.FC = () => {
     const loadUserOptions = async (): Promise<void> => {
         // Si ya están cargados, no volver a cargar
         if (userOptions) return;
-        
+
         // Si ya está cargando, no volver a cargar
         if (isLoadingOptions) return;
-        
+
         setIsLoadingOptions(true);
-        
+
         try {
             const options = await userService.getUserOptions();
             setUserOptions(options);
@@ -156,7 +156,7 @@ const UserPage: React.FC = () => {
     const [isEditingAddress, setIsEditingAddress] = useState(false);
     const [isEditingAccount, setIsEditingAccount] = useState(false);
     const [isEditingPassword, setIsEditingPassword] = useState(false);
-    
+
     // Estados para edición de foto de perfil
     const [profilePictureModalOpen, setProfilePictureModalOpen] = useState(false);
     const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
@@ -164,13 +164,13 @@ const UserPage: React.FC = () => {
     const [isUpdatingProfilePicture, setIsUpdatingProfilePicture] = useState(false);
     const [profilePictureError, setProfilePictureError] = useState<string | null>(null);
     const [profilePictureSuccess, setProfilePictureSuccess] = useState(false);
-    
+
     // Estados para edición de datos personales
     const [personalDataModalOpen, setPersonalDataModalOpen] = useState(false);
     const [isUpdatingPersonalData, setIsUpdatingPersonalData] = useState(false);
     const [personalDataError, setPersonalDataError] = useState<string | null>(null);
     const [personalDataSuccess, setPersonalDataSuccess] = useState(false);
-    
+
     // Estados para edición de domicilio
     const [addressModalOpen, setAddressModalOpen] = useState(false);
     const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
@@ -188,7 +188,7 @@ const UserPage: React.FC = () => {
     const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
     const [passwordError, setPasswordError] = useState<string | null>(null);
     const [passwordSuccess, setPasswordSuccess] = useState(false);
-    
+
     // Estados para eliminar usuario
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [isDeletingUser, setIsDeletingUser] = useState(false);
@@ -249,7 +249,7 @@ const UserPage: React.FC = () => {
                 genderId: state.user.gender.id,
                 dateOfBirth: localDate
             });
-            
+
             addressForm.reset({
                 address: state.user.address?.address || '',
                 zipCode: state.user.address?.zipCode || '',
@@ -268,25 +268,25 @@ const UserPage: React.FC = () => {
 
     const loadUserData = async () => {
         const userId = getUserId();
-        
+
         if (!userId) {
             navigate('/dashboard/users');
             return;
         }
 
         setState({ status: UserPageStatus.LOADING });
-        
+
         try {
             const user = await userService.getFullUserById(userId);
-            setState({ 
-                status: UserPageStatus.SUCCESS, 
+            setState({
+                status: UserPageStatus.SUCCESS,
                 user
             });
             setAgeState(user.age);
         } catch (error) {
-            setState({ 
-                status: UserPageStatus.ERROR, 
-                error: error instanceof Error ? error.message : 'Error desconocido' 
+            setState({
+                status: UserPageStatus.ERROR,
+                error: error instanceof Error ? error.message : 'Error desconocido'
             });
         }
     };
@@ -322,11 +322,11 @@ const UserPage: React.FC = () => {
     const handleDeleteUserConfirm = async () => {
         const userId = getUserId();
         if (!userId) return;
-        
+
         setIsDeletingUser(true);
         setDeleteError(null);
         setDeleteSuccess(false);
-        
+
         try {
             await userService.deleteUserById(userId);
             setDeleteSuccess(true);
@@ -406,7 +406,7 @@ const UserPage: React.FC = () => {
             const response = await userService.updateUserPersonalData(userId, request);
             setAgeState(response.age);
             // Actualizar el estado del usuario con los nuevos datos
-        if (state.status === UserPageStatus.SUCCESS) {
+            if (state.status === UserPageStatus.SUCCESS) {
                 setState({
                     status: UserPageStatus.SUCCESS,
                     user: {
@@ -464,7 +464,7 @@ const UserPage: React.FC = () => {
             };
 
             const response = await userService.updateUserAddress(userId, request);
-            
+
             // Actualizar el estado del usuario con los nuevos datos
             if (state.status === UserPageStatus.SUCCESS) {
                 setState({
@@ -579,20 +579,20 @@ const UserPage: React.FC = () => {
 
     const handleSaveProfilePicture = async () => {
         if (!selectedImageFile) return;
-        
+
         const userId = getUserId();
         if (!userId) return;
-        
+
         setIsUpdatingProfilePicture(true);
         setProfilePictureError(null);
-        
+
         try {
             const request: UpdateProfilePictureRequest = {
                 profilePicture: selectedImageFile
             };
-            
+
             const response: UpdateProfilePictureResponse = await userService.updateProfilePicture(userId, request);
-            
+
             // Actualizar la imagen en el estado
             if (state.status === UserPageStatus.SUCCESS) {
                 setState({
@@ -603,7 +603,7 @@ const UserPage: React.FC = () => {
                     }
                 });
             }
-            
+
             setProfilePictureSuccess(true);
         } catch (error: any) {
             setProfilePictureError(error.message || 'Error al actualizar la foto de perfil');
@@ -622,20 +622,20 @@ const UserPage: React.FC = () => {
         switch (state.status) {
             case UserPageStatus.IDLE:
                 return <div>Iniciando...</div>;
-            
+
             case UserPageStatus.LOADING:
                 return (
                     <Box sx={{ width: '100%' }}>
                         {/* Sección Superior - Skeleton */}
-                        <Box sx={{ 
-                            display: 'flex', 
-                            gap: 3, 
+                        <Box sx={{
+                            display: 'flex',
+                            gap: 3,
                             mb: 4,
                             p: 3
                         }}>
                             {/* Caja Izquierda - Foto Skeleton */}
-                            <Box sx={{ 
-                                width: 240, 
+                            <Box sx={{
+                                width: 240,
                                 height: 274,
                                 backgroundColor: '#f5f5f5',
                                 borderRadius: 1
@@ -650,19 +650,19 @@ const UserPage: React.FC = () => {
                                     <Skeleton variant="text" width="60%" height={32} />
                                     <Skeleton variant="text" width="40%" height={20} />
                                 </Box>
-                                
+
                                 {/* Información de contacto */}
                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                                     <Skeleton variant="text" width="70%" height={20} />
                                     <Skeleton variant="text" width="50%" height={20} />
                                 </Box>
-                                
+
                                 {/* Rol */}
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <Skeleton variant="text" width="30%" height={20} />
                                     <Skeleton variant="rectangular" width={60} height={24} sx={{ borderRadius: 3 }} />
                                 </Box>
-                                
+
                                 {/* Fecha de registro */}
                                 <Skeleton variant="text" width="45%" height={20} />
                             </Box>
@@ -683,7 +683,7 @@ const UserPage: React.FC = () => {
                         </Box>
                     </Box>
                 );
-            
+
             case UserPageStatus.ERROR:
                 return (
                     <div>
@@ -691,25 +691,20 @@ const UserPage: React.FC = () => {
                         <button onClick={handleRetry}>Reintentar</button>
                     </div>
                 );
-            
-            case UserPageStatus.SUCCESS:
-                function log(arg0: any): any {
-                    alert(arg0);
-                    return arg0;
-                }
 
+            case UserPageStatus.SUCCESS:
                 return (
                     <Box sx={{ width: '100%' }}>
                         {/* Sección Superior */}
-                        <Box sx={{ 
-                            display: 'flex', 
-                            gap: 3, 
+                        <Box sx={{
+                            display: 'flex',
+                            gap: 3,
                             mb: 4,
                             p: 3
                         }}>
                             {/* Caja Izquierda - Foto */}
-                            <Box sx={{ 
-                                width: 240, 
+                            <Box sx={{
+                                width: 240,
                                 height: 274,
                                 backgroundColor: '#f5f5f5',
                                 display: 'flex',
@@ -718,13 +713,13 @@ const UserPage: React.FC = () => {
                                 overflow: 'hidden'
                             }}>
                                 {state.user.profilePictureUrl ? (
-                                    <img 
-                                        src={state.user.profilePictureUrl} 
+                                    <img
+                                        src={state.user.profilePictureUrl}
                                         alt="Foto de perfil"
-                                        style={{ 
-                                            width: '100%', 
-                                            height: '100%', 
-                                            objectFit: 'cover' 
+                                        style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover'
                                         }}
                                     />
                                 ) : (
@@ -739,18 +734,18 @@ const UserPage: React.FC = () => {
                                 <Typography variant="h5" component="h1" sx={{ mb: 1 }}>
                                     {state.user.firstName} {state.user.lastName}
                                 </Typography>
-                                
+
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <Typography variant="body1" color="text.secondary">
                                         ID: {state.user.id}
                                     </Typography>
-                                    <CopyToClipboard 
+                                    <CopyToClipboard
                                         text={state.user.id}
-                                        size="small" 
+                                        size="small"
                                         sx={{ ml: 1 }}
                                     />
                                 </Box>
-                                
+
                                 {/* Rol del usuario */}
                                 <Box sx={{ mt: 1 }}>
                                     <Box
@@ -760,30 +755,30 @@ const UserPage: React.FC = () => {
                                             borderRadius: '16px',
                                             fontSize: '14px',
                                             fontWeight: 500,
-                                            backgroundColor: state.user.role.slug === 'ADMIN' ? '#DC2626' : 
-                                                           state.user.role.slug === 'LIBRARIAN' ? '#2563EB' : '#16A34A',
+                                            backgroundColor: state.user.role.slug === 'ADMIN' ? '#DC2626' :
+                                                state.user.role.slug === 'LIBRARIAN' ? '#2563EB' : '#16A34A',
                                             color: '#ffffff'
                                         }}
                                     >
                                         {state.user.role.name}
                                     </Box>
                                 </Box>
-                                
+
                                 {/* Botón de editar foto */}
                                 <Box sx={{ mt: 2 }}>
                                     {hasEditPermission() && (
-                                    <Button 
-                                        type="secondary" 
-                                        onClick={handleEditProfilePicture}
-                                        startIcon={<CameraAlt />}
-                                        sx={{ 
-                                            fontSize: '0.75rem',
-                                            padding: '6px 12px',
-                                            minWidth: 'auto'
-                                        }}
-                                    >
-                                        Cambiar foto
-                                    </Button>
+                                        <Button
+                                            type="secondary"
+                                            onClick={handleEditProfilePicture}
+                                            startIcon={<CameraAlt />}
+                                            sx={{
+                                                fontSize: '0.75rem',
+                                                padding: '6px 12px',
+                                                minWidth: 'auto'
+                                            }}
+                                        >
+                                            Cambiar foto
+                                        </Button>
                                     )}
                                 </Box>
                             </Box>
@@ -838,8 +833,8 @@ const UserPage: React.FC = () => {
                                                         await loadUserOptions();
                                                         setIsEditingBasicInfo(true);
                                                     }}>
-                                                    Editar
-                                                </Button>
+                                                        Editar
+                                                    </Button>
                                                 )
                                             )}
                                         </Box>
@@ -853,18 +848,18 @@ const UserPage: React.FC = () => {
                                                         name="firstName"
                                                         control={personalDataForm.control}
                                                         render={({ field, fieldState }) => (
-                                                    <TextField
+                                                            <TextField
                                                                 {...field}
-                                                        variant="outlined"
-                                                        size="small"
+                                                                variant="outlined"
+                                                                size="small"
                                                                 error={!!fieldState.error}
                                                                 helperText={fieldState.error?.message}
-                                                        sx={{ 
-                                                            width: 300,
-                                                            '& .MuiOutlinedInput-root': {
-                                                                fontSize: '0.875rem'
-                                                            }
-                                                        }}
+                                                                sx={{
+                                                                    width: 300,
+                                                                    '& .MuiOutlinedInput-root': {
+                                                                        fontSize: '0.875rem'
+                                                                    }
+                                                                }}
                                                             />
                                                         )}
                                                     />
@@ -883,18 +878,18 @@ const UserPage: React.FC = () => {
                                                         name="lastName"
                                                         control={personalDataForm.control}
                                                         render={({ field, fieldState }) => (
-                                                    <TextField
+                                                            <TextField
                                                                 {...field}
-                                                        variant="outlined"
-                                                        size="small"
+                                                                variant="outlined"
+                                                                size="small"
                                                                 error={!!fieldState.error}
                                                                 helperText={fieldState.error?.message}
-                                                        sx={{ 
-                                                            width: 300,
-                                                            '& .MuiOutlinedInput-root': {
-                                                                fontSize: '0.875rem'
-                                                            }
-                                                        }}
+                                                                sx={{
+                                                                    width: 300,
+                                                                    '& .MuiOutlinedInput-root': {
+                                                                        fontSize: '0.875rem'
+                                                                    }
+                                                                }}
                                                             />
                                                         )}
                                                     />
@@ -913,27 +908,27 @@ const UserPage: React.FC = () => {
                                                         name="phone"
                                                         control={personalDataForm.control}
                                                         render={({ field, fieldState }) => (
-                                                    <TextField
+                                                            <TextField
                                                                 {...field}
-                                                        variant="outlined"
-                                                        size="small"
+                                                                variant="outlined"
+                                                                size="small"
                                                                 error={!!fieldState.error}
                                                                 helperText={fieldState.error?.message}
-                                                        sx={{ 
-                                                            width: 300,
-                                                            '& .MuiOutlinedInput-root': {
-                                                                fontSize: '0.875rem'
-                                                            }
-                                                        }}
+                                                                sx={{
+                                                                    width: 300,
+                                                                    '& .MuiOutlinedInput-root': {
+                                                                        fontSize: '0.875rem'
+                                                                    }
+                                                                }}
                                                             />
                                                         )}
                                                     />
                                                 ) : (
                                                     <Box sx={{ display: 'flex', alignItems: isEditingAddress ? 'flex-start' : 'center', gap: 1 }}>
-                                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                        {state.user.phone}
-                                                    </Typography>
-                                                        <CopyToClipboard 
+                                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                                            {state.user.phone}
+                                                        </Typography>
+                                                        <CopyToClipboard
                                                             text={state.user.phone}
                                                             size="small"
                                                         />
@@ -954,7 +949,7 @@ const UserPage: React.FC = () => {
                                                                 <Select
                                                                     {...field}
                                                                     label="Género"
-                                                                    sx={{ 
+                                                                    sx={{
                                                                         '& .MuiOutlinedInput-root': {
                                                                             fontSize: '0.875rem'
                                                                         }
@@ -984,32 +979,32 @@ const UserPage: React.FC = () => {
                                                 <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: isEditingBasicInfo ? 0.5 : 0 }}>
                                                     Fecha nacimiento:
                                                 </Typography>
-                                            {isEditingBasicInfo ? (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                                <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
-                                                <DatePicker
-                                                slotProps={{ textField: { size: 'small', sx: { width: '300px' } } }} 
-                                                  label="Fecha de nacimiento"
-                                                  value={
-                                                    dateOfBirth ? (dayjs(dateOfBirth)) : null 
-                                                  }
-                                                  onChange={(date) => {
-                                                    personalDataForm.setValue(
-                                                      "dateOfBirth",
-                                                      date?.toDate() ?? new Date()
-                                                    );
-                                                  }}
-                                                />
-                                              </LocalizationProvider>
-                                              <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
-                                                {personalDataForm.formState.errors.dateOfBirth?.message}
-                                               </Typography>
-                                               </div>
-                                            ) : (
-                                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                    {(dayjs(personalDataForm.getValues('dateOfBirth')).format('DD/MMM/YYYY'))}
-                                                </Typography>
-                                            )}
+                                                {isEditingBasicInfo ? (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                                        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+                                                            <DatePicker
+                                                                slotProps={{ textField: { size: 'small', sx: { width: '300px' } } }}
+                                                                label="Fecha de nacimiento"
+                                                                value={
+                                                                    dateOfBirth ? (dayjs(dateOfBirth)) : null
+                                                                }
+                                                                onChange={(date) => {
+                                                                    personalDataForm.setValue(
+                                                                        "dateOfBirth",
+                                                                        date?.toDate() ?? new Date()
+                                                                    );
+                                                                }}
+                                                            />
+                                                        </LocalizationProvider>
+                                                        <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                                                            {personalDataForm.formState.errors.dateOfBirth?.message}
+                                                        </Typography>
+                                                    </div>
+                                                ) : (
+                                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                                        {(dayjs(personalDataForm.getValues('dateOfBirth')).format('DD/MMM/YYYY'))}
+                                                    </Typography>
+                                                )}
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: isEditingBasicInfo ? 'flex-start' : 'center', gap: 1 }}>
                                                 <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: isEditingBasicInfo ? 0.5 : 0 }}>
@@ -1054,8 +1049,8 @@ const UserPage: React.FC = () => {
                                                         await loadUserOptions();
                                                         setIsEditingAddress(true);
                                                     }}>
-                                                    Editar
-                                                </Button>
+                                                        Editar
+                                                    </Button>
                                                 )
                                             )}
                                         </Box>
@@ -1070,28 +1065,28 @@ const UserPage: React.FC = () => {
                                                         control={addressForm.control}
                                                         render={({ field, fieldState }) => (
                                                             <FormControl size="small" sx={{ width: 300 }} error={!!fieldState.error}>
-                                                        <InputLabel>Estado</InputLabel>
-                                                        <Select
+                                                                <InputLabel>Estado</InputLabel>
+                                                                <Select
                                                                     {...field}
-                                                            label="Estado"
-                                                            sx={{ 
-                                                                '& .MuiOutlinedInput-root': {
-                                                                    fontSize: '0.875rem'
-                                                                }
-                                                            }}
-                                                        >
-                                                            {userOptions?.states.map((stateOption) => (
+                                                                    label="Estado"
+                                                                    sx={{
+                                                                        '& .MuiOutlinedInput-root': {
+                                                                            fontSize: '0.875rem'
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    {userOptions?.states.map((stateOption) => (
                                                                         <MenuItem key={stateOption.value} value={stateOption.value}>
                                                                             {stateOption.label}
-                                                                </MenuItem>
-                                                            ))}
-                                                        </Select>
+                                                                        </MenuItem>
+                                                                    ))}
+                                                                </Select>
                                                                 {fieldState.error && (
                                                                     <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
                                                                         {fieldState.error.message}
                                                                     </Typography>
                                                                 )}
-                                                    </FormControl>
+                                                            </FormControl>
                                                         )}
                                                     />
                                                 ) : (
@@ -1109,18 +1104,18 @@ const UserPage: React.FC = () => {
                                                         name="city"
                                                         control={addressForm.control}
                                                         render={({ field, fieldState }) => (
-                                                    <TextField
+                                                            <TextField
                                                                 {...field}
-                                                        variant="outlined"
-                                                        size="small"
+                                                                variant="outlined"
+                                                                size="small"
                                                                 error={!!fieldState.error}
                                                                 helperText={fieldState.error?.message}
-                                                        sx={{ 
-                                                            width: 300,
-                                                            '& .MuiOutlinedInput-root': {
-                                                                fontSize: '0.875rem'
-                                                            }
-                                                        }}
+                                                                sx={{
+                                                                    width: 300,
+                                                                    '& .MuiOutlinedInput-root': {
+                                                                        fontSize: '0.875rem'
+                                                                    }
+                                                                }}
                                                             />
                                                         )}
                                                     />
@@ -1139,18 +1134,18 @@ const UserPage: React.FC = () => {
                                                         name="address"
                                                         control={addressForm.control}
                                                         render={({ field, fieldState }) => (
-                                                    <TextField
+                                                            <TextField
                                                                 {...field}
-                                                        variant="outlined"
-                                                        size="small"
+                                                                variant="outlined"
+                                                                size="small"
                                                                 error={!!fieldState.error}
                                                                 helperText={fieldState.error?.message}
-                                                        sx={{ 
-                                                            width: 300,
-                                                            '& .MuiOutlinedInput-root': {
-                                                                fontSize: '0.875rem'
-                                                            }
-                                                        }}
+                                                                sx={{
+                                                                    width: 300,
+                                                                    '& .MuiOutlinedInput-root': {
+                                                                        fontSize: '0.875rem'
+                                                                    }
+                                                                }}
                                                             />
                                                         )}
                                                     />
@@ -1169,18 +1164,18 @@ const UserPage: React.FC = () => {
                                                         name="district"
                                                         control={addressForm.control}
                                                         render={({ field, fieldState }) => (
-                                                    <TextField
+                                                            <TextField
                                                                 {...field}
-                                                        variant="outlined"
-                                                        size="small"
+                                                                variant="outlined"
+                                                                size="small"
                                                                 error={!!fieldState.error}
                                                                 helperText={fieldState.error?.message}
-                                                        sx={{ 
-                                                            width: 300,
-                                                            '& .MuiOutlinedInput-root': {
-                                                                fontSize: '0.875rem'
-                                                            }
-                                                        }}
+                                                                sx={{
+                                                                    width: 300,
+                                                                    '& .MuiOutlinedInput-root': {
+                                                                        fontSize: '0.875rem'
+                                                                    }
+                                                                }}
                                                             />
                                                         )}
                                                     />
@@ -1199,18 +1194,18 @@ const UserPage: React.FC = () => {
                                                         name="zipCode"
                                                         control={addressForm.control}
                                                         render={({ field, fieldState }) => (
-                                                    <TextField
+                                                            <TextField
                                                                 {...field}
-                                                        variant="outlined"
-                                                        size="small"
+                                                                variant="outlined"
+                                                                size="small"
                                                                 error={!!fieldState.error}
                                                                 helperText={fieldState.error?.message}
-                                                        sx={{ 
-                                                            width: 300,
-                                                            '& .MuiOutlinedInput-root': {
-                                                                fontSize: '0.875rem'
-                                                            }
-                                                        }}
+                                                                sx={{
+                                                                    width: 300,
+                                                                    '& .MuiOutlinedInput-root': {
+                                                                        fontSize: '0.875rem'
+                                                                    }
+                                                                }}
                                                             />
                                                         )}
                                                     />
@@ -1253,8 +1248,8 @@ const UserPage: React.FC = () => {
                                                     await loadUserOptions();
                                                     setIsEditingAccount(true);
                                                 }}>
-                                                Editar
-                                            </Button>
+                                                    Editar
+                                                </Button>
                                             )
                                         )}
                                     </Box>
@@ -1266,7 +1261,7 @@ const UserPage: React.FC = () => {
                                             <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                                 {state.user.id}
                                             </Typography>
-                                            <CopyToClipboard 
+                                            <CopyToClipboard
                                                 text={state.user.id}
                                                 size="small"
                                                 sx={{ ml: 1 }}
@@ -1289,27 +1284,27 @@ const UserPage: React.FC = () => {
                                                     name="email"
                                                     control={accountForm.control}
                                                     render={({ field, fieldState }) => (
-                                                <TextField
+                                                        <TextField
                                                             {...field}
-                                                    variant="outlined"
-                                                    size="small"
+                                                            variant="outlined"
+                                                            size="small"
                                                             error={!!fieldState.error}
                                                             helperText={fieldState.error?.message}
-                                                    sx={{ 
-                                                        width: 300,
-                                                        '& .MuiOutlinedInput-root': {
-                                                            fontSize: '0.875rem'
-                                                        }
-                                                    }}
+                                                            sx={{
+                                                                width: 300,
+                                                                '& .MuiOutlinedInput-root': {
+                                                                    fontSize: '0.875rem'
+                                                                }
+                                                            }}
                                                         />
                                                     )}
                                                 />
                                             ) : (
                                                 <Box sx={{ display: 'flex', alignItems: isEditingAddress ? 'flex-start' : 'center', gap: 1 }}>
-                                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                    {state.user.email}
-                                                </Typography>
-                                                    <CopyToClipboard 
+                                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                                        {state.user.email}
+                                                    </Typography>
+                                                    <CopyToClipboard
                                                         text={state.user.email}
                                                         size="small"
                                                     />
@@ -1326,28 +1321,28 @@ const UserPage: React.FC = () => {
                                                     control={accountForm.control}
                                                     render={({ field, fieldState }) => (
                                                         <FormControl size="small" sx={{ width: 300 }} error={!!fieldState.error}>
-                                                    <InputLabel>Rol</InputLabel>
-                                                    <Select
+                                                            <InputLabel>Rol</InputLabel>
+                                                            <Select
                                                                 {...field}
-                                                        label="Rol"
-                                                        sx={{ 
-                                                            '& .MuiOutlinedInput-root': {
-                                                                fontSize: '0.875rem'
-                                                            }
-                                                        }}
-                                                    >
-                                                        {userOptions?.roles.map((role) => (
+                                                                label="Rol"
+                                                                sx={{
+                                                                    '& .MuiOutlinedInput-root': {
+                                                                        fontSize: '0.875rem'
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {userOptions?.roles.map((role) => (
                                                                     <MenuItem key={role.value} value={role.value}>
                                                                         {role.label}
-                                                            </MenuItem>
-                                                        ))}
-                                                    </Select>
+                                                                    </MenuItem>
+                                                                ))}
+                                                            </Select>
                                                             {fieldState.error && (
                                                                 <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
                                                                     {fieldState.error.message}
                                                                 </Typography>
                                                             )}
-                                                </FormControl>
+                                                        </FormControl>
                                                     )}
                                                 />
                                             ) : (
@@ -1383,9 +1378,9 @@ const UserPage: React.FC = () => {
                                                 </Box>
                                             ) : (
                                                 hasEditPermission() && (
-                                                <Button type="primary" onClick={() => setIsEditingPassword(true)}>
-                                                    Editar
-                                                </Button>
+                                                    <Button type="primary" onClick={() => setIsEditingPassword(true)}>
+                                                        Editar
+                                                    </Button>
                                                 )
                                             )}
                                         </Box>
@@ -1399,19 +1394,19 @@ const UserPage: React.FC = () => {
                                                         name="password"
                                                         control={passwordForm.control}
                                                         render={({ field, fieldState }) => (
-                                                <TextField
+                                                            <TextField
                                                                 {...field}
                                                                 type={showPassword ? 'text' : 'password'}
-                                                    variant="outlined"
-                                                    size="small"
+                                                                variant="outlined"
+                                                                size="small"
                                                                 error={!!fieldState.error}
                                                                 helperText={fieldState.error?.message}
-                                                    sx={{ 
-                                                        width: 300,
-                                                        '& .MuiOutlinedInput-root': {
-                                                            fontSize: '0.875rem'
-                                                        }
-                                                    }}
+                                                                sx={{
+                                                                    width: 300,
+                                                                    '& .MuiOutlinedInput-root': {
+                                                                        fontSize: '0.875rem'
+                                                                    }
+                                                                }}
                                                                 InputProps={{
                                                                     endAdornment: (
                                                                         <InputAdornment position="end">
@@ -1427,13 +1422,13 @@ const UserPage: React.FC = () => {
                                                                 }}
                                                             />
                                                         )}
-                                                />
-                                            ) : (
-                                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                                    />
+                                                ) : (
+                                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                                         ••••••••••••
-                                                </Typography>
-                                            )}
-                                        </Box>
+                                                    </Typography>
+                                                )}
+                                            </Box>
                                             {isEditingPassword && (
                                                 <Box sx={{ display: 'flex', alignItems: isEditingPassword ? 'flex-start' : 'center', gap: 1 }}>
                                                     <Typography variant="body2" color="text.secondary" sx={{ minWidth: 120, pt: isEditingPassword ? 0.5 : 0 }}>
@@ -1450,7 +1445,7 @@ const UserPage: React.FC = () => {
                                                                 size="small"
                                                                 error={!!fieldState.error}
                                                                 helperText={fieldState.error?.message}
-                                                                sx={{ 
+                                                                sx={{
                                                                     width: 300,
                                                                     '& .MuiOutlinedInput-root': {
                                                                         fontSize: '0.875rem'
@@ -1481,7 +1476,7 @@ const UserPage: React.FC = () => {
                         </Box>
                     </Box>
                 );
-            
+
             default:
                 return null;
         }
@@ -1490,30 +1485,30 @@ const UserPage: React.FC = () => {
     return (
         <div className='user-page'>
             {/* Header con botón de regreso y título */}
-            <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
+            <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'space-between',
-                mb: 3 
+                mb: 3
             }}>
-                <Box sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: 1 
+                <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1
                 }}>
                     <IconButton
                         onClick={handleGoBack}
                         size="small"
-                        sx={{ 
+                        sx={{
                             color: 'black',
                             p: 0.5
                         }}
                     >
                         <ArrowBack />
                     </IconButton>
-                    <Typography 
-                        variant="body2" 
-                        sx={{ 
+                    <Typography
+                        variant="body2"
+                        sx={{
                             color: 'black',
                             fontWeight: 500
                         }}
@@ -1521,29 +1516,29 @@ const UserPage: React.FC = () => {
                         Usuario
                     </Typography>
                 </Box>
-                
+
                 {/* Botón Borrar usuario */}
-                {state.status === UserPageStatus.SUCCESS && 
-                 state.user.permissions.includes('delete') && (
-                    <Button 
-                        type="error"
-                        onClick={handleDeleteUserClick}
-                        sx={{ 
-                            fontSize: '0.75rem',
-                            padding: '6px 12px',
-                            minWidth: 'auto'
-                        }}
-                    >
-                        Borrar usuario
-                    </Button>
-                )}
+                {state.status === UserPageStatus.SUCCESS &&
+                    state.user.permissions.includes('delete') && (
+                        <Button
+                            type="error"
+                            onClick={handleDeleteUserClick}
+                            sx={{
+                                fontSize: '0.75rem',
+                                padding: '6px 12px',
+                                minWidth: 'auto'
+                            }}
+                        >
+                            Borrar usuario
+                        </Button>
+                    )}
             </Box>
-            
+
             {renderContent()}
-            
+
             {/* Modal de edición de foto de perfil */}
-            <Dialog 
-                open={profilePictureModalOpen} 
+            <Dialog
+                open={profilePictureModalOpen}
                 onClose={isUpdatingProfilePicture ? undefined : handleCloseProfilePictureModal}
                 maxWidth="sm"
                 fullWidth
@@ -1554,7 +1549,7 @@ const UserPage: React.FC = () => {
                         {profilePictureSuccess ? 'Foto actualizada' : 'Cambiar foto de perfil'}
                     </Typography>
                 </DialogTitle>
-                
+
                 <DialogContent>
                     {/* Alert de error */}
                     {profilePictureError && (
@@ -1562,23 +1557,23 @@ const UserPage: React.FC = () => {
                             {profilePictureError}
                         </Alert>
                     )}
-                    
+
                     {/* Alert de éxito */}
                     {profilePictureSuccess && (
                         <Alert severity="success" sx={{ mb: 3 }}>
                             ¡Foto de perfil actualizada exitosamente!
                         </Alert>
                     )}
-                    
+
                     {/* Vista previa de la imagen */}
                     {selectedImagePreview && (
                         <Box sx={{ textAlign: 'center', mb: 3 }}>
                             <Typography variant="body1" sx={{ mb: 2 }}>
                                 {profilePictureSuccess ? 'Foto actualizada exitosamente' : '¿Desea cambiar la foto actual por esta?'}
                             </Typography>
-                            <Box sx={{ 
-                                width: 200, 
-                                height: 200, 
+                            <Box sx={{
+                                width: 200,
+                                height: 200,
                                 margin: '0 auto',
                                 backgroundColor: '#f5f5f5',
                                 display: 'flex',
@@ -1587,20 +1582,20 @@ const UserPage: React.FC = () => {
                                 overflow: 'hidden',
                                 borderRadius: 1
                             }}>
-                                <img 
-                                    src={selectedImagePreview} 
+                                <img
+                                    src={selectedImagePreview}
                                     alt="Vista previa"
-                                    style={{ 
-                                        width: '100%', 
-                                        height: '100%', 
-                                        objectFit: 'cover' 
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover'
                                     }}
                                 />
                             </Box>
                         </Box>
                     )}
                 </DialogContent>
-                
+
                 <DialogActions sx={{ p: 3 }}>
                     {profilePictureSuccess ? (
                         <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
@@ -1610,15 +1605,15 @@ const UserPage: React.FC = () => {
                         </Box>
                     ) : (
                         <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
-                            <Button 
-                                type="secondary" 
+                            <Button
+                                type="secondary"
                                 onClick={handleCloseProfilePictureModal}
                                 disabled={isUpdatingProfilePicture}
                             >
                                 Cancelar
                             </Button>
-                            <Button 
-                                type="primary" 
+                            <Button
+                                type="primary"
                                 onClick={handleSaveProfilePicture}
                                 disabled={isUpdatingProfilePicture}
                             >
@@ -1637,8 +1632,8 @@ const UserPage: React.FC = () => {
             </Dialog>
 
             {/* Modal de confirmación para actualizar cuenta */}
-            <Dialog 
-                open={accountModalOpen} 
+            <Dialog
+                open={accountModalOpen}
                 onClose={isUpdatingAccount ? undefined : handleCloseAccountModal}
                 maxWidth="sm"
                 fullWidth
@@ -1649,34 +1644,34 @@ const UserPage: React.FC = () => {
                         {accountSuccess ? 'Cuenta actualizada' : '¿Actualizar cuenta?'}
                     </Typography>
                 </DialogTitle>
-                
+
                 <DialogContent>
                     {accountError && (
                         <Alert severity="error" sx={{ mb: 3 }}>
                             {accountError}
                         </Alert>
                     )}
-                    
+
                     {accountSuccess && (
                         <Alert severity="success" sx={{ mb: 3 }}>
                             ¡Cuenta actualizada exitosamente!
                         </Alert>
                     )}
-                    
+
                     {(
                         <Box>
                             <Typography variant="body1" sx={{ mb: 2 }}>
-                                {accountSuccess 
-                                    ? 'Los siguientes datos han sido actualizados exitosamente:' 
+                                {accountSuccess
+                                    ? 'Los siguientes datos han sido actualizados exitosamente:'
                                     : '¿Está seguro de que desea actualizar la cuenta del usuario?'
                                 }
                             </Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                                 {accountSuccess ? 'Datos actualizados:' : 'Nuevos datos:'}
                             </Typography>
-                            <Box sx={{ 
-                                backgroundColor: '#f5f5f5', 
-                                p: 2, 
+                            <Box sx={{
+                                backgroundColor: '#f5f5f5',
+                                p: 2,
                                 borderRadius: 1,
                                 display: 'flex',
                                 flexDirection: 'column',
@@ -1695,7 +1690,7 @@ const UserPage: React.FC = () => {
                                         Rol:
                                     </Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                        {state.status === UserPageStatus.SUCCESS 
+                                        {state.status === UserPageStatus.SUCCESS
                                             ? userOptions?.roles.find(r => r.value === accountForm.getValues('roleId'))?.label || 'N/A'
                                             : 'N/A'
                                         }
@@ -1705,7 +1700,7 @@ const UserPage: React.FC = () => {
                         </Box>
                     )}
                 </DialogContent>
-                
+
                 <DialogActions sx={{ p: 3 }}>
                     {accountSuccess ? (
                         <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
@@ -1715,15 +1710,15 @@ const UserPage: React.FC = () => {
                         </Box>
                     ) : (
                         <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
-                            <Button 
-                                type="secondary" 
+                            <Button
+                                type="secondary"
                                 onClick={handleCloseAccountModal}
                                 disabled={isUpdatingAccount}
                             >
                                 Cancelar
                             </Button>
-                            <Button 
-                                type="primary" 
+                            <Button
+                                type="primary"
                                 onClick={handleConfirmAccountUpdate}
                                 disabled={isUpdatingAccount}
                             >
@@ -1741,8 +1736,8 @@ const UserPage: React.FC = () => {
                 </DialogActions>
             </Dialog>
             {/* Modal de confirmación para actualizar datos personales */}
-            <Dialog 
-                open={personalDataModalOpen} 
+            <Dialog
+                open={personalDataModalOpen}
                 onClose={isUpdatingPersonalData ? undefined : handleClosePersonalDataModal}
                 maxWidth="sm"
                 fullWidth
@@ -1753,34 +1748,34 @@ const UserPage: React.FC = () => {
                         {personalDataSuccess ? 'Datos actualizados' : '¿Actualizar datos personales?'}
                     </Typography>
                 </DialogTitle>
-                
+
                 <DialogContent>
                     {personalDataError && (
                         <Alert severity="error" sx={{ mb: 3 }}>
                             {personalDataError}
                         </Alert>
                     )}
-                    
+
                     {personalDataSuccess && (
                         <Alert severity="success" sx={{ mb: 3 }}>
                             ¡Datos personales actualizados exitosamente!
                         </Alert>
                     )}
-                    
+
                     {(
                         <Box>
                             <Typography variant="body1" sx={{ mb: 2 }}>
-                                {personalDataSuccess 
-                                    ? 'Los siguientes datos han sido actualizados exitosamente:' 
+                                {personalDataSuccess
+                                    ? 'Los siguientes datos han sido actualizados exitosamente:'
                                     : '¿Está seguro de que desea actualizar los datos personales del usuario?'
                                 }
                             </Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                                 {personalDataSuccess ? 'Datos actualizados:' : 'Nuevos datos:'}
                             </Typography>
-                            <Box sx={{ 
-                                backgroundColor: '#f5f5f5', 
-                                p: 2, 
+                            <Box sx={{
+                                backgroundColor: '#f5f5f5',
+                                p: 2,
                                 borderRadius: 1,
                                 display: 'flex',
                                 flexDirection: 'column',
@@ -1815,7 +1810,7 @@ const UserPage: React.FC = () => {
                                         Género:
                                     </Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                        {state.status === UserPageStatus.SUCCESS 
+                                        {state.status === UserPageStatus.SUCCESS
                                             ? userOptions?.genders.find(g => g.value === personalDataForm.getValues('genderId'))?.label || 'N/A'
                                             : 'N/A'
                                         }
@@ -1833,7 +1828,7 @@ const UserPage: React.FC = () => {
                         </Box>
                     )}
                 </DialogContent>
-                
+
                 <DialogActions sx={{ p: 3 }}>
                     {personalDataSuccess ? (
                         <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
@@ -1843,15 +1838,15 @@ const UserPage: React.FC = () => {
                         </Box>
                     ) : (
                         <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
-                            <Button 
-                                type="secondary" 
+                            <Button
+                                type="secondary"
                                 onClick={handleClosePersonalDataModal}
                                 disabled={isUpdatingPersonalData}
                             >
                                 Cancelar
                             </Button>
-                            <Button 
-                                type="primary" 
+                            <Button
+                                type="primary"
                                 onClick={handleConfirmPersonalDataUpdate}
                                 disabled={isUpdatingPersonalData}
                             >
@@ -1870,8 +1865,8 @@ const UserPage: React.FC = () => {
             </Dialog>
 
             {/* Modal de confirmación para actualizar domicilio */}
-            <Dialog 
-                open={addressModalOpen} 
+            <Dialog
+                open={addressModalOpen}
                 onClose={isUpdatingAddress ? undefined : handleCloseAddressModal}
                 maxWidth="sm"
                 fullWidth
@@ -1882,34 +1877,34 @@ const UserPage: React.FC = () => {
                         {addressSuccess ? 'Domicilio actualizado' : '¿Actualizar domicilio?'}
                     </Typography>
                 </DialogTitle>
-                
+
                 <DialogContent>
                     {addressError && (
                         <Alert severity="error" sx={{ mb: 3 }}>
                             {addressError}
                         </Alert>
                     )}
-                    
+
                     {addressSuccess && (
                         <Alert severity="success" sx={{ mb: 3 }}>
                             ¡Domicilio actualizado exitosamente!
                         </Alert>
                     )}
-                    
+
                     {(
                         <Box>
                             <Typography variant="body1" sx={{ mb: 2 }}>
-                                {addressSuccess 
-                                    ? 'Los siguientes datos han sido actualizados exitosamente:' 
+                                {addressSuccess
+                                    ? 'Los siguientes datos han sido actualizados exitosamente:'
                                     : '¿Está seguro de que desea actualizar el domicilio del usuario?'
                                 }
                             </Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                                 {addressSuccess ? 'Datos actualizados:' : 'Nuevos datos:'}
                             </Typography>
-                            <Box sx={{ 
-                                backgroundColor: '#f5f5f5', 
-                                p: 2, 
+                            <Box sx={{
+                                backgroundColor: '#f5f5f5',
+                                p: 2,
                                 borderRadius: 1,
                                 display: 'flex',
                                 flexDirection: 'column',
@@ -1920,7 +1915,7 @@ const UserPage: React.FC = () => {
                                         Estado:
                                     </Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                        {state.status === UserPageStatus.SUCCESS 
+                                        {state.status === UserPageStatus.SUCCESS
                                             ? userOptions?.states.find(s => s.value === addressForm.getValues('stateId'))?.label || 'N/A'
                                             : 'N/A'
                                         }
@@ -1962,7 +1957,7 @@ const UserPage: React.FC = () => {
                         </Box>
                     )}
                 </DialogContent>
-                
+
                 <DialogActions sx={{ p: 3 }}>
                     {addressSuccess ? (
                         <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
@@ -1972,15 +1967,15 @@ const UserPage: React.FC = () => {
                         </Box>
                     ) : (
                         <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
-                            <Button 
-                                type="secondary" 
+                            <Button
+                                type="secondary"
                                 onClick={handleCloseAddressModal}
                                 disabled={isUpdatingAddress}
                             >
                                 Cancelar
                             </Button>
-                            <Button 
-                                type="primary" 
+                            <Button
+                                type="primary"
                                 onClick={handleConfirmAddressUpdate}
                                 disabled={isUpdatingAddress}
                             >
@@ -1999,8 +1994,8 @@ const UserPage: React.FC = () => {
             </Dialog>
 
             {/* Modal de confirmación para cambiar contraseña */}
-            <Dialog 
-                open={passwordModalOpen} 
+            <Dialog
+                open={passwordModalOpen}
                 onClose={isUpdatingPassword ? undefined : handleClosePasswordModal}
                 maxWidth="sm"
                 fullWidth
@@ -2011,20 +2006,20 @@ const UserPage: React.FC = () => {
                         {passwordSuccess ? 'Contraseña actualizada' : '¿Cambiar contraseña?'}
                     </Typography>
                 </DialogTitle>
-                
+
                 <DialogContent>
                     {passwordError && (
                         <Alert severity="error" sx={{ mb: 3 }}>
                             {passwordError}
                         </Alert>
                     )}
-                    
+
                     {passwordSuccess && (
                         <Alert severity="success" sx={{ mb: 3 }}>
                             ¡Contraseña cambiada exitosamente!
                         </Alert>
                     )}
-                    
+
                     {!passwordSuccess && (
                         <Box>
                             <Typography variant="body1" sx={{ mb: 2 }}>
@@ -2036,7 +2031,7 @@ const UserPage: React.FC = () => {
                         </Box>
                     )}
                 </DialogContent>
-                
+
                 <DialogActions sx={{ p: 3 }}>
                     {passwordSuccess ? (
                         <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
@@ -2046,15 +2041,15 @@ const UserPage: React.FC = () => {
                         </Box>
                     ) : (
                         <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: 'flex-end' }}>
-                            <Button 
-                                type="secondary" 
+                            <Button
+                                type="secondary"
                                 onClick={handleClosePasswordModal}
                                 disabled={isUpdatingPassword}
                             >
                                 Cancelar
                             </Button>
-                            <Button 
-                                type="primary" 
+                            <Button
+                                type="primary"
                                 onClick={handleConfirmPasswordUpdate}
                                 disabled={isUpdatingPassword}
                             >
@@ -2071,10 +2066,10 @@ const UserPage: React.FC = () => {
                     )}
                 </DialogActions>
             </Dialog>
-            
+
             {/* Modal de confirmación para eliminar usuario */}
-            <Dialog 
-                open={deleteModalOpen} 
+            <Dialog
+                open={deleteModalOpen}
                 onClose={deleteSuccess ? undefined : handleDeleteUserCancel}
                 maxWidth="sm"
                 fullWidth
@@ -2091,29 +2086,29 @@ const UserPage: React.FC = () => {
                         {deleteSuccess ? 'Usuario eliminado' : '¿Eliminar usuario?'}
                     </Typography>
                 </DialogTitle>
-                
+
                 <DialogContent sx={{ pt: 2, pb: 3 }}>
                     {deleteError && (
                         <Alert severity="error" sx={{ mb: 3 }}>
                             {deleteError}
                         </Alert>
                     )}
-                    
+
                     {deleteSuccess && (
                         <Alert severity="success" sx={{ mb: 3 }}>
                             ¡Usuario eliminado exitosamente!
                         </Alert>
                     )}
-                    
+
                     {!deleteSuccess && state.status === UserPageStatus.SUCCESS && (
                         <Box>
                             <Typography variant="body1" sx={{ mb: 2 }}>
                                 ¿Está seguro de que desea eliminar este usuario? Esta acción no se puede deshacer.
                             </Typography>
-                            
-                            <Box sx={{ 
-                                display: 'flex', 
-                                flexDirection: 'row', 
+
+                            <Box sx={{
+                                display: 'flex',
+                                flexDirection: 'row',
                                 alignItems: 'flex-start',
                                 gap: 2,
                                 p: 2,
@@ -2121,9 +2116,9 @@ const UserPage: React.FC = () => {
                                 borderRadius: 1,
                                 border: '1px solid #e9ecef'
                             }}>
-                                <Box sx={{ 
-                                    width: 60, 
-                                    height: 60, 
+                                <Box sx={{
+                                    width: 60,
+                                    height: 60,
                                     borderRadius: '50%',
                                     overflow: 'hidden',
                                     backgroundColor: '#e9ecef',
@@ -2133,8 +2128,8 @@ const UserPage: React.FC = () => {
                                     flexShrink: 0
                                 }}>
                                     {state.user.profilePictureUrl ? (
-                                        <img 
-                                            src={state.user.profilePictureUrl} 
+                                        <img
+                                            src={state.user.profilePictureUrl}
                                             alt={`${state.user.fullName} profile`}
                                             style={{
                                                 width: '100%',
@@ -2148,17 +2143,17 @@ const UserPage: React.FC = () => {
                                         </Typography>
                                     )}
                                 </Box>
-                                
+
                                 <Box sx={{ flex: 1 }}>
-                                    <Typography variant="h6" sx={{ 
-                                        fontWeight: 600, 
+                                    <Typography variant="h6" sx={{
+                                        fontWeight: 600,
                                         color: '#1f2937',
                                         mb: 1
                                     }}>
                                         {state.user.fullName}
                                     </Typography>
-                                    
-                                    <Typography variant="body2" sx={{ 
+
+                                    <Typography variant="body2" sx={{
                                         color: '#6b7280'
                                     }}>
                                         ID: {state.user.id}
@@ -2168,30 +2163,30 @@ const UserPage: React.FC = () => {
                         </Box>
                     )}
                 </DialogContent>
-                
-                <DialogActions sx={{ 
-                    p: 3, 
-                    gap: 1, 
-                    justifyContent: 'flex-end' 
+
+                <DialogActions sx={{
+                    p: 3,
+                    gap: 1,
+                    justifyContent: 'flex-end'
                 }}>
                     {deleteSuccess ? (
-                        <Button 
-                            type="primary" 
+                        <Button
+                            type="primary"
                             onClick={handleReturnToUsers}
                         >
                             Regresar a página de usuarios
                         </Button>
                     ) : (
                         <>
-                            <Button 
-                                type="secondary" 
+                            <Button
+                                type="secondary"
                                 onClick={handleDeleteUserCancel}
                                 disabled={isDeletingUser}
                             >
                                 Cancelar
                             </Button>
-                            <Button 
-                                type="error" 
+                            <Button
+                                type="error"
                                 onClick={handleDeleteUserConfirm}
                                 disabled={isDeletingUser}
                             >

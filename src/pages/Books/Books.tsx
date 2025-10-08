@@ -26,6 +26,7 @@ import type { CreateBookRequest } from '../../models/CreateBookRequest';
 import type { UpdateBookRequest } from '../../models/UpdateBookRequest';
 import type { BookDetailsResponse } from '../../models/BookDetailsResponse';
 import type { AuthorResponse } from '../../models/AuthorResponse';
+import { useNavigate } from 'react-router-dom';
 
 type BookFilters = {
   search: string;
@@ -107,6 +108,8 @@ const Books: React.FC = () => {
   const debouncedSearch = useDebounce(filters.search, 500);
   const debouncedYearMin = useDebounce(filters.yearMin, 500);
   const debouncedYearMax = useDebounce(filters.yearMax, 500);
+
+  const navigate = useNavigate();
 
   // Funciones para selección múltiple
   const handleSelectBook = (bookId: string) => {
@@ -334,6 +337,10 @@ const Books: React.FC = () => {
     }
 
     return { sort: column, order: 'asc' };
+  };
+
+  const handleViewBookClick = (book: BookSummaryResponse) => {
+    navigate(`/dashboard/books/${book.id}`);
   };
 
   const handleEditClick = (book: BookSummaryResponse) => {
@@ -860,7 +867,7 @@ const Books: React.FC = () => {
                       {auth && authenticationHelper.hasAnyPermission(auth, ['books:read']) && (
                         <button
                           className='action-button view-button'
-                          onClick={() => {/* TODO: Implement view functionality */ }}
+                          onClick={() => { handleViewBookClick(book) }}
                         >
                           <VisibilityIcon className='view-icon' />
                         </button>

@@ -164,8 +164,7 @@ export const BookFormModal = ({
   const handleViewSavedBook = () => {
     handleCloseModal();
     if (saveBookState.status === 'saved') {
-      // TODO 
-      // handle view saved book 
+      navigate(`/dashboard/books/${saveBookState.response.id}`);
     }
   };
 

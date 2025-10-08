@@ -8,5 +8,5 @@ export type BookDetailsResponse = {
     authors: AuthorResponse[];
     category: BookCategoryMinimalResponse;
     year: number;
-    imageUrl: string;
+    pictureUrl: string;
 };

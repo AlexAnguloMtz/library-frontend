@@ -1,0 +1,284 @@
+import React, { useState, useEffect } from 'react';
+import { Tabs, Tab, Box, Typography, IconButton, Skeleton } from '@mui/material';
+import { ArrowBack } from '@mui/icons-material';
+import './styles.css';
+import type { BookDetailsResponse } from '../../models/BookDetailsResponse';
+import { useNavigate, useParams } from 'react-router-dom';
+import type { BookOptionsResponse } from '../../models/BookOptionsResponse';
+import bookService from '../../services/BookService';
+
+enum DataLoadStatus {
+    IDLE = 'idle',
+    LOADING = 'loading',
+    SUCCESS = 'success',
+    ERROR = 'error',
+}
+
+type BooDetailsState =
+    | { status: DataLoadStatus.IDLE }
+    | { status: DataLoadStatus.LOADING }
+    | { status: DataLoadStatus.SUCCESS; book: BookDetailsResponse }
+    | { status: DataLoadStatus.ERROR; error: string };
+
+type BookOptionsState =
+    | { status: DataLoadStatus.IDLE }
+    | { status: DataLoadStatus.LOADING }
+    | { status: DataLoadStatus.SUCCESS; options: BookOptionsResponse }
+    | { status: DataLoadStatus.ERROR; error: string };
+
+enum BookPageTab {
+    COPIES = 0,
+}
+
+const BookPage: React.FC = () => {
+    const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
+    const [bookDetailsState, setBookDetailsState] = useState<BooDetailsState>({ status: DataLoadStatus.IDLE });
+    const [bookOptionsState, setBookOptionsState] = useState<BookOptionsState>({ status: DataLoadStatus.IDLE });
+    const [activeTab, setActiveTab] = useState(BookPageTab.COPIES);
+
+    const loadBookOptions = async (): Promise<void> => {
+        setBookOptionsState({ status: DataLoadStatus.LOADING });
+        try {
+            const options = await bookService.getBookOptions();
+            setBookOptionsState({ status: DataLoadStatus.SUCCESS, options });
+        } catch (error) {
+            setBookOptionsState({
+                status: DataLoadStatus.ERROR,
+                error: error instanceof Error ? error.message : 'Error desconocido'
+            });
+        }
+    };
+
+    const loadBookData = async () => {
+        if (!id) {
+            navigate('/dashboard/books');
+            return;
+        }
+
+        setBookDetailsState({ status: DataLoadStatus.LOADING });
+
+        try {
+            const book = await bookService.getBookById(id);
+            setBookDetailsState({
+                status: DataLoadStatus.SUCCESS,
+                book
+            });
+        } catch (error) {
+            setBookDetailsState({
+                status: DataLoadStatus.ERROR,
+                error: error instanceof Error ? error.message : 'Error desconocido'
+            });
+        }
+    };
+
+    const handleRetry = () => {
+        loadBookData();
+    };
+
+    const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
+        setActiveTab(newValue);
+    };
+
+    const handleGoBack = () => {
+        navigate(-1);
+    };
+
+    useEffect(() => {
+        if (id) {
+            loadBookData();
+        }
+    }, []);
+
+    useEffect(() => {
+        loadBookOptions();
+    }, []);
+
+    const renderContent = () => {
+        switch (bookDetailsState.status) {
+            case DataLoadStatus.IDLE:
+                return <div>Iniciando...</div>;
+
+            case DataLoadStatus.LOADING:
+                return (
+                    <Box sx={{ width: '100%' }}>
+                        {/* Sección Superior - Skeleton */}
+                        <Box sx={{
+                            display: 'flex',
+                            gap: 3,
+                            mb: 4,
+                            p: 3
+                        }}>
+                            {/* Caja Izquierda - Foto Skeleton */}
+                            <Box sx={{
+                                width: 240,
+                                height: 274,
+                                backgroundColor: '#f5f5f5',
+                                borderRadius: 1
+                            }}>
+                                <Skeleton variant="rectangular" width="100%" height="100%" />
+                            </Box>
+
+                            {/* Caja Derecha - Información Skeleton */}
+                            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                {/* Nombre y ID */}
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                    <Skeleton variant="text" width="60%" height={32} />
+                                    <Skeleton variant="text" width="40%" height={20} />
+                                </Box>
+
+                                {/* Información de contacto */}
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                    <Skeleton variant="text" width="70%" height={20} />
+                                    <Skeleton variant="text" width="50%" height={20} />
+                                </Box>
+
+                                {/* Rol */}
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Skeleton variant="text" width="30%" height={20} />
+                                    <Skeleton variant="rectangular" width={60} height={24} sx={{ borderRadius: 3 }} />
+                                </Box>
+
+                                {/* Fecha de registro */}
+                                <Skeleton variant="text" width="45%" height={20} />
+                            </Box>
+                        </Box>
+
+                        {/* Tabs Skeleton */}
+                        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+                            <Box sx={{ display: 'flex', gap: 3, px: 3 }}>
+                                <Skeleton variant="text" width={80} height={40} />
+                                <Skeleton variant="text" width={120} height={40} />
+                                <Skeleton variant="text" width={100} height={40} />
+                            </Box>
+                        </Box>
+
+                        {/* Contenido de tabs skeleton */}
+                        <Box sx={{ px: 3 }}>
+                            <Skeleton variant="text" width="100%" height={200} />
+                        </Box>
+                    </Box>
+                );
+
+            case DataLoadStatus.ERROR:
+                return (
+                    <div>
+                        <p>Error: {bookDetailsState.error}</p>
+                        <button onClick={handleRetry}>Reintentar</button>
+                    </div>
+                );
+
+            case DataLoadStatus.SUCCESS:
+                return (
+                    <Box sx={{ width: '100%' }}>
+                        {/* Sección Superior */}
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                gap: 3,
+                                mb: 4,
+                                p: 3,
+                            }}
+                        >
+                            {/* Caja Izquierda - Foto */}
+                            <Box
+                                sx={{
+                                    width: 240,
+                                    height: 274,
+                                    backgroundColor: '#f5f5f5',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    overflow: 'hidden',
+                                }}
+                            >
+                                {bookDetailsState.status === 'success' && (
+                                    <img
+                                        src={(bookDetailsState.book.pictureUrl)}
+                                        alt="Foto de libro"
+                                        style={{
+                                            width: '70%',
+                                            height: '100%',
+                                            objectFit: 'cover',
+                                        }}
+                                    />
+                                )}
+                            </Box>
+
+                            {/* Caja Derecha - Información */}
+                            <Box
+                                sx={{
+                                    flex: 1,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center',
+                                }}
+                            >
+                                {/* Aquí va el contenido de texto del libro */}
+                                <Typography variant="h6">{bookDetailsState.book.title}</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    ID: {bookDetailsState.book.id}
+                                </Typography>
+                            </Box>
+                        </Box>
+
+                        {/* Sección Inferior - Pestañas */}
+                        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                            <Tabs value={activeTab} onChange={handleTabChange}>
+                                <Tab label="Copias" />
+                            </Tabs>
+                        </Box>
+
+                        {/* Contenido de las pestañas */}
+                        <Box sx={{ mt: 3, pb: 24, px: 3 }}>
+                            {activeTab === BookPageTab.COPIES && <>copias...</>}
+                        </Box>
+                    </Box>
+                );
+
+
+            default:
+                return null;
+        }
+    };
+
+    return (
+        <div className="book-page">
+            {/* Header con botón de regreso y título */}
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    mb: 3,
+                }}
+            >
+                <IconButton
+                    onClick={handleGoBack}
+                    size="small"
+                    sx={{
+                        color: 'black',
+                        p: 0.5,
+                    }}
+                >
+                    <ArrowBack />
+                </IconButton>
+
+                <Typography
+                    variant="body2"
+                    sx={{
+                        color: 'black',
+                        fontWeight: 500,
+                    }}
+                >
+                    Libro
+                </Typography>
+            </Box>
+
+            {/* Contenido de la página */}
+            {renderContent()}
+        </div>
+    );
+};
+
+export default BookPage;
