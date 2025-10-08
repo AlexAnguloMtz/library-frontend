@@ -838,7 +838,13 @@ const Books: React.FC = () => {
                     {renderAuthors(book.authors)}
                   </td>
                   <td>
-                    <span className='author-book-count'>{book.isbn}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span className='author-book-count'>{book.isbn}</span>
+                      <CopyToClipboard
+                        text={book.isbn}
+                        size="tiny"
+                      />
+                    </div>
                   </td>
                   <td>
                     <span className='author-book-count'>{book.category || '---'}</span>
@@ -1208,7 +1214,7 @@ const Books: React.FC = () => {
           )}
         </DialogActions>
       </Dialog>
-    </div>
+    </div >
   );
 };
 
