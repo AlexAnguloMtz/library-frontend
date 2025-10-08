@@ -1,7 +1,7 @@
 import { useEffect, useState, type JSX } from 'react';
 import './styles.css';
 import { Dialog, DialogTitle, Button as MuiButton, DialogContent, Stepper, Step, StepLabel, Alert, DialogActions, CircularProgress, Autocomplete, Card, CardContent, IconButton } from '@mui/material';
-import { z } from 'zod';
+import { success, z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { TextField } from '@mui/material';
 import { Button } from '../Button';
@@ -83,7 +83,9 @@ export const BookFormModal = ({
   getInitialFormValues = () => Promise.resolve(DEFAULT_INITIAL_VALUES),
   save,
   initialImageSrc = null,
-  onSaveSuccess = () => { }
+  onSaveSuccess = () => { },
+  onSuccessPrimaryAction = (book: BookDetailsResponse): void => { },
+  successPrimaryActionLabel = "Ver libro",
 }: {
   open: boolean;
   onCloseModal: () => void;
@@ -92,6 +94,8 @@ export const BookFormModal = ({
   save: (data: BookFormData, imageFile: File | null) => Promise<BookDetailsResponse>;
   initialImageSrc?: string | null;
   onSaveSuccess?: () => void;
+  onSuccessPrimaryAction?: (book: BookDetailsResponse) => void;
+  successPrimaryActionLabel?: string;
 }): JSX.Element => {
 
   const navigate = useNavigate();
@@ -154,10 +158,10 @@ export const BookFormModal = ({
     }
   };
 
-  const handleViewSavedBook = () => {
+  const handleSuccessPrimaryAction = () => {
     handleCloseModal();
     if (saveBookState.status === 'saved') {
-      navigate(`/dashboard/books/${saveBookState.response.id}`);
+      onSuccessPrimaryAction(saveBookState.response);
     }
   };
 
@@ -631,8 +635,8 @@ export const BookFormModal = ({
                         <Button type="secondary" onClick={handleCloseModal}>
                           Cerrar
                         </Button>
-                        <Button type="primary" onClick={handleViewSavedBook}>
-                          Ver Libro
+                        <Button type="primary" onClick={handleSuccessPrimaryAction}>
+                          {successPrimaryActionLabel}
                         </Button>
                       </Box>
                     }
@@ -643,7 +647,7 @@ export const BookFormModal = ({
                   <Button type="secondary" onClick={handleCloseModal}>
                     Cerrar
                   </Button>
-                  <Button type="primary" onClick={handleViewSavedBook}>
+                  <Button type="primary" onClick={handleSuccessPrimaryAction}>
                     Ver Libro
                   </Button>
                 </Box>

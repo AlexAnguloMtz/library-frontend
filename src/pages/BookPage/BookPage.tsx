@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Tabs, Tab, Box, Typography, IconButton, Skeleton } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import './styles.css';
-import type { BookDetailsResponse } from '../../models/BookDetailsResponse';
+import { fromDtoToFormValues, type BookDetailsResponse } from '../../models/BookDetailsResponse';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { BookOptionsResponse } from '../../models/BookOptionsResponse';
 import bookService from '../../services/BookService';
@@ -11,6 +11,8 @@ import type { AuthenticationResponse } from '../../models/AuthenticationResponse
 import authenticationHelper from '../../util/AuthenticationHelper';
 import { CopyToClipboard } from '../../components/CopyToClipboard/CopyToClipboard';
 import { AuthorCard, toAuthorCardModel } from '../../components/AuthorCard/AuthorCard';
+import { BookFormModal, type BookFormData } from '../../components/BookFormModal/BookFormModal';
+import { toUpdateDto } from '../../models/UpdateBookRequest';
 
 enum DataLoadStatus {
     IDLE = 'idle',
@@ -42,6 +44,11 @@ const BookPage: React.FC = () => {
     const [bookOptionsState, setBookOptionsState] = useState<BookOptionsState>({ status: DataLoadStatus.IDLE });
     const [activeTab, setActiveTab] = useState(BookPageTab.COPIES);
     const [auth, setAuth] = useState<AuthenticationResponse | null>(null);
+    const [updateModalOpen, setUpdateModalOpen] = useState(false);
+
+    const handleCloseUpdateModal = () => {
+        setUpdateModalOpen(false);
+    }
 
     const loadBookOptions = async (): Promise<void> => {
         setBookOptionsState({ status: DataLoadStatus.LOADING });
@@ -106,9 +113,15 @@ const BookPage: React.FC = () => {
     }, []);
 
     const handleEditBookClick = () => {
+        setUpdateModalOpen(true);
     }
 
     const handleDeleteBookClick = () => {
+    }
+
+    const getUpdateFormValues = async (): Promise<BookFormData> => {
+        const bookDetails: BookDetailsResponse = await bookService.getBookById(id!);
+        return fromDtoToFormValues(bookDetails);
     }
 
     const renderContent = () => {
@@ -370,7 +383,23 @@ const BookPage: React.FC = () => {
 
             {/* Contenido de la página */}
             {renderContent()}
+
+            {/* Update Modal */}
+            <BookFormModal
+                open={updateModalOpen}
+                onCloseModal={handleCloseUpdateModal}
+                categories={bookOptionsState.status === DataLoadStatus.SUCCESS ? bookOptionsState.options.categories : []}
+                initialImageSrc={bookDetailsState.status === DataLoadStatus.SUCCESS ? bookDetailsState.book.pictureUrl : undefined}
+                getInitialFormValues={getUpdateFormValues}
+                save={(data: BookFormData, imageFile: File | null) => bookService.updateBook(id!, toUpdateDto(data, imageFile))}
+                onSaveSuccess={loadBookData}
+                successPrimaryActionLabel="OK"
+                onSuccessPrimaryAction={() => { handleCloseUpdateModal(); }}
+            />
+
         </div>
+
+
     );
 };
 

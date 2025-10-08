@@ -23,9 +23,8 @@ import type { OptionResponse } from '../../models/OptionResponse';
 import type { BookOptionsResponse } from '../../models/BookOptionsResponse';
 import { BookFormModal, type BookFormData } from '../../components/BookFormModal/BookFormModal';
 import type { CreateBookRequest } from '../../models/CreateBookRequest';
-import type { UpdateBookRequest } from '../../models/UpdateBookRequest';
-import type { BookDetailsResponse } from '../../models/BookDetailsResponse';
-import type { AuthorResponse } from '../../models/AuthorResponse';
+import { toUpdateDto, type UpdateBookRequest } from '../../models/UpdateBookRequest';
+import { fromDtoToFormValues, type BookDetailsResponse } from '../../models/BookDetailsResponse';
 import { useNavigate } from 'react-router-dom';
 
 type BookFilters = {
@@ -903,8 +902,11 @@ const Books: React.FC = () => {
         onCloseModal={handleCloseCreateModal}
         categories={bookOptions?.categories || []}
         save={(data: BookFormData, imageFile: File | null) => bookService.createBook(toCreationDto(data, imageFile))}
+        successPrimaryActionLabel="Ver libro"
+        onSuccessPrimaryAction={(book: BookDetailsResponse) => {
+          navigate(`/dashboard/books/${book.id}`);
+        }}
       />
-
 
       {/* Update Modal */}
       <BookFormModal
@@ -914,7 +916,11 @@ const Books: React.FC = () => {
         initialImageSrc={bookToUpdate?.imageUrl || undefined}
         getInitialFormValues={getBookToUpdateDetails}
         save={(data: BookFormData, imageFile: File | null) => bookService.updateBook(bookToUpdate!.id, toUpdateDto(data, imageFile))}
+        successPrimaryActionLabel="Ver libro"
         onSaveSuccess={() => fetchBooks()}
+        onSuccessPrimaryAction={(book: BookDetailsResponse) => {
+          navigate(`/dashboard/books/${book.id}`);
+        }}
       />
 
       {/* Error Modal */}
@@ -1236,34 +1242,6 @@ function toCreationDto(form: BookFormData, imageFile: File | null): CreateBookRe
     authorIds: form.authors.map((author) => author.id),
     categoryId: form.categoryId,
     bookPicture: imageFile,
-  };
-}
-
-function toUpdateDto(form: BookFormData, imageFile: File | null): UpdateBookRequest {
-  return {
-    title: form.title,
-    year: parseInt(form.year),
-    isbn: form.isbn,
-    authorIds: form.authors.map((author) => author.id),
-    categoryId: form.categoryId,
-    bookPicture: imageFile || undefined,
-  };
-}
-
-function fromDtoToFormValues(dto: BookDetailsResponse): BookFormData {
-  return {
-    title: dto.title,
-    year: dto.year.toString(),
-    isbn: dto.isbn,
-    authors: dto.authors.map((author: AuthorResponse) => ({
-      id: author.id,
-      firstName: author.firstName,
-      lastName: author.lastName,
-      country: author.country.name,
-      dateOfBirth: author.dateOfBirth,
-      bookCount: author.bookCount,
-    })),
-    categoryId: dto.category.id,
   };
 }
 
