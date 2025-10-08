@@ -798,9 +798,9 @@ function AuthorCard({
         <Typography variant="body1" sx={{ fontWeight: 600 }}>
           {author.lastName}, {author.firstName}
         </Typography>
-        <Box sx={{ display: "flex", mt: 0.5, gap: 4, flexWrap: "wrap" }}>
+        <Box sx={{ display: "flex", mt: 0.5, gap: 5, flexWrap: "wrap" }}>
           {keyValuePair("Nacionalidad", author.country)}
-          {keyValuePair("Nacimiento", author.dateOfBirth)}
+          {keyValuePair("Fecha de nacimiento", author.dateOfBirth)}
           {keyValuePair("Libros", author.bookCount.toString())}
         </Box>
       </Box>
