@@ -27,6 +27,7 @@ import { toUpdateDto } from '../../models/UpdateBookRequest';
 import { fromDtoToFormValues, type BookDetailsResponse } from '../../models/BookDetailsResponse';
 import { useNavigate } from 'react-router-dom';
 import { DeleteBookModal, DeleteStatus, type DeleteState } from '../../components/DeleteBookModal/DeleteBookModal';
+import * as blobHelpers from '../../util/BlobHelpers';
 
 type BookFilters = {
   search: string;
@@ -158,8 +159,7 @@ const Books: React.FC = () => {
       setIsExporting(true);
       const selectedIds = Array.from(selectedBooks);
       const blob: Blob = await bookService.exportBooks(selectedIds);
-      // TODO: Implementar downloadBlob cuando esté disponible
-      console.log('Export blob:', blob);
+      blobHelpers.downloadBlob(blob, "libros.pdf");
     } catch (error: any) {
       setExportErrorMessage(error.message || 'Error desconocido al exportar libros');
       setExportErrorOpen(true);
@@ -773,13 +773,6 @@ const Books: React.FC = () => {
                   style={{ width: '25%' }}
                 />
                 <SortableColumnHeader
-                  title='Autores'
-                  active={paginationState.sort === 'author'}
-                  order={paginationState.order}
-                  onClick={() => { setPaginationState(nextPagination("author")) }}
-                  style={{ width: '20%' }}
-                />
-                <SortableColumnHeader
                   title='ISBN'
                   active={paginationState.sort === 'isbn'}
                   order={paginationState.order}
@@ -799,6 +792,13 @@ const Books: React.FC = () => {
                   order={paginationState.order}
                   onClick={() => { setPaginationState(nextPagination("year")) }}
                   style={{ width: '10%' }}
+                />
+                <SortableColumnHeader
+                  title='Autores'
+                  active={paginationState.sort === 'author'}
+                  order={paginationState.order}
+                  onClick={() => { setPaginationState(nextPagination("author")) }}
+                  style={{ width: '20%' }}
                 />
                 <SortableColumnHeader
                   title='Disponibilidad'
@@ -859,9 +859,6 @@ const Books: React.FC = () => {
                     </div>
                   </td>
                   <td>
-                    {renderAuthors(book.authors)}
-                  </td>
-                  <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <span className='author-book-count'>{book.isbn}</span>
                       <CopyToClipboard
@@ -875,6 +872,9 @@ const Books: React.FC = () => {
                   </td>
                   <td>
                     <span className='author-book-count'>{book.year}</span>
+                  </td>
+                  <td>
+                    {renderAuthors(book.authors)}
                   </td>
                   <td>
                     {renderAvailability(book.availability)}
