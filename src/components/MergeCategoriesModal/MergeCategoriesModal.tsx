@@ -81,6 +81,7 @@ export default function MergeBookCategoriesModal({
                 mergedCategoriesIds: mergedCategoriesIds
             });
         }
+
     };
 
     const handleClose = () => {
@@ -97,6 +98,12 @@ export default function MergeBookCategoriesModal({
     useEffect(() => {
         if (!open) handleReset();
     }, [open]);
+
+    useEffect(() => {
+        if (state.type === "success") {
+            setActiveStep(CategoriesMergeStep.ShowResult);
+        }
+    }, [state.type]);
 
     return (
         <Dialog
@@ -301,32 +308,26 @@ const StepConfirmMerge: React.FC<StepConfirmMergeProps> = ({
 interface StepResultProps {
     result: MergeBookCategoriesResponse;
 }
-
 const StepResult: React.FC<StepResultProps> = ({ result }) => (
-    <Paper elevation={3} sx={{ p: 3, maxWidth: 400 }}>
-        <Typography variant="h6" gutterBottom>
-            Resultados:
-        </Typography>
+    <Paper elevation={0} sx={{ p: 3, maxWidth: 500 }}>
+        <Box display="grid" gridTemplateColumns="180px 1fr" rowGap={1} alignItems="center">
+            <Box display="flex" alignItems="center">
+                <CheckCircleIcon color="success" sx={{ mr: 1 }} />
+                <Typography>Libros movidos:</Typography>
+            </Box>
+            <Typography><strong>{result.movedBooks}</strong></Typography>
 
-        <Box display="flex" alignItems="center" mb={1}>
-            <CheckCircleIcon color="success" sx={{ mr: 1 }} />
-            <Typography>
-                <strong>Libros movidos:</strong> {result.movedBooks}
-            </Typography>
-        </Box>
+            <Box display="flex" alignItems="center">
+                <DeleteIcon color="error" sx={{ mr: 1 }} />
+                <Typography>Categorías eliminadas:</Typography>
+            </Box>
+            <Typography><strong>{result.deletedCategories}</strong></Typography>
 
-        <Box display="flex" alignItems="center" mb={1}>
-            <DeleteIcon color="error" sx={{ mr: 1 }} />
-            <Typography>
-                <strong>Categorías eliminadas:</strong> {result.deletedCategories}
-            </Typography>
-        </Box>
-
-        <Box display="flex" alignItems="center">
-            <CategoryIcon color="primary" sx={{ mr: 1 }} />
-            <Typography>
-                <strong>Categoría resultante:</strong> {result.targetCategory.name} con {result.targetCategory.bookCount} libros
-            </Typography>
+            <Box display="flex" alignItems="center">
+                <CategoryIcon color="primary" sx={{ mr: 1 }} />
+                <Typography>Categoría resultante:</Typography>
+            </Box>
+            <Typography><strong>{result.targetCategory.name}</strong> con <strong>{result.targetCategory.bookCount}</strong> libros</Typography>
         </Box>
     </Paper>
 );
