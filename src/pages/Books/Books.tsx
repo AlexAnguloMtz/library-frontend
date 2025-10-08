@@ -23,9 +23,10 @@ import type { OptionResponse } from '../../models/OptionResponse';
 import type { BookOptionsResponse } from '../../models/BookOptionsResponse';
 import { BookFormModal, type BookFormData } from '../../components/BookFormModal/BookFormModal';
 import type { CreateBookRequest } from '../../models/CreateBookRequest';
-import { toUpdateDto, type UpdateBookRequest } from '../../models/UpdateBookRequest';
+import { toUpdateDto } from '../../models/UpdateBookRequest';
 import { fromDtoToFormValues, type BookDetailsResponse } from '../../models/BookDetailsResponse';
 import { useNavigate } from 'react-router-dom';
+import { DeleteBookModal, DeleteStatus, type DeleteState } from '../../components/DeleteBookModal/DeleteBookModal';
 
 type BookFilters = {
   search: string;
@@ -47,17 +48,30 @@ type PaginationControls = {
   size: number;
 };
 
+enum DataLoadStatus {
+  IDLE = 'idle',
+  LOADING = 'loading',
+  SUCCESS = 'success',
+  ERROR = 'error'
+}
+
+type BookDetailsState =
+  | { status: DataLoadStatus.IDLE }
+  | { status: DataLoadStatus.LOADING }
+  | { status: DataLoadStatus.ERROR; error: string }
+  | { status: DataLoadStatus.SUCCESS; book: BookDetailsResponse };
+
 type BooksState =
-  | { status: 'idle' }
-  | { status: 'loading' }
-  | { status: 'error'; error: string }
-  | { status: 'success'; response: PaginationResponse<BookSummaryResponse> };
+  | { status: DataLoadStatus.IDLE }
+  | { status: DataLoadStatus.LOADING }
+  | { status: DataLoadStatus.ERROR; error: string }
+  | { status: DataLoadStatus.SUCCESS; response: PaginationResponse<BookSummaryResponse> };
 
 type FiltersState =
-  | { status: 'idle' }
-  | { status: 'loading' }
-  | { status: 'error' }
-  | { status: 'success'; categories: OptionResponse[] };
+  | { status: DataLoadStatus.IDLE }
+  | { status: DataLoadStatus.LOADING }
+  | { status: DataLoadStatus.ERROR; error: string }
+  | { status: DataLoadStatus.SUCCESS; categories: OptionResponse[] };
 
 const Books: React.FC = () => {
   const [filters, setFilters] = useState<BookFilters>({
@@ -78,8 +92,8 @@ const Books: React.FC = () => {
     size: 20
   });
 
-  const [booksState, setBooksState] = useState<BooksState>({ status: 'idle' });
-  const [filtersState, setFiltersState] = useState<FiltersState>({ status: 'idle' });
+  const [booksState, setBooksState] = useState<BooksState>({ status: DataLoadStatus.IDLE });
+  const [filtersState, setFiltersState] = useState<FiltersState>({ status: DataLoadStatus.IDLE });
   const [bookOptions, setBookOptions] = useState<BookOptionsResponse | null>(null);
   const [auth, setAuth] = useState<AuthenticationResponse | null>(null);
   const [displayPagination, setDisplayPagination] = useState<{ totalPages: number; page: number } | null>(null);
@@ -87,10 +101,8 @@ const Books: React.FC = () => {
 
   const [errorOpen, setErrorOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [bookToDelete, setBookToDelete] = useState<BookSummaryResponse | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteSuccess, setDeleteSuccess] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [bookToDeleteState, setBookToDeleteState] = useState<BookDetailsState>({ status: DataLoadStatus.IDLE });
+  const [deleteState, setDeleteState] = useState<DeleteState>({ status: DeleteStatus.Idle });
 
   // Estados del modal de crear libro
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -107,6 +119,9 @@ const Books: React.FC = () => {
   const debouncedSearch = useDebounce(filters.search, 500);
   const debouncedYearMin = useDebounce(filters.yearMin, 500);
   const debouncedYearMax = useDebounce(filters.yearMax, 500);
+
+  const [bookSummaryToDelete, setBookSummaryToDelete] = useState<BookSummaryResponse | null>(null);
+  const [loadingBookToDeleteModalOpen, setLoadingBookToDeleteModalOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -146,7 +161,6 @@ const Books: React.FC = () => {
       // TODO: Implementar downloadBlob cuando esté disponible
       console.log('Export blob:', blob);
     } catch (error: any) {
-      console.error('Error al exportar libros:', error);
       setExportErrorMessage(error.message || 'Error desconocido al exportar libros');
       setExportErrorOpen(true);
     } finally {
@@ -162,15 +176,15 @@ const Books: React.FC = () => {
 
   // Limpiar selección cuando cambien los datos
   useEffect(() => {
-    if (booksState.status === 'success' && booksState.response) {
+    if (booksState.status === DataLoadStatus.SUCCESS && booksState.response) {
       setSelectedBooks(new Set());
       setIsAllSelected(false);
     }
-  }, [booksState.status, booksState.status === 'success' ? booksState.response?.items : undefined]);
+  }, [booksState.status, booksState.status === DataLoadStatus.SUCCESS ? booksState.response?.items : undefined]);
 
   // Sincronizar checkbox maestro
   useEffect(() => {
-    if (booksState.status === 'success' && booksState.response) {
+    if (booksState.status === DataLoadStatus.SUCCESS && booksState.response) {
       const totalBooks = booksState.response.items.length;
       const selectedCount = selectedBooks.size;
 
@@ -187,15 +201,15 @@ const Books: React.FC = () => {
   // Fetch options for dropdowns
   useEffect(() => {
     const fetchFilters = async () => {
-      setFiltersState({ status: 'loading' });
+      setFiltersState({ status: DataLoadStatus.LOADING });
       try {
         const response = await bookService.getBookOptions();
         const sortedOptions = withSortedOptions(response);
-        setFiltersState({ status: 'success', categories: sortedOptions.categories });
+        setFiltersState({ status: DataLoadStatus.SUCCESS, categories: sortedOptions.categories });
         setBookOptions(sortedOptions);
       } catch (error: any) {
-        // Fail silently 
-        setFiltersState({ status: 'error' });
+        // Fail silently
+        setFiltersState({ status: DataLoadStatus.ERROR, error: error.message || 'Error desconocido' });
       }
     };
 
@@ -227,13 +241,19 @@ const Books: React.FC = () => {
     fetchBooks();
   }, [debouncedSearch, filters.available, debouncedYearMin, debouncedYearMax, filters.categories, paginationState, paginationControls]);
 
+  useEffect(() => {
+    if (bookSummaryToDelete) {
+      loadBookToDeleteDetails();
+    }
+  }, [bookSummaryToDelete]);
+
   const fetchBooks = async () => {
-    setBooksState({ status: 'loading' });
+    setBooksState({ status: DataLoadStatus.LOADING });
     try {
       const response = await bookService.getBooks(toQuery(filters), pagination(paginationState, paginationControls));
-      setBooksState({ status: 'success', response });
+      setBooksState({ status: DataLoadStatus.SUCCESS, response });
     } catch (error: any) {
-      setBooksState({ status: 'error', error: error.message || 'Unknown error' });
+      setBooksState({ status: DataLoadStatus.ERROR, error: error.message || 'Unknown error' });
       setErrorOpen(true);
     }
   };
@@ -347,53 +367,44 @@ const Books: React.FC = () => {
     setUpdateModalOpen(true);
   };
 
-  const handleDeleteClick = (book: BookSummaryResponse) => {
-    setBookToDelete(book);
-    setDeleteModalOpen(true);
-    setDeleteSuccess(false);
-    setDeleteError(null);
+  const handleDeleteClick = async (book: BookSummaryResponse) => {
+    setBookSummaryToDelete(book);
   };
 
-  const handleDeleteCancel = () => {
-    setDeleteModalOpen(false);
-    setBookToDelete(null);
-    setDeleteSuccess(false);
-    setDeleteError(null);
-  };
+  const loadBookToDeleteDetails = async () => {
+    setBookToDeleteState({ status: DataLoadStatus.LOADING });
+    try {
+      setLoadingBookToDeleteModalOpen(true);
+      const book = await bookService.getBookById(bookSummaryToDelete!.id);
+      setBookToDeleteState({ status: DataLoadStatus.SUCCESS, book });
+      setDeleteModalOpen(true);
+    } catch (error: any) {
+      setBookToDeleteState({ status: DataLoadStatus.ERROR, error: error.message || 'Error desconocido' });
+      setDeleteState({ status: DeleteStatus.Idle });
+    } finally {
+      setLoadingBookToDeleteModalOpen(false);
+    }
+  }
 
   const handleDeleteClose = () => {
     setDeleteModalOpen(false);
-    setBookToDelete(null);
-    setDeleteSuccess(false);
-    setDeleteError(null);
+    setBookToDeleteState({ status: DataLoadStatus.IDLE });
+    setDeleteState({ status: DeleteStatus.Idle });
+    setBookSummaryToDelete(null);
   };
 
   const handleDeleteConfirm = async () => {
-    if (!bookToDelete) return;
+    if (bookToDeleteState.status !== DataLoadStatus.SUCCESS) return;
 
-    setIsDeleting(true);
-    setDeleteError(null);
+    setDeleteState({ status: DeleteStatus.Deleting });
 
     try {
-      await bookService.deleteById(bookToDelete.id);
-
-      // Remove book from table
-      if (booksState.status === 'success') {
-        const updatedItems = booksState.response.items.filter(book => book.id !== bookToDelete.id);
-        const updatedResponse = {
-          ...booksState.response,
-          items: updatedItems,
-          totalItems: booksState.response.totalItems - 1
-        };
-        setBooksState({ status: 'success', response: updatedResponse });
-      }
-
-      setDeleteSuccess(true);
+      await bookService.deleteById(bookToDeleteState.book.id);
+      setDeleteState({ status: DeleteStatus.Deleted });
+      fetchBooks();
+      setBookSummaryToDelete(null);
     } catch (error: any) {
-      console.error('Error deleting book:', error);
-      setDeleteError(error.detail || error.message || 'Error desconocido al eliminar libro');
-    } finally {
-      setIsDeleting(false);
+      setDeleteState({ status: DeleteStatus.Error, error: error.detail || error.message || 'Error desconocido al eliminar libro' });
     }
   };
 
@@ -403,6 +414,13 @@ const Books: React.FC = () => {
       categories: options.categories.sort((a, b) => a.label.localeCompare(b.label))
     };
   }
+
+  const bookToDelete = (): BookDetailsResponse | null => {
+    if (bookToDeleteState.status === DataLoadStatus.SUCCESS) {
+      return bookToDeleteState.book;
+    }
+    return null;
+  };
 
   const handleNewBook = () => {
     setCreateModalOpen(true);
@@ -945,288 +963,42 @@ const Books: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation Modal */}
-      <Dialog
-        open={deleteModalOpen}
-        onClose={isDeleting ? undefined : handleDeleteCancel}
-        maxWidth="sm"
-        fullWidth
-        disableEscapeKeyDown={isDeleting}
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
-          }
-        }}
-      >
-        <DialogTitle sx={{
-          textAlign: 'left',
-          pb: 1,
-          fontSize: '1.25rem',
-          fontWeight: 600,
-          color: '#1f2937'
-        }}>
-          ¿Eliminar este libro?
-        </DialogTitle>
-
-        <DialogContent sx={{ pt: 2, pb: 3 }}>
-          {/* Alerts */}
-          {deleteSuccess && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              ¡Libro eliminado exitosamente!
-            </Alert>
+      <Dialog open={loadingBookToDeleteModalOpen}>
+        <DialogTitle>Cargando libro...</DialogTitle>
+        <DialogContent>
+          {bookToDeleteState.status === DataLoadStatus.LOADING && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem' }}>
+              <CircularProgress />
+            </div>
           )}
-          {deleteError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {deleteError}
-            </Alert>
+          {bookToDeleteState.status === DataLoadStatus.ERROR && (
+            <div style={{ color: '#dc2626' }}>
+              {bookToDeleteState.error}
+            </div>
           )}
-
-          {!deleteSuccess && bookToDelete && (
-            <Box sx={{
-              display: 'flex',
-              flexDirection: 'row',
-            }}>
-              <Box
-                component="img"
-                src={bookToDelete.imageUrl}
-                alt={"preview-" + bookToDelete.id}
-                sx={{
-                  width: '90%',
-                  height: '360px',
-                  objectFit: 'cover',
-                  borderRadius: '8px',
-                  mb: 2
-                }}>
-              </Box>
-              <Box sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                width: '900px',
-              }}>
-                <Box sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 1.5,
-                  width: '100%',
-                  padding: '0 20px',
-                }}>
-                  <Typography variant='h6' sx={{
-                    fontWeight: 600,
-                    color: '#1f2937',
-                    mb: 1
-                  }}>
-                    Detalles
-                  </Typography>
-                  <Box sx={{
-                    display: 'flex',
-                    justifyContent: 'flex-start',
-                    alignItems: 'center',
-                    py: 0.5,
-                    gap: 2
-                  }}>
-                    <Typography variant="body2" sx={{
-                      fontWeight: 400,
-                      color: '#9ca3af',
-                      minWidth: '120px',
-                      textAlign: 'left'
-                    }}>
-                      ID:
-                    </Typography>
-                    <Typography variant="body2" sx={{
-                      fontWeight: 600,
-                      color: '#1f2937',
-                      textAlign: 'right',
-                      flex: 1
-                    }}>
-                      {bookToDelete.id}
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{
-                    display: 'flex',
-                    justifyContent: 'flex-start',
-                    alignItems: 'center',
-                    py: 0.5,
-                    gap: 2
-                  }}>
-                    <Typography variant="body2" sx={{
-                      fontWeight: 400,
-                      color: '#9ca3af',
-                      minWidth: '120px',
-                      textAlign: 'left'
-                    }}>
-                      Título:
-                    </Typography>
-                    <Typography variant="body2" sx={{
-                      fontWeight: 600,
-                      color: '#1f2937',
-                      textAlign: 'right',
-                      flex: 1
-                    }}>
-                      {bookToDelete.title}
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{
-                    display: 'flex',
-                    justifyContent: 'flex-start',
-                    alignItems: 'center',
-                    py: 0.5,
-                    gap: 2
-                  }}>
-                    <Typography variant="body2" sx={{
-                      fontWeight: 400,
-                      color: '#9ca3af',
-                      minWidth: '120px',
-                      textAlign: 'left'
-                    }}>
-                      ISBN:
-                    </Typography>
-                    <Typography variant="body2" sx={{
-                      fontWeight: 600,
-                      color: '#1f2937',
-                      textAlign: 'right',
-                      flex: 1
-                    }}>
-                      {bookToDelete.isbn}
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{
-                    display: 'flex',
-                    justifyContent: 'flex-start',
-                    alignItems: 'center',
-                    py: 0.5,
-                    gap: 2
-                  }}>
-                    <Typography variant="body2" sx={{
-                      fontWeight: 400,
-                      color: '#9ca3af',
-                      minWidth: '120px',
-                      textAlign: 'left'
-                    }}>
-                      Categoría:
-                    </Typography>
-                    <Typography variant="body2" sx={{
-                      fontWeight: 600,
-                      color: '#1f2937',
-                      textAlign: 'right',
-                      flex: 1
-                    }}>
-                      {bookToDelete.category}
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{
-                    display: 'flex',
-                    justifyContent: 'flex-start',
-                    alignItems: 'center',
-                    py: 0.5,
-                    gap: 2
-                  }}>
-                    <Typography variant="body2" sx={{
-                      fontWeight: 400,
-                      color: '#9ca3af',
-                      minWidth: '120px',
-                      textAlign: 'left'
-                    }}>
-                      Año:
-                    </Typography>
-                    <Typography variant="body2" sx={{
-                      fontWeight: 600,
-                      color: '#1f2937',
-                      textAlign: 'right',
-                      flex: 1
-                    }}>
-                      {bookToDelete.year}
-                    </Typography>
-                  </Box>
-                </Box>
-                <Box sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 1.5,
-                  width: '100%',
-                  padding: '0 20px',
-                  margin: '20px 0 0 0',
-                }}>
-                  <Typography variant='h6' sx={{
-                    fontWeight: 600,
-                    color: '#1f2937',
-                    mb: 1
-                  }}>
-                    Autores ({bookToDelete.authors.length})
-                  </Typography>
-                  {
-                    bookToDelete.authors.map((author, index) => (
-                      <Box key={index} sx={{
-                        display: 'flex',
-                        justifyContent: 'flex-start',
-                        alignItems: 'center',
-                        py: 0.5,
-                        gap: 2
-                      }}>
-                        <Typography variant="body2" sx={{
-                          fontWeight: 400,
-                          color: 'black',
-                          minWidth: '120px',
-                          textAlign: 'left'
-                        }}>
-                          {author}
-                        </Typography>
-                      </Box>
-                    ))
-                  }
-                </Box>
-              </Box>
+          {bookToDeleteState.status === DataLoadStatus.ERROR && (
+            <Box>
+              <DialogActions>
+                <Button type='primary' onClick={loadBookToDeleteDetails}>Reintentar</Button>
+              </DialogActions>
             </Box>
           )}
         </DialogContent>
-
-        <DialogActions sx={{
-          p: 3,
-          pt: 1,
-          gap: 0.5,
-          justifyContent: 'flex-end'
-        }}>
-          {deleteSuccess ? (
-            <Button
-              type='primary'
-              onClick={handleDeleteClose}
-              className='small-button'
-            >
-              Cerrar
-            </Button>
-          ) : (
-            <>
-              <Button
-                type='secondary'
-                onClick={handleDeleteCancel}
-                className='small-button'
-                disabled={isDeleting}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type='error'
-                onClick={handleDeleteConfirm}
-                className='small-button'
-                disabled={isDeleting}
-              >
-                {isDeleting ? (
-                  <>
-                    <CircularProgress size={16} sx={{ color: 'white', mr: 1 }} />
-                    Eliminando...
-                  </>
-                ) : (
-                  'Eliminar'
-                )}
-              </Button>
-            </>
-          )}
-        </DialogActions>
       </Dialog>
+
+
+      {/* Delete Confirmation Modal */}
+      <DeleteBookModal
+        open={deleteModalOpen}
+        bookToDelete={bookToDelete()}
+        onClose={handleDeleteClose}
+        onDeleteConfirm={handleDeleteConfirm}
+        deleteState={deleteState}
+        successActionLabel={'Cerrar'}
+        onSuccessAction={handleDeleteClose}
+        closable={deleteState.status !== DeleteStatus.Deleting}
+      />
+
     </div >
   );
 };

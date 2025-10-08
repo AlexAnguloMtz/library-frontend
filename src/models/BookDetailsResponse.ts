@@ -9,7 +9,7 @@ export type BookDetailsResponse = {
     authors: AuthorResponse[];
     category: BookCategoryMinimalResponse;
     year: number;
-    pictureUrl: string;
+    imageUrl: string;
 };
 
 export function fromDtoToFormValues(dto: BookDetailsResponse): BookFormData {

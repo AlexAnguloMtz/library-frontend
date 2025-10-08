@@ -13,6 +13,7 @@ import { CopyToClipboard } from '../../components/CopyToClipboard/CopyToClipboar
 import { AuthorCard, toAuthorCardModel } from '../../components/AuthorCard/AuthorCard';
 import { BookFormModal, type BookFormData } from '../../components/BookFormModal/BookFormModal';
 import { toUpdateDto } from '../../models/UpdateBookRequest';
+import { DeleteBookModal, DeleteStatus, type DeleteState } from '../../components/DeleteBookModal/DeleteBookModal';
 
 enum DataLoadStatus {
     IDLE = 'idle',
@@ -45,6 +46,8 @@ const BookPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState(BookPageTab.COPIES);
     const [auth, setAuth] = useState<AuthenticationResponse | null>(null);
     const [updateModalOpen, setUpdateModalOpen] = useState(false);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [deleteState, setDeleteState] = useState<DeleteState>({ status: DeleteStatus.Idle });
 
     const handleCloseUpdateModal = () => {
         setUpdateModalOpen(false);
@@ -117,6 +120,24 @@ const BookPage: React.FC = () => {
     }
 
     const handleDeleteBookClick = () => {
+        setDeleteModalOpen(true);
+    }
+
+    const handleDeleteClose = () => {
+        setDeleteModalOpen(false);
+    }
+
+    const handleDeleteConfirm = async () => {
+        try {
+            setDeleteState({ status: DeleteStatus.Deleting });
+            await bookService.deleteById(id!);
+            setDeleteState({ status: DeleteStatus.Deleted });
+        } catch (error: any) {
+            setDeleteState({
+                status: DeleteStatus.Error,
+                error: error.message || 'Error desconocido'
+            });
+        }
     }
 
     const getUpdateFormValues = async (): Promise<BookFormData> => {
@@ -224,7 +245,7 @@ const BookPage: React.FC = () => {
                             >
                                 {bookDetailsState.status === 'success' && (
                                     <img
-                                        src={(bookDetailsState.book.pictureUrl)}
+                                        src={(bookDetailsState.book.imageUrl)}
                                         alt="Foto de libro"
                                         style={{
                                             width: '70%',
@@ -389,7 +410,7 @@ const BookPage: React.FC = () => {
                 open={updateModalOpen}
                 onCloseModal={handleCloseUpdateModal}
                 categories={bookOptionsState.status === DataLoadStatus.SUCCESS ? bookOptionsState.options.categories : []}
-                initialImageSrc={bookDetailsState.status === DataLoadStatus.SUCCESS ? bookDetailsState.book.pictureUrl : undefined}
+                initialImageSrc={bookDetailsState.status === DataLoadStatus.SUCCESS ? bookDetailsState.book.imageUrl : undefined}
                 getInitialFormValues={getUpdateFormValues}
                 save={(data: BookFormData, imageFile: File | null) => bookService.updateBook(id!, toUpdateDto(data, imageFile))}
                 onSaveSuccess={loadBookData}
@@ -397,9 +418,19 @@ const BookPage: React.FC = () => {
                 onSuccessPrimaryAction={() => { handleCloseUpdateModal(); }}
             />
 
+            {/* Delete Modal */}
+            <DeleteBookModal
+                open={deleteModalOpen}
+                bookToDelete={bookDetailsState.status === DataLoadStatus.SUCCESS ? bookDetailsState.book : null}
+                onClose={handleDeleteClose}
+                onDeleteConfirm={handleDeleteConfirm}
+                deleteState={deleteState}
+                successActionLabel="Volver al listado de libros"
+                onSuccessAction={() => { navigate('/dashboard/books'); }}
+                closable={deleteState.status !== DeleteStatus.Deleting && deleteState.status !== DeleteStatus.Deleted}
+            />
+
         </div>
-
-
     );
 };
 
