@@ -268,22 +268,45 @@ const StepConfirmMerge: React.FC<StepConfirmMergeProps> = ({
 
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {/* Target */}
-                <div style={{ display: "flex", alignItems: "center", padding: 8, backgroundColor: "#d0f0c0", borderRadius: 4 }}>
-                    <CheckCircleIcon style={{ marginRight: 8, color: "green" }} />
-                    <Typography variant="h6">{targetCategory.name}</Typography>
-                    <BookIcon style={{ marginLeft: 8, marginRight: 4 }} />
-                    <Typography>{targetCategory.bookCount} libros</Typography>
+                <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    padding: 8,
+                    backgroundColor: "#d0f0c0",
+                    borderRadius: 4
+                }}>
+                    <Box display="flex" alignItems="center" minWidth={180}>
+                        <CheckCircleIcon style={{ marginRight: 8, color: "green" }} />
+                        <Typography variant="h6">{targetCategory.name}</Typography>
+                    </Box>
+
+                    <Box display="flex" alignItems="center" ml={2}>
+                        <BookIcon style={{ marginRight: 4 }} />
+                        <Typography>{targetCategory.bookCount} libros</Typography>
+                    </Box>
                 </div>
 
                 {/* A eliminar */}
                 {categoriesToMerge.map(cat => (
-                    <div key={cat.id} style={{ display: "flex", alignItems: "center", padding: 8, backgroundColor: "#f8d7da", borderRadius: 4 }}>
-                        <DeleteForeverIcon style={{ marginRight: 8, color: "red" }} />
-                        <Typography variant="h6">{cat.name}</Typography>
-                        <BookIcon style={{ marginLeft: 8, marginRight: 4 }} />
-                        <Typography>{cat.bookCount} libros</Typography>
+                    <div key={cat.id} style={{
+                        display: "flex",
+                        alignItems: "center",
+                        padding: 8,
+                        backgroundColor: "#f8d7da",
+                        borderRadius: 4
+                    }}>
+                        <Box display="flex" alignItems="center" minWidth={180}>
+                            <DeleteForeverIcon style={{ marginRight: 8, color: "red" }} />
+                            <Typography variant="h6">{cat.name}</Typography>
+                        </Box>
+
+                        <Box display="flex" alignItems="center" ml={2}>
+                            <BookIcon style={{ marginRight: 4 }} />
+                            <Typography>{cat.bookCount} libros</Typography>
+                        </Box>
                     </div>
                 ))}
+
             </div>
 
             <Alert severity="warning" sx={{ my: 2 }}>
