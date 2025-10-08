@@ -8,9 +8,7 @@ import { Button } from '../Button';
 import type { BookDetailsResponse } from '../../models/BookDetailsResponse';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
-import bookService from '../../services/BookService';
 import type { OptionResponse } from '../../models/OptionResponse';
-import ISBN from 'isbn3';
 import { Controller } from "react-hook-form";
 import {
   FormControl,
@@ -679,8 +677,7 @@ export const BookFormModal = ({
 };
 
 function isValidIsbn(isbn: string): boolean {
-  return true;
-  // return ISBN.parse(isbn) !== null;
+  return /^\d+$/.test(isbn) && isbn.length >= 10 && isbn.length <= 13;
 }
 
 function AuthorMultiSelect({
