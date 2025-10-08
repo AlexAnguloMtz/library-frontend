@@ -268,7 +268,7 @@ const BookPage: React.FC = () => {
                                             </Typography>
                                         </Box>
                                     </Box>
-                                    <Box sx={{ width: '500px', maxHeight: '274px', overflowY: 'auto' }}>
+                                    <Box sx={{ width: '500px', maxHeight: '220px', overflowY: 'auto' }}>
                                         <Typography sx={{ margin: '0 0 10px 0', fontWeight: 'bold', fontSize: '1em' }} variant="h6">Autores ({bookDetailsState.book.authors.length})</Typography>
                                         {bookDetailsState.book.authors.map((author) => (
                                             <AuthorCard
