@@ -558,7 +558,7 @@ export const BookFormModal = ({
 
               <Box>
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                  Autores
+                  Autores ({form.getValues('authors').length})
                 </Typography>
                 <Box>
                   {form.getValues('authors').map(author => {
