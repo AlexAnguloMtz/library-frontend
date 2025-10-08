@@ -17,6 +17,7 @@ import { DeleteBookModal, DeleteStatus, type DeleteState } from '../../component
 import type { ProblemDetailError } from '../../models/ProblemDetail';
 import { NotFoundSurface } from '../../components/NotFoundSurface/NotFoundSurface';
 import { HttpStatus } from '../../util/HttpStatus';
+import { GenericErrorSurface } from '../../components/GenericErrorSurface/GenericErrorSurface';
 
 enum DataLoadStatus {
     IDLE = 'idle',
@@ -221,10 +222,9 @@ const BookPage: React.FC = () => {
                     );
                 }
                 return (
-                    <div>
-                        <p>Error: {bookDetailsState.error.detail}</p>
-                        <button onClick={handleRetry}>Reintentar</button>
-                    </div>
+                    <GenericErrorSurface
+                        onRetry={handleRetry}
+                        message={bookDetailsState.error.detail} />
                 );
 
             case DataLoadStatus.SUCCESS:

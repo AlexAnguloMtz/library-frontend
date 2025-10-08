@@ -70,17 +70,17 @@ class UserService {
         }
 
         const formData = new FormData();
-        
+
         formData.append('personalData.firstName', requestToSend.personalData.firstName);
         formData.append('personalData.lastName', requestToSend.personalData.lastName);
         formData.append('personalData.phone', requestToSend.personalData.phone);
         formData.append('personalData.genderId', requestToSend.personalData.genderId);
         formData.append('personalData.dateOfBirth', requestToSend.personalData.dateOfBirth);
-        
+
         formData.append('account.email', requestToSend.account.email);
         formData.append('account.roleId', requestToSend.account.roleId);
         formData.append('account.password', requestToSend.account.password);
-    
+
         return apiClient.post(`/api/v1/users`, formData);
     }
 
@@ -90,7 +90,7 @@ class UserService {
         return apiClient.put(`/api/v1/users/${id}/profile-picture`, formData);
     }
 
-    async exportUsers (ids: string[]): Promise<Blob> {
+    async exportUsers(ids: string[]): Promise<Blob> {
         const request = {
             format: "pdf",
             ids
@@ -106,7 +106,7 @@ class UserService {
 
 function userPreviewsQueryString(query: UserPreviewsQuery, pagination: PaginationRequest): string {
     const filtersParams: URLSearchParams = userPreviewsQuery.toURLSearchParams(query);
-    const paginationParams: URLSearchParams = paginationRequest.toURLSearchParams(pagination); 
+    const paginationParams: URLSearchParams = paginationRequest.toURLSearchParams(pagination);
     const finalParams: URLSearchParams = URLSearchParamsHelpers.merge([filtersParams, paginationParams]);
     return finalParams.toString();
 }

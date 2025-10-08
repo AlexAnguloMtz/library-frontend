@@ -22,6 +22,10 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import * as dateHelper from '../../util/DateHelper';
+import type { ProblemDetailError } from '../../models/ProblemDetail';
+import { HttpStatus } from '../../util/HttpStatus';
+import { NotFoundSurface } from '../../components/NotFoundSurface/NotFoundSurface';
+import { GenericErrorSurface } from '../../components/GenericErrorSurface/GenericErrorSurface';
 
 const EMPTY_FIELD_TEXT = '---';
 
@@ -98,7 +102,7 @@ enum UserPageStatus {
 type UserPageState =
     | { status: UserPageStatus.IDLE }
     | { status: UserPageStatus.LOADING }
-    | { status: UserPageStatus.ERROR; error: string }
+    | { status: UserPageStatus.ERROR; error: ProblemDetailError }
     | { status: UserPageStatus.SUCCESS; user: FullUser };
 
 const UserPage: React.FC = () => {
@@ -286,7 +290,7 @@ const UserPage: React.FC = () => {
         } catch (error) {
             setState({
                 status: UserPageStatus.ERROR,
-                error: error instanceof Error ? error.message : 'Error desconocido'
+                error: error as ProblemDetailError
             });
         }
     };
@@ -685,11 +689,13 @@ const UserPage: React.FC = () => {
                 );
 
             case UserPageStatus.ERROR:
+                if (state.error.status === HttpStatus.NOT_FOUND) {
+                    return <NotFoundSurface onRetry={handleRetry} />
+                }
                 return (
-                    <div>
-                        <p>Error: {state.error}</p>
-                        <button onClick={handleRetry}>Reintentar</button>
-                    </div>
+                    <GenericErrorSurface
+                        onRetry={handleRetry}
+                        message={state.error.detail} />
                 );
 
             case UserPageStatus.SUCCESS:
