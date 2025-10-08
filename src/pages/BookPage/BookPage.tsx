@@ -14,6 +14,9 @@ import { AuthorCard, toAuthorCardModel } from '../../components/AuthorCard/Autho
 import { BookFormModal, type BookFormData } from '../../components/BookFormModal/BookFormModal';
 import { toUpdateDto } from '../../models/UpdateBookRequest';
 import { DeleteBookModal, DeleteStatus, type DeleteState } from '../../components/DeleteBookModal/DeleteBookModal';
+import type { ProblemDetailError } from '../../models/ProblemDetail';
+import { NotFoundSurface } from '../../components/NotFoundSurface/NotFoundSurface';
+import { HttpStatus } from '../../util/HttpStatus';
 
 enum DataLoadStatus {
     IDLE = 'idle',
@@ -26,7 +29,7 @@ type BookDetailsState =
     | { status: DataLoadStatus.IDLE }
     | { status: DataLoadStatus.LOADING }
     | { status: DataLoadStatus.SUCCESS; book: BookDetailsResponse }
-    | { status: DataLoadStatus.ERROR; error: string };
+    | { status: DataLoadStatus.ERROR; error: ProblemDetailError };
 
 type BookOptionsState =
     | { status: DataLoadStatus.IDLE }
@@ -83,7 +86,7 @@ const BookPage: React.FC = () => {
         } catch (error) {
             setBookDetailsState({
                 status: DataLoadStatus.ERROR,
-                error: error instanceof Error ? error.message : 'Error desconocido'
+                error: error as ProblemDetailError
             });
         }
     };
@@ -212,9 +215,14 @@ const BookPage: React.FC = () => {
                 );
 
             case DataLoadStatus.ERROR:
+                if (bookDetailsState.error.status === HttpStatus.NOT_FOUND) {
+                    return (
+                        <NotFoundSurface onRetry={handleRetry} />
+                    );
+                }
                 return (
                     <div>
-                        <p>Error: {bookDetailsState.error}</p>
+                        <p>Error: {bookDetailsState.error.detail}</p>
                         <button onClick={handleRetry}>Reintentar</button>
                     </div>
                 );
