@@ -6,6 +6,11 @@ import type { BookDetailsResponse } from '../../models/BookDetailsResponse';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { BookOptionsResponse } from '../../models/BookOptionsResponse';
 import bookService from '../../services/BookService';
+import { Button } from '../../components/Button';
+import type { AuthenticationResponse } from '../../models/AuthenticationResponse';
+import authenticationHelper from '../../util/AuthenticationHelper';
+import { CopyToClipboard } from '../../components/CopyToClipboard/CopyToClipboard';
+import { AuthorCard, toAuthorCardModel } from '../../components/AuthorCard/AuthorCard';
 
 enum DataLoadStatus {
     IDLE = 'idle',
@@ -14,7 +19,7 @@ enum DataLoadStatus {
     ERROR = 'error',
 }
 
-type BooDetailsState =
+type BookDetailsState =
     | { status: DataLoadStatus.IDLE }
     | { status: DataLoadStatus.LOADING }
     | { status: DataLoadStatus.SUCCESS; book: BookDetailsResponse }
@@ -33,9 +38,10 @@ enum BookPageTab {
 const BookPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const [bookDetailsState, setBookDetailsState] = useState<BooDetailsState>({ status: DataLoadStatus.IDLE });
+    const [bookDetailsState, setBookDetailsState] = useState<BookDetailsState>({ status: DataLoadStatus.IDLE });
     const [bookOptionsState, setBookOptionsState] = useState<BookOptionsState>({ status: DataLoadStatus.IDLE });
     const [activeTab, setActiveTab] = useState(BookPageTab.COPIES);
+    const [auth, setAuth] = useState<AuthenticationResponse | null>(null);
 
     const loadBookOptions = async (): Promise<void> => {
         setBookOptionsState({ status: DataLoadStatus.LOADING });
@@ -85,6 +91,11 @@ const BookPage: React.FC = () => {
     };
 
     useEffect(() => {
+        const auth = authenticationHelper.getAuthentication();
+        setAuth(auth);
+    }, []);
+
+    useEffect(() => {
         if (id) {
             loadBookData();
         }
@@ -93,6 +104,12 @@ const BookPage: React.FC = () => {
     useEffect(() => {
         loadBookOptions();
     }, []);
+
+    const handleEditBookClick = () => {
+    }
+
+    const handleDeleteBookClick = () => {
+    }
 
     const renderContent = () => {
         switch (bookDetailsState.status) {
@@ -211,14 +228,58 @@ const BookPage: React.FC = () => {
                                     flex: 1,
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    justifyContent: 'center',
                                 }}
                             >
                                 {/* Aquí va el contenido de texto del libro */}
-                                <Typography variant="h6">{bookDetailsState.book.title}</Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    ID: {bookDetailsState.book.id}
-                                </Typography>
+                                <Typography sx={{ fontWeight: 'bold', margin: '0 0 14px 0' }} variant="h6">{bookDetailsState.book.title}</Typography>
+                                <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                                    <Box sx={{ mt: 0 }}>
+                                        <Typography sx={{ margin: ' 0 0 0', fontWeight: 'bold', fontSize: '1em' }} variant="h6">Detalles del libro</Typography>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 5, mt: 1 }}>
+                                            <Typography variant="body2" sx={{ width: '100px' }}>
+                                                ID:
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                                                {bookDetailsState.book.id} <CopyToClipboard size='small' text={bookDetailsState.book.id} />
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 5, mt: 1 }}>
+                                            <Typography variant="body2" sx={{ width: '100px' }}>
+                                                ISBN:
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                                                {bookDetailsState.book.isbn} <CopyToClipboard size='small' text={bookDetailsState.book.isbn} />
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 5, mt: 1 }}>
+                                            <Typography variant="body2" sx={{ width: '100px' }}>
+                                                Categoría:
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                                                {bookDetailsState.book.category.name}
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 5, mt: 1 }}>
+                                            <Typography variant="body2" sx={{ width: '100px' }}>
+                                                Año:
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                                                {bookDetailsState.book.year}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                    <Box sx={{ width: '500px', maxHeight: '274px', overflowY: 'auto' }}>
+                                        <Typography sx={{ margin: '0 0 10px 0', fontWeight: 'bold', fontSize: '1em' }} variant="h6">Autores ({bookDetailsState.book.authors.length})</Typography>
+                                        {bookDetailsState.book.authors.map((author) => (
+                                            <AuthorCard
+                                                key={author.id}
+                                                author={toAuthorCardModel(author)}
+                                                showRemoveButton={false}
+                                                hoverStyles={false}
+                                            />
+                                        ))}
+                                    </Box>
+                                </Box>
                             </Box>
                         </Box>
 
@@ -273,6 +334,38 @@ const BookPage: React.FC = () => {
                 >
                     Libro
                 </Typography>
+
+                <div style={{ flexGrow: 1 }}></div>
+
+                {bookDetailsState.status === DataLoadStatus.SUCCESS &&
+                    auth && authenticationHelper.hasAnyPermission(auth, ['books:update']) && (
+                        <Button
+                            type="primary"
+                            onClick={handleEditBookClick}
+                            sx={{
+                                fontSize: '0.75rem',
+                                padding: '6px 12px',
+                                minWidth: 'auto'
+                            }}
+                        >
+                            Editar libro
+                        </Button>
+                    )}
+
+                {bookDetailsState.status === DataLoadStatus.SUCCESS &&
+                    auth && authenticationHelper.hasAnyPermission(auth, ['books:delete']) && (
+                        <Button
+                            type="error"
+                            onClick={handleDeleteBookClick}
+                            sx={{
+                                fontSize: '0.75rem',
+                                padding: '6px 12px',
+                                minWidth: 'auto'
+                            }}
+                        >
+                            Borrar libro
+                        </Button>
+                    )}
             </Box>
 
             {/* Contenido de la página */}

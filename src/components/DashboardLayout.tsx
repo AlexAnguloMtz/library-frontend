@@ -73,9 +73,9 @@ const DashboardLayout: React.FC = () => {
             <div style={{ padding: '0px 16px 12px 16px', color: 'white', textAlign: 'center' }}>
                 {/* Avatar del usuario */}
                 <div style={{ marginBottom: '12px' }}>
-                    <img 
-                        src={auth.profilePictureUrl} 
-                        alt="Avatar" 
+                    <img
+                        src={auth.profilePictureUrl}
+                        alt="Avatar"
                         style={{
                             width: '56px',
                             height: '56px',
@@ -88,7 +88,7 @@ const DashboardLayout: React.FC = () => {
                 <div style={{ fontSize: '0.75em', marginBottom: '8px', opacity: 0.9 }}>
                     {auth.fullName}
                 </div>
-                <div style={{ 
+                <div style={{
                     display: 'inline-block',
                     padding: '4px 8px',
                     borderRadius: '12px',
