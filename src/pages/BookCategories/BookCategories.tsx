@@ -5,6 +5,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import SearchIcon from '@mui/icons-material/Search';
 import DeleteIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
+import FolderCopy from "@mui/icons-material/FolderCopy";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, Pagination, MenuItem, Box, Typography, CircularProgress, Checkbox, FormControl, InputLabel, Select, TextField, Alert } from '@mui/material';
 import { DashboardModuleTopBar } from '../../components/DashboardModuleTopBar/DashboardModuleTopBar';
 import type { GetBookCategoriesRequest } from '../../models/GetBookCategoriesRequest';
@@ -23,6 +24,8 @@ import bookCategoryService from '../../services/BookCategoryService';
 import * as blobHelpers from '../../util/BlobHelpers';
 import type { BookCategoryResponse } from '../../models/BookCategoryResponse';
 import type { BookCategoryRequest } from '../../models/BookCategoryRequest';
+import MergeBookCategoriesModal, { type CategoriesMergeState } from '../../components/MergeCategoriesModal/MergeCategoriesModal';
+import type { MergeBookCategoriesRequest } from '../../models/MergeBookCategoriesRequest';
 
 type BookCategoryFilters = {
   search: string;
@@ -118,6 +121,10 @@ const BookCategories: React.FC = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [exportErrorOpen, setExportErrorOpen] = useState(false);
   const [exportErrorMessage, setExportErrorMessage] = useState('');
+
+  // Estados para el modal de combinar categorías
+  const [mergeModalOpen, setMergeModalOpen] = useState(false);
+  const [mergeState, setMergeState] = useState<CategoriesMergeState>({ type: 'idle' });
 
   const debouncedSearch = useDebounce(filters.search, 500);
 
@@ -247,19 +254,20 @@ const BookCategories: React.FC = () => {
   }, [debouncedSearch, filters.bookCountMin, filters.bookCountMax]);
 
   useEffect(() => {
-    const fetchBookCategories = async () => {
-      setBookCategoriesState({ status: 'loading' });
-      try {
-        const response = await bookCategoryService.getBookCategories(toQuery(filters), pagination(paginationState, paginationControls));
-        setBookCategoriesState({ status: 'success', response });
-      } catch (error: any) {
-        setBookCategoriesState({ status: 'error', error: error.message || 'Unknown error' });
-        setErrorOpen(true);
-      }
-    };
-
     fetchBookCategories();
   }, [debouncedSearch, filters.bookCountMin, filters.bookCountMax, paginationState, paginationControls]);
+
+
+  const fetchBookCategories = async () => {
+    setBookCategoriesState({ status: 'loading' });
+    try {
+      const response = await bookCategoryService.getBookCategories(toQuery(filters), pagination(paginationState, paginationControls));
+      setBookCategoriesState({ status: 'success', response });
+    } catch (error: any) {
+      setBookCategoriesState({ status: 'error', error: error.message || 'Unknown error' });
+      setErrorOpen(true);
+    }
+  };
 
   const toQuery = (filters: BookCategoryFilters): GetBookCategoriesRequest => {
     return {
@@ -474,6 +482,10 @@ const BookCategories: React.FC = () => {
     }
   };
 
+  const handleMergeCategoriesClick = () => {
+    setMergeModalOpen(true);
+  }
+
   const onCreateSubmit = async (data: UpdateBookCategoryFormData) => {
     setIsCreating(true);
     setCreateError(null);
@@ -506,6 +518,29 @@ const BookCategories: React.FC = () => {
     }
   };
 
+  const categoriesSelection = (): BookCategoryResponse[] => {
+    if (bookCategoriesState.status !== 'success') {
+      return [];
+    }
+    return bookCategoriesState.response.items.filter(bc => selectedBookCategories.has(bc.id));
+  }
+
+  const handleCloseMergeModal = () => {
+    setMergeModalOpen(false);
+    setMergeState({ type: 'idle' });
+  };
+
+  const handleMergeCategories = async (request: MergeBookCategoriesRequest) => {
+    try {
+      setMergeState({ type: 'merging' });
+      const response = await bookCategoryService.mergeBookCategories(request);
+      setMergeState({ type: 'success', result: response });
+      fetchBookCategories();
+    } catch (error: any) {
+      setMergeState({ type: 'error', message: error.message || 'Error desconocido al combinar categorías' });
+    }
+  };
+
   return (
     <div className='parent-container'>
       <DashboardModuleTopBar
@@ -516,6 +551,22 @@ const BookCategories: React.FC = () => {
         isExporting={isExporting}
         auth={auth}
         newPermission="book-categories:create"
+        additionalActions={
+          auth && authenticationHelper.hasAnyPermission(auth, ['book-categories:update']) && (
+            <Button
+              onClick={handleMergeCategoriesClick}
+              className='dashboard-module-top-bar-action'
+              type='secondary'
+              disabled={(selectedBookCategories.size < 2)}
+            >
+              <div className='dashboard-module-top-bar-action-icon-container'>
+                <FolderCopy />
+              </div>
+              <span className='dashboard-module-top-bar-action-text'>
+                Combinar {selectedBookCategories.size < 2 ? '' : `(${selectedBookCategories.size})`}
+              </span>
+            </Button>
+          )}
       />
 
       {/* Filters */}
@@ -1216,6 +1267,13 @@ const BookCategories: React.FC = () => {
           )}
         </DialogActions>
       </Dialog>
+      <MergeBookCategoriesModal
+        open={mergeModalOpen}
+        onClose={handleCloseMergeModal}
+        categories={categoriesSelection()}
+        onConfirm={handleMergeCategories}
+        state={mergeState}
+      />
     </div>
   );
 };
