@@ -10,9 +10,9 @@ import apiClient from "./ApiClient";
 import type { BookDetailsResponse } from "../models/BookDetailsResponse";
 import type { CreateBookRequest } from "../models/CreateBookRequest";
 import type { UpdateBookRequest } from "../models/UpdateBookRequest";
-import type { BookAvailabilityDetailsResponse } from "../models/BookAvailabilityDetailsResponse";
 import type { GetBookAvailabilityRequest } from "../models/GetBookAvailabilityRequest";
 import * as getBookAvailabilityRequest from "../models/GetBookAvailabilityRequest";
+import type { BookCopyResponse } from "../models/BookCopyResponse";
 
 class BookService {
     async getBooks(request: GetBooksRequest, pagination: PaginationRequest): Promise<PaginationResponse<BookSummaryResponse>> {
@@ -81,9 +81,11 @@ class BookService {
         return response.blob();
     }
 
-    async getBookAvailabilityDetails(id: string, request: GetBookAvailabilityRequest): Promise<BookAvailabilityDetailsResponse> {
-        const query: string = getBookAvailabilityRequest.toURLSearchParams(request).toString();
-        return apiClient.get(`/api/v1/books/${id}/availability?${query}`);
+    async getBookCopies(id: string, request: GetBookAvailabilityRequest, pagination: PaginationRequest): Promise<PaginationResponse<BookCopyResponse>> {
+        const filtersParams: URLSearchParams = getBookAvailabilityRequest.toURLSearchParams(request);
+        const paginationParams: URLSearchParams = paginationRequest.toURLSearchParams(pagination);
+        const finalParams: URLSearchParams = URLSearchParamsHelpers.merge([filtersParams, paginationParams]);
+        return apiClient.get(`/api/v1/books/${id}/copies?${finalParams.toString()}`);
     }
 
 }

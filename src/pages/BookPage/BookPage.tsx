@@ -1,5 +1,5 @@
 import React, { useState, useEffect, type JSX } from 'react';
-import { Tabs, Tab, Box, Typography, IconButton, Skeleton, CircularProgress, TextField, InputAdornment, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Tabs, Tab, Box, Typography, IconButton, Skeleton, CircularProgress, TextField, InputAdornment, FormControl, InputLabel, Select, MenuItem, Pagination } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import './styles.css';
 import { fromDtoToFormValues, type BookDetailsResponse } from '../../models/BookDetailsResponse';
@@ -18,11 +18,14 @@ import type { ProblemDetailError } from '../../models/ProblemDetail';
 import { NotFoundSurface } from '../../components/NotFoundSurface/NotFoundSurface';
 import { HttpStatus } from '../../util/HttpStatus';
 import { GenericErrorSurface } from '../../components/GenericErrorSurface/GenericErrorSurface';
-import type { BookAvailabilityDetailsResponse } from '../../models/BookAvailabilityDetailsResponse';
 import { SortableColumnHeader } from '../../components/SortableColumnHeader/SortableColumnHeader';
 import SearchIcon from '@mui/icons-material/Search';
 import { useDebounce } from '../../hooks/useDebounce';
 import type { GetBookAvailabilityRequest } from '../../models/GetBookAvailabilityRequest';
+import type { PaginationResponse } from '../../models/PaginationResponse';
+import type { BookCopyResponse } from '../../models/BookCopyResponse';
+import type { SortRequest } from '../../models/SortRequest';
+import type { PaginationRequest } from '../../models/PaginationRequest';
 
 enum DataLoadStatus {
     IDLE = 'idle',
@@ -43,10 +46,10 @@ type BookOptionsState =
     | { status: DataLoadStatus.SUCCESS; options: BookOptionsResponse }
     | { status: DataLoadStatus.ERROR; error: string };
 
-type BookAvailabilityState =
+type BookCopiesState =
     | { status: DataLoadStatus.IDLE }
     | { status: DataLoadStatus.LOADING }
-    | { status: DataLoadStatus.SUCCESS; availability: BookAvailabilityDetailsResponse }
+    | { status: DataLoadStatus.SUCCESS; response: PaginationResponse<BookCopyResponse> }
     | { status: DataLoadStatus.ERROR; error: string };
 
 enum BookPageTab {
@@ -466,80 +469,28 @@ const BookPage: React.FC = () => {
     );
 };
 
-type AvailabilitySummaryProps = {
-    state: BookAvailabilityState;
-};
-
-function AvailabilitySummary({ state }: AvailabilitySummaryProps): JSX.Element {
-    return (
-        <Box sx={{ display: 'flex' }}>
-            <Box
-                sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1, }}
-            >
-                <Box>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#379ECC' }}></div>
-                        <Typography variant="subtitle2">
-                            Total
-                        </Typography>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <div style={{ width: '28px' }}></div>
-                        {(state.status === DataLoadStatus.LOADING && <div style={{ width: '50px', height: '40px' }}><Skeleton variant="rectangular" height={40} /></div>)}
-                        {state.status === DataLoadStatus.SUCCESS && (<Typography variant="h6">{state.availability.total}</Typography>)}
-                    </div>
-                </Box>
-            </Box>
-
-            <Box
-                sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1, }}
-            >
-                <Box>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#43D16B' }}></div>
-                        <Typography variant="subtitle2">
-                            Disponibles
-                        </Typography>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <div style={{ width: '28px' }}></div>
-                        {(state.status === DataLoadStatus.LOADING && <div style={{ width: '50px', height: '40px' }}><Skeleton variant="rectangular" height={40} /></div>)}
-                        {state.status === DataLoadStatus.SUCCESS && (<Typography variant="h6">{state.availability.available}</Typography>)}
-                    </div>
-                </Box>
-            </Box>
-
-            <Box
-                sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1, }}
-            >
-                <Box>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#BF0F0F' }}></div>
-                        <Typography variant="subtitle2">
-                            Prestados
-                        </Typography>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <div style={{ width: '28px' }}></div>
-                        {(state.status === DataLoadStatus.LOADING && <div style={{ width: '50px', height: '40px' }}><Skeleton variant="rectangular" height={40} /></div>)}
-                        {state.status === DataLoadStatus.SUCCESS && (<Typography variant="h6">{state.availability.borrowed}</Typography>)}
-                    </div>
-                </Box>
-            </Box>
-        </Box>
-    );
-}
-
 type BookCopyFilters = {
     search: string,
     status: string
 }
 
+type AvailabilitySortableColumn = 'id' | 'status' | 'observations';
+
+type SortingState = {
+    sort?: AvailabilitySortableColumn;
+    order?: 'asc' | 'desc';
+};
+
+type PaginationControls = {
+    page: number;
+    size: number;
+};
+
 function AvailabilityContent({ id }: { id: string | null | undefined }) {
 
     if (!id) return <></>;
 
-    const [bookAvailabilityState, setBookAvailabilityState] = useState<BookAvailabilityState>({ status: DataLoadStatus.IDLE });
+    const [copiesState, setBookAvailabilityState] = useState<BookCopiesState>({ status: DataLoadStatus.IDLE });
     const [filters, setFilters] = useState<BookCopyFilters>({
         search: '',
         status: '',
@@ -547,26 +498,103 @@ function AvailabilityContent({ id }: { id: string | null | undefined }) {
 
     const debouncedSearch = useDebounce(filters.search, 500);
 
+    const [paginationState, setPaginationState] = useState<SortingState>({
+        sort: undefined,
+        order: undefined
+    });
+
+    const [paginationControls, setPaginationControls] = useState<PaginationControls>({
+        page: 0,
+        size: 20
+    });
+
+    const [displayPagination, setDisplayPagination] = useState<{ totalPages: number; page: number } | null>(null);
+    const [displayCount, setDisplayCount] = useState<{ start: number; end: number; total: number } | null>(null);
+
     useEffect(() => {
         loadBookAvailabilityDetails();
     }, []);
 
+    // Reset pagination when filters change
+    useEffect(() => {
+        setPaginationControls(prev => ({ ...prev, page: 0 }));
+    }, [debouncedSearch, filters.status]);
+
+    // Search when filters or pagination change
     useEffect(() => {
         loadBookAvailabilityDetails();
-    }, [debouncedSearch, filters.status]);
+    }, [debouncedSearch, filters.status, paginationState, paginationControls]);
+
+    useEffect(() => {
+        if (copiesState.status === DataLoadStatus.SUCCESS) {
+            const response = copiesState.response;
+            setDisplayPagination({
+                totalPages: response.totalPages,
+                page: response.page
+            });
+            setDisplayCount({
+                start: response.page * response.size + 1,
+                end: Math.min((response.page + 1) * response.size, response.totalItems),
+                total: response.totalItems
+            });
+        }
+    }, [copiesState]);
+
+    const pagination = (paginationState: SortingState, paginationControls: PaginationControls): PaginationRequest => {
+        const sorts = mapSort(paginationState);
+        return {
+            sorts: sorts,
+            page: paginationControls.page,
+            size: paginationControls.size
+        };
+    }
+
+    const mapSort = (paginationState: SortingState): SortRequest[] => {
+        if (paginationState.sort === 'id') {
+            return [{ sort: 'id', order: paginationState.order }];
+        }
+
+        if (paginationState.sort === 'status') {
+            return [{ sort: 'status', order: paginationState.order }];
+        }
+
+        if (paginationState.sort === 'observations') {
+            return [{ sort: 'observations', order: paginationState.order }];
+        }
+
+        return [];
+    }
 
     const handleFilterChange = (field: keyof typeof filters, value: any) => {
         setFilters(prev => ({ ...prev, [field]: value }));
+    };
+
+    const nextPagination = (column: AvailabilitySortableColumn): SortingState => {
+        const { sort, order } = paginationState;
+
+        if (sort !== column) {
+            return { sort: column, order: 'asc' };
+        }
+
+        if (order === 'asc') {
+            return { sort: column, order: 'desc' };
+        }
+
+        if (order === 'desc') {
+            return { sort: undefined, order: undefined };
+        }
+
+        return { sort: column, order: 'asc' };
     };
 
     const loadBookAvailabilityDetails = async () => {
         setBookAvailabilityState({ status: DataLoadStatus.LOADING });
 
         try {
-            const availability = await bookService.getBookAvailabilityDetails(id, toRequest(filters));
+            const response = await bookService.getBookCopies(id, toRequest(filters), pagination(paginationState, paginationControls));
             setBookAvailabilityState({
                 status: DataLoadStatus.SUCCESS,
-                availability
+                response,
             });
         } catch (error: any) {
             setBookAvailabilityState({
@@ -588,15 +616,16 @@ function AvailabilityContent({ id }: { id: string | null | undefined }) {
             search: '',
             status: '',
         });
+        setPaginationControls(prev => ({ ...prev, page: 0 }));
     }
 
     return (
         <>
             {
-                bookAvailabilityState.status === DataLoadStatus.ERROR && (
+                copiesState.status === DataLoadStatus.ERROR && (
                     <Box sx={{ display: 'flex', justifyContent: 'center', padding: '50px 0 0 0' }}>
                         <GenericErrorSurface
-                            message={bookAvailabilityState.error}
+                            message={copiesState.error}
                             onRetry={loadBookAvailabilityDetails}
                         />
                     </Box>
@@ -605,9 +634,6 @@ function AvailabilityContent({ id }: { id: string | null | undefined }) {
 
             {
                 <Box>
-                    <Box>
-                        <AvailabilitySummary state={bookAvailabilityState} />
-                    </Box>
                     <div className='filters'>
                         {/* Buscar */}
                         <div className='filter-item'>
@@ -645,28 +671,112 @@ function AvailabilityContent({ id }: { id: string | null | undefined }) {
                             </FormControl>
                         </div>
                     </div>
-                    <div className='reset-container'>
+                    <div className='reset-and-pagination-container'>
                         <Button type='secondary' onClick={clearFilters} className='small-button'>
                             Limpiar filtros
                         </Button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            {/* Element Count */}
+                            {displayCount && (
+                                <span style={{
+                                    fontSize: '12px',
+                                    color: '#6B7280',
+                                    marginRight: '0.5rem'
+                                }}>
+                                    {displayCount.start} - {displayCount.end} de {displayCount.total}
+                                </span>
+                            )}
+
+                            {/* Page Size Selector */}
+                            <FormControl size="small" sx={{ minWidth: 100 }}>
+                                <InputLabel sx={{ fontSize: '12px' }}>Items</InputLabel>
+                                <Select
+                                    value={paginationControls.size}
+                                    onChange={(e) => setPaginationControls(prev => ({ ...prev, size: e.target.value as number, page: 0 }))}
+                                    label="Elementos por página"
+                                    sx={{ fontSize: '12px', height: '32px' }}
+                                >
+                                    <MenuItem value={10} sx={{ fontSize: '12px' }}>10</MenuItem>
+                                    <MenuItem value={20} sx={{ fontSize: '12px' }}>20</MenuItem>
+                                    <MenuItem value={50} sx={{ fontSize: '12px' }}>50</MenuItem>
+                                    <MenuItem value={100} sx={{ fontSize: '12px' }}>100</MenuItem>
+                                </Select>
+                            </FormControl>
+
+                            {/* Pagination */}
+                            {displayPagination && displayPagination.totalPages > 1 ? (
+                                <Pagination
+                                    count={displayPagination.totalPages}
+                                    page={displayPagination.page + 1} // Material-UI uses 1-based indexing
+                                    onChange={(_, page) => setPaginationControls(prev => ({ ...prev, page: page - 1 }))} // Convert back to 0-based
+                                    color="primary"
+                                    size="small"
+                                    sx={{
+                                        '& .MuiPaginationItem-root': {
+                                            color: '#4F46E5',
+                                            fontSize: '12px',
+                                            minWidth: '28px',
+                                            height: '28px',
+                                            '&.Mui-selected': {
+                                                backgroundColor: '#4F46E5',
+                                                color: 'white',
+                                                '&:hover': {
+                                                    backgroundColor: '#433BCF',
+                                                }
+                                            },
+                                            '&:hover': {
+                                                backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                                            }
+                                        }
+                                    }}
+                                />
+                            ) : (
+                                <Pagination
+                                    count={1}
+                                    page={1}
+                                    disabled={true}
+                                    color="primary"
+                                    size="small"
+                                    sx={{
+                                        '& .MuiPaginationItem-root': {
+                                            color: '#4F46E5',
+                                            fontSize: '12px',
+                                            minWidth: '28px',
+                                            height: '28px',
+                                            '&.Mui-selected': {
+                                                backgroundColor: '#4F46E5',
+                                                color: 'white',
+                                            }
+                                        }
+                                    }}
+                                />
+                            )}
+                        </div>
                     </div>
                     <Box>
                         <table className='copies-table'>
                             <thead>
                                 <SortableColumnHeader
                                     title='ID Copia'
-                                    nonSortable={true}
-                                    style={{ padding: '10px 6px' }} />
+                                    active={paginationState.sort === 'id'}
+                                    order={paginationState.order}
+                                    onClick={() => { setPaginationState(nextPagination("id")) }}
+                                    style={{ padding: '10px 6px' }}
+                                />
                                 <SortableColumnHeader
                                     title='Estatus'
-                                    nonSortable={true}
+                                    active={paginationState.sort === 'status'}
+                                    order={paginationState.order}
+                                    onClick={() => { setPaginationState(nextPagination("status")) }}
                                     style={{ padding: '10px 6px' }} />
                                 <SortableColumnHeader
                                     title='Observaciones'
-                                    nonSortable={true}
+                                    active={paginationState.sort === 'observations'}
+                                    order={paginationState.order}
+                                    onClick={() => { setPaginationState(nextPagination("observations")) }}
                                     style={{ padding: '10px 6px' }} />
                             </thead>
-                            {bookAvailabilityState.status === DataLoadStatus.LOADING && (
+                            {copiesState.status === DataLoadStatus.LOADING && (
                                 Array.from({ length: 15 }).map((_, i) => (
                                     <tr key={i}>
                                         <td><Skeleton variant="rectangular" height={40} /></td>
@@ -675,7 +785,7 @@ function AvailabilityContent({ id }: { id: string | null | undefined }) {
                                     </tr>
                                 ))
                             )}
-                            {bookAvailabilityState.status === DataLoadStatus.SUCCESS && bookAvailabilityState.availability.copies.map((copy) => (
+                            {copiesState.status === DataLoadStatus.SUCCESS && copiesState.response.items.map((copy) => (
                                 <tr>
                                     <td>
                                         <div className='cell-content'>

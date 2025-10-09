@@ -40,7 +40,7 @@ type BookFilters = {
 
 type SortableColumn = 'title' | 'author' | 'isbn' | 'category' | 'publisher' | 'year';
 
-type PaginationState = {
+type SortingState = {
   sort?: SortableColumn;
   order?: 'asc' | 'desc';
 };
@@ -85,7 +85,7 @@ const Books: React.FC = () => {
     publishers: [],
   });
 
-  const [paginationState, setPaginationState] = useState<PaginationState>({
+  const [paginationState, setPaginationState] = useState<SortingState>({
     sort: undefined,
     order: undefined
   });
@@ -271,7 +271,7 @@ const Books: React.FC = () => {
     };
   }
 
-  const pagination = (paginationState: PaginationState, paginationControls: PaginationControls): PaginationRequest => {
+  const pagination = (paginationState: SortingState, paginationControls: PaginationControls): PaginationRequest => {
     const sorts = mapSort(paginationState);
     return {
       sorts: sorts,
@@ -280,7 +280,7 @@ const Books: React.FC = () => {
     };
   }
 
-  const mapSort = (paginationState: PaginationState): SortRequest[] => {
+  const mapSort = (paginationState: SortingState): SortRequest[] => {
     if (paginationState.sort === 'title') {
       return [{ sort: 'title', order: paginationState.order }];
     }
@@ -348,7 +348,7 @@ const Books: React.FC = () => {
     setPaginationControls(prev => ({ ...prev, page: 0 }));
   };
 
-  const nextPagination = (column: SortableColumn): PaginationState => {
+  const nextPagination = (column: SortableColumn): SortingState => {
     const { sort, order } = paginationState;
 
     if (sort !== column) {

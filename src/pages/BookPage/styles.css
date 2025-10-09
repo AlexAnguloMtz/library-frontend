@@ -2,8 +2,10 @@
     padding: 0 !important;
 }
 
-.reset-container {
+.reset-and-pagination-container {
     padding: 12px 0 !important;
+    display: flex;
+    justify-content: space-between;
 }
 
 .copies-table {
