@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, type JSX } from 'react';
 import { Tabs, Tab, Box, Typography, IconButton, Skeleton } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import './styles.css';
@@ -18,6 +18,10 @@ import type { ProblemDetailError } from '../../models/ProblemDetail';
 import { NotFoundSurface } from '../../components/NotFoundSurface/NotFoundSurface';
 import { HttpStatus } from '../../util/HttpStatus';
 import { GenericErrorSurface } from '../../components/GenericErrorSurface/GenericErrorSurface';
+import { Stack, Paper } from '@mui/material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
+import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
 
 enum DataLoadStatus {
     IDLE = 'idle',
@@ -336,13 +340,20 @@ const BookPage: React.FC = () => {
                         {/* Sección Inferior - Pestañas */}
                         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                             <Tabs value={activeTab} onChange={handleTabChange}>
-                                <Tab label="Copias" />
+                                <Tab label="Disponibilidad" />
                             </Tabs>
                         </Box>
 
                         {/* Contenido de las pestañas */}
                         <Box sx={{ mt: 3, pb: 24, px: 3 }}>
-                            {activeTab === BookPageTab.COPIES && <>copias...</>}
+                            {
+                                activeTab === BookPageTab.COPIES && (
+                                    <AvailabilitySummary
+                                        total={10}
+                                        available={6}
+                                        borrowed={4} />
+                                )
+                            }
                         </Box>
                     </Box>
                 );
@@ -450,5 +461,68 @@ const BookPage: React.FC = () => {
         </div>
     );
 };
+
+type AvailabilitySummaryProps = {
+    total: number;
+    available: number;
+    borrowed: number;
+};
+
+function AvailabilitySummary({ total, available, borrowed }: AvailabilitySummaryProps): JSX.Element {
+    return (
+        <Box sx={{ display: 'flex' }}>
+            <Box
+                sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1, }}
+            >
+                <Box>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#379ECC' }}></div>
+                        <Typography variant="subtitle2">
+                            Total
+                        </Typography>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <div style={{ width: '28px' }}></div>
+                        <Typography variant="h6">{total}</Typography>
+                    </div>
+                </Box>
+            </Box>
+
+            <Box
+                sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1, }}
+            >
+                <Box>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#43D16B' }}></div>
+                        <Typography variant="subtitle2">
+                            Disponibles
+                        </Typography>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <div style={{ width: '28px' }}></div>
+                        <Typography variant="h6">{available}</Typography>
+                    </div>
+                </Box>
+            </Box>
+
+            <Box
+                sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1, }}
+            >
+                <Box>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#BF0F0F' }}></div>
+                        <Typography variant="subtitle2">
+                            Prestados
+                        </Typography>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <div style={{ width: '28px' }}></div>
+                        <Typography variant="h6">{borrowed}</Typography>
+                    </div>
+                </Box>
+            </Box>
+        </Box>
+    );
+}
 
 export default BookPage;
