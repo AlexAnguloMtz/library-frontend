@@ -1,5 +1,5 @@
 import React, { useState, useEffect, type JSX } from 'react';
-import { Tabs, Tab, Box, Typography, IconButton, Skeleton } from '@mui/material';
+import { Tabs, Tab, Box, Typography, IconButton, Skeleton, CircularProgress, TextField, InputAdornment, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import './styles.css';
 import { fromDtoToFormValues, type BookDetailsResponse } from '../../models/BookDetailsResponse';
@@ -18,10 +18,11 @@ import type { ProblemDetailError } from '../../models/ProblemDetail';
 import { NotFoundSurface } from '../../components/NotFoundSurface/NotFoundSurface';
 import { HttpStatus } from '../../util/HttpStatus';
 import { GenericErrorSurface } from '../../components/GenericErrorSurface/GenericErrorSurface';
-import { Stack, Paper } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
-import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
+import type { BookAvailabilityDetailsResponse } from '../../models/BookAvailabilityDetailsResponse';
+import { SortableColumnHeader } from '../../components/SortableColumnHeader/SortableColumnHeader';
+import SearchIcon from '@mui/icons-material/Search';
+import { useDebounce } from '../../hooks/useDebounce';
+import type { GetBookAvailabilityRequest } from '../../models/GetBookAvailabilityRequest';
 
 enum DataLoadStatus {
     IDLE = 'idle',
@@ -42,6 +43,12 @@ type BookOptionsState =
     | { status: DataLoadStatus.SUCCESS; options: BookOptionsResponse }
     | { status: DataLoadStatus.ERROR; error: string };
 
+type BookAvailabilityState =
+    | { status: DataLoadStatus.IDLE }
+    | { status: DataLoadStatus.LOADING }
+    | { status: DataLoadStatus.SUCCESS; availability: BookAvailabilityDetailsResponse }
+    | { status: DataLoadStatus.ERROR; error: string };
+
 enum BookPageTab {
     COPIES = 0,
 }
@@ -56,6 +63,7 @@ const BookPage: React.FC = () => {
     const [updateModalOpen, setUpdateModalOpen] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [deleteState, setDeleteState] = useState<DeleteState>({ status: DeleteStatus.Idle });
+
 
     const handleCloseUpdateModal = () => {
         setUpdateModalOpen(false);
@@ -96,6 +104,8 @@ const BookPage: React.FC = () => {
         }
     };
 
+
+
     const handleRetry = () => {
         loadBookData();
     };
@@ -118,6 +128,7 @@ const BookPage: React.FC = () => {
             loadBookData();
         }
     }, []);
+
 
     useEffect(() => {
         loadBookOptions();
@@ -346,14 +357,7 @@ const BookPage: React.FC = () => {
 
                         {/* Contenido de las pestañas */}
                         <Box sx={{ mt: 3, pb: 24, px: 3 }}>
-                            {
-                                activeTab === BookPageTab.COPIES && (
-                                    <AvailabilitySummary
-                                        total={10}
-                                        available={6}
-                                        borrowed={4} />
-                                )
-                            }
+                            {activeTab === BookPageTab.COPIES && <AvailabilityContent id={id} />}
                         </Box>
                     </Box>
                 );
@@ -463,12 +467,10 @@ const BookPage: React.FC = () => {
 };
 
 type AvailabilitySummaryProps = {
-    total: number;
-    available: number;
-    borrowed: number;
+    state: BookAvailabilityState;
 };
 
-function AvailabilitySummary({ total, available, borrowed }: AvailabilitySummaryProps): JSX.Element {
+function AvailabilitySummary({ state }: AvailabilitySummaryProps): JSX.Element {
     return (
         <Box sx={{ display: 'flex' }}>
             <Box
@@ -483,7 +485,8 @@ function AvailabilitySummary({ total, available, borrowed }: AvailabilitySummary
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <div style={{ width: '28px' }}></div>
-                        <Typography variant="h6">{total}</Typography>
+                        {(state.status === DataLoadStatus.LOADING && <div style={{ width: '50px', height: '40px' }}><Skeleton variant="rectangular" height={40} /></div>)}
+                        {state.status === DataLoadStatus.SUCCESS && (<Typography variant="h6">{state.availability.total}</Typography>)}
                     </div>
                 </Box>
             </Box>
@@ -500,7 +503,8 @@ function AvailabilitySummary({ total, available, borrowed }: AvailabilitySummary
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <div style={{ width: '28px' }}></div>
-                        <Typography variant="h6">{available}</Typography>
+                        {(state.status === DataLoadStatus.LOADING && <div style={{ width: '50px', height: '40px' }}><Skeleton variant="rectangular" height={40} /></div>)}
+                        {state.status === DataLoadStatus.SUCCESS && (<Typography variant="h6">{state.availability.available}</Typography>)}
                     </div>
                 </Box>
             </Box>
@@ -517,11 +521,182 @@ function AvailabilitySummary({ total, available, borrowed }: AvailabilitySummary
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <div style={{ width: '28px' }}></div>
-                        <Typography variant="h6">{borrowed}</Typography>
+                        {(state.status === DataLoadStatus.LOADING && <div style={{ width: '50px', height: '40px' }}><Skeleton variant="rectangular" height={40} /></div>)}
+                        {state.status === DataLoadStatus.SUCCESS && (<Typography variant="h6">{state.availability.borrowed}</Typography>)}
                     </div>
                 </Box>
             </Box>
         </Box>
+    );
+}
+
+type BookCopyFilters = {
+    search: string,
+    status: string
+}
+
+function AvailabilityContent({ id }: { id: string | null | undefined }) {
+
+    if (!id) return <></>;
+
+    const [bookAvailabilityState, setBookAvailabilityState] = useState<BookAvailabilityState>({ status: DataLoadStatus.IDLE });
+    const [filters, setFilters] = useState<BookCopyFilters>({
+        search: '',
+        status: '',
+    });
+
+    const debouncedSearch = useDebounce(filters.search, 500);
+
+    useEffect(() => {
+        loadBookAvailabilityDetails();
+    }, []);
+
+    useEffect(() => {
+        loadBookAvailabilityDetails();
+    }, [debouncedSearch, filters.status]);
+
+    const handleFilterChange = (field: keyof typeof filters, value: any) => {
+        setFilters(prev => ({ ...prev, [field]: value }));
+    };
+
+    const loadBookAvailabilityDetails = async () => {
+        setBookAvailabilityState({ status: DataLoadStatus.LOADING });
+
+        try {
+            const availability = await bookService.getBookAvailabilityDetails(id, toRequest(filters));
+            setBookAvailabilityState({
+                status: DataLoadStatus.SUCCESS,
+                availability
+            });
+        } catch (error: any) {
+            setBookAvailabilityState({
+                status: DataLoadStatus.ERROR,
+                error: error.message || 'Error desconocido'
+            });
+        }
+    };
+
+    const toRequest = (filters: BookCopyFilters): GetBookAvailabilityRequest => {
+        return {
+            search: filters.search,
+            status: filters.status
+        }
+    }
+
+    const clearFilters = () => {
+        setFilters({
+            search: '',
+            status: '',
+        });
+    }
+
+    return (
+        <>
+            {
+                bookAvailabilityState.status === DataLoadStatus.ERROR && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', padding: '50px 0 0 0' }}>
+                        <GenericErrorSurface
+                            message={bookAvailabilityState.error}
+                            onRetry={loadBookAvailabilityDetails}
+                        />
+                    </Box>
+                )
+            }
+
+            {
+                <Box>
+                    <Box>
+                        <AvailabilitySummary state={bookAvailabilityState} />
+                    </Box>
+                    <div className='filters'>
+                        {/* Buscar */}
+                        <div className='filter-item'>
+                            <TextField
+                                value={filters.search}
+                                onChange={(e) => handleFilterChange('search', e.target.value)}
+                                label="Buscar"
+                                placeholder='Buscar...'
+                                variant="outlined"
+                                fullWidth
+                                size='small'
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <SearchIcon />
+                                        </InputAdornment>
+                                    ),
+                                }}
+                            />
+                        </div>
+                        <div className='filter-item'>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Estatus</InputLabel>
+                                <Select
+                                    value={filters.status}
+                                    onChange={(e) => handleFilterChange('status', e.target.value)}
+                                    label="Estatus"
+                                >
+                                    <MenuItem value="">
+                                        <em>Todos</em>
+                                    </MenuItem>
+                                    <MenuItem value="available">Disponible</MenuItem>
+                                    <MenuItem value="borrowed">Prestado</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </div>
+                    </div>
+                    <div className='reset-container'>
+                        <Button type='secondary' onClick={clearFilters} className='small-button'>
+                            Limpiar filtros
+                        </Button>
+                    </div>
+                    <Box>
+                        <table className='copies-table'>
+                            <thead>
+                                <SortableColumnHeader
+                                    title='ID Copia'
+                                    nonSortable={true}
+                                    style={{ padding: '10px 6px' }} />
+                                <SortableColumnHeader
+                                    title='Estatus'
+                                    nonSortable={true}
+                                    style={{ padding: '10px 6px' }} />
+                                <SortableColumnHeader
+                                    title='Observaciones'
+                                    nonSortable={true}
+                                    style={{ padding: '10px 6px' }} />
+                            </thead>
+                            {bookAvailabilityState.status === DataLoadStatus.LOADING && (
+                                Array.from({ length: 15 }).map((_, i) => (
+                                    <tr key={i}>
+                                        <td><Skeleton variant="rectangular" height={40} /></td>
+                                        <td><Skeleton variant="rectangular" height={40} /></td>
+                                        <td><Skeleton variant="rectangular" height={40} /></td>
+                                    </tr>
+                                ))
+                            )}
+                            {bookAvailabilityState.status === DataLoadStatus.SUCCESS && bookAvailabilityState.availability.copies.map((copy) => (
+                                <tr>
+                                    <td>
+                                        <div className='cell-content'>
+                                            {copy.id} <CopyToClipboard text={copy.id} size='tiny' />
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div className={'cell-content copy-status ' + copy.status.slug}>
+                                            {copy.status.name}
+                                        </div>
+                                    </td>
+                                    <td className='cell-content' style={{ margin: '4px 0 0 0' }}>
+                                        {copy.observations || '---'}
+                                    </td>
+                                </tr>
+                            ))}
+                        </table>
+                    </Box>
+                </Box>
+            }
+        </>
     );
 }
 

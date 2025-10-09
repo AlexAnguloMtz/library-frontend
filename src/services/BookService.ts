@@ -10,6 +10,9 @@ import apiClient from "./ApiClient";
 import type { BookDetailsResponse } from "../models/BookDetailsResponse";
 import type { CreateBookRequest } from "../models/CreateBookRequest";
 import type { UpdateBookRequest } from "../models/UpdateBookRequest";
+import type { BookAvailabilityDetailsResponse } from "../models/BookAvailabilityDetailsResponse";
+import type { GetBookAvailabilityRequest } from "../models/GetBookAvailabilityRequest";
+import * as getBookAvailabilityRequest from "../models/GetBookAvailabilityRequest";
 
 class BookService {
     async getBooks(request: GetBooksRequest, pagination: PaginationRequest): Promise<PaginationResponse<BookSummaryResponse>> {
@@ -77,6 +80,12 @@ class BookService {
         const response = await apiClient.post<Response>(`/api/v1/books/export`, request);
         return response.blob();
     }
+
+    async getBookAvailabilityDetails(id: string, request: GetBookAvailabilityRequest): Promise<BookAvailabilityDetailsResponse> {
+        const query: string = getBookAvailabilityRequest.toURLSearchParams(request).toString();
+        return apiClient.get(`/api/v1/books/${id}/availability?${query}`);
+    }
+
 }
 
 function toQueryString(request: GetBooksRequest, pagination: PaginationRequest): string {
