@@ -421,6 +421,7 @@ const Publishers: React.FC = () => {
     setItemToEdit(null);
     setUpdateSuccess(false);
     setUpdateError(null);
+    setSavedItem(null);
     resetEditForm();
   };
 
