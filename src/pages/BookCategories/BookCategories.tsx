@@ -113,7 +113,6 @@ const BookCategories: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [createSuccess, setCreateSuccess] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
-  const [createdBookCategory, setCreatedBookCategory] = useState<BookCategoryResponse | null>(null);
 
   // Estados para selección múltiple
   const [selectedBookCategories, setSelectedBookCategories] = useState<Set<string>>(new Set());
@@ -125,6 +124,8 @@ const BookCategories: React.FC = () => {
   // Estados para el modal de combinar categorías
   const [mergeModalOpen, setMergeModalOpen] = useState(false);
   const [mergeState, setMergeState] = useState<CategoriesMergeState>({ type: 'idle' });
+
+  const [savedResponse, setSavedResponse] = useState<BookCategoryResponse | null>(null);
 
   const debouncedSearch = useDebounce(filters.search, 500);
 
@@ -429,6 +430,7 @@ const BookCategories: React.FC = () => {
     setBookCategoryToEdit(null);
     setUpdateSuccess(false);
     setUpdateError(null);
+    setSavedResponse(null);
     resetEditForm();
   };
 
@@ -440,7 +442,7 @@ const BookCategories: React.FC = () => {
     setCreateModalOpen(false);
     setCreateSuccess(false);
     setCreateError(null);
-    setCreatedBookCategory(null);
+    setSavedResponse(null);
     resetCreateForm();
   };
 
@@ -474,8 +476,8 @@ const BookCategories: React.FC = () => {
       }
 
       setUpdateSuccess(true);
+      setSavedResponse(updatedBookCategory);
     } catch (error: any) {
-      console.error('Error updating book category:', error);
       setUpdateError(error.detail || error.message || 'Error desconocido al actualizar categoría');
     } finally {
       setIsUpdating(false);
@@ -508,10 +510,9 @@ const BookCategories: React.FC = () => {
         setBookCategoriesState({ status: 'success', response: updatedResponse });
       }
 
-      setCreatedBookCategory(newBookCategory);
       setCreateSuccess(true);
+      setSavedResponse(newBookCategory);
     } catch (error: any) {
-      console.error('Error creating book category:', error);
       setCreateError(error.detail || error.message || 'Error desconocido al crear categoría');
     } finally {
       setIsCreating(false);
@@ -1080,7 +1081,7 @@ const BookCategories: React.FC = () => {
           {updateSuccess ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Typography variant="body1" sx={{ fontWeight: 500, color: '#1f2937' }}>
-                Nombre: {bookCategoryToEdit?.name}
+                Nombre: {savedResponse?.name}
               </Typography>
             </Box>
           ) : (
@@ -1198,7 +1199,7 @@ const BookCategories: React.FC = () => {
           {createSuccess ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Typography variant="body1" sx={{ fontWeight: 500, color: '#1f2937' }}>
-                Nombre: {createdBookCategory?.name}
+                Nombre: {savedResponse?.name}
               </Typography>
             </Box>
           ) : (

@@ -112,7 +112,7 @@ const Publishers: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [createSuccess, setCreateSuccess] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
-  const [createdItem, setCreatedItem] = useState<PublisherResponse | null>(null);
+  const [savedItem, setSavedItem] = useState<PublisherResponse | null>(null);
 
   // Estados para selección múltiple
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
@@ -432,7 +432,7 @@ const Publishers: React.FC = () => {
     setCreateModalOpen(false);
     setCreateSuccess(false);
     setCreateError(null);
-    setCreatedItem(null);
+    setSavedItem(null);
     resetCreateForm();
   };
 
@@ -465,6 +465,7 @@ const Publishers: React.FC = () => {
         setItemsState({ status: 'success', response: updatedResponse });
       }
 
+      setSavedItem(updatedItem);
       setUpdateSuccess(true);
     } catch (error: any) {
       setUpdateError(error.detail || error.message || 'Error desconocido al actualizar');
@@ -499,7 +500,7 @@ const Publishers: React.FC = () => {
         setItemsState({ status: 'success', response: updatedResponse });
       }
 
-      setCreatedItem(newItem);
+      setSavedItem(newItem);
       setCreateSuccess(true);
     } catch (error: any) {
       setCreateError(error.detail || error.message || 'Error desconocido al crear');
@@ -1070,7 +1071,7 @@ const Publishers: React.FC = () => {
           {updateSuccess ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Typography variant="body1" sx={{ fontWeight: 500, color: '#1f2937' }}>
-                Nombre: {itemToEdit?.name}
+                Nombre: {savedItem?.name}
               </Typography>
             </Box>
           ) : (
@@ -1188,7 +1189,7 @@ const Publishers: React.FC = () => {
           {createSuccess ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Typography variant="body1" sx={{ fontWeight: 500, color: '#1f2937' }}>
-                Nombre: {createdItem?.name}
+                Nombre: {savedItem?.name}
               </Typography>
             </Box>
           ) : (
