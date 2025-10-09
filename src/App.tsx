@@ -7,6 +7,7 @@ import Books from './pages/Books/Books';
 import BookCategories from './pages/BookCategories/BookCategories';
 import BookPage from './pages/BookPage/BookPage';
 import { Login } from './pages/Login/Login';
+import Publishers from './pages/Publishers/Publishers';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/dashboard/books/:id" element={<BookPage />} ></Route>
           <Route path="/dashboard/authors" element={<Authors />} ></Route>
           <Route path="/dashboard/book-categories" element={<BookCategories />} ></Route>
+          <Route path="/dashboard/publishers" element={<Publishers />} ></Route>
           <Route path="/dashboard/profile" element={<UserPage key="user-profile" />} ></Route>
         </Route>
       </Routes>

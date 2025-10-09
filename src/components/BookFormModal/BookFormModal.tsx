@@ -263,7 +263,7 @@ export const BookFormModal = ({
       <DialogTitle>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6">
-            {activeStep === BookFormModalStep.Form ? 'Crear Libro' :
+            {activeStep === BookFormModalStep.Form ? 'Libro' :
               saveBookState.status === 'saved' ? 'Libro guardado' :
                 'Confirmar datos de libro'}
           </Typography>

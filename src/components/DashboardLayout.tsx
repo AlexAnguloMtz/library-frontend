@@ -20,6 +20,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import CategoryIcon from '@mui/icons-material/Category';
+import CollectionsBookmarkIcon from '@mui/icons-material/CollectionsBookmark';
 import { Icon, Icons } from './Icon';
 import authenticationHelper from '../util/AuthenticationHelper';
 import type { AuthenticationResponse } from '../models/AuthenticationResponse';
@@ -110,6 +111,7 @@ const DashboardLayout: React.FC = () => {
                     {[
                         { text: 'Libros', icon: <MenuBookIcon />, path: '/dashboard/books', permission: 'books:read' },
                         { text: 'Autores', icon: <LibraryBooksIcon />, path: '/dashboard/authors', permission: 'authors:read' },
+                        { text: 'Editoriales', icon: <CollectionsBookmarkIcon />, path: '/dashboard/publishers', permission: 'publishers:read' },
                         { text: 'Categorías', icon: <CategoryIcon />, path: '/dashboard/book-categories', permission: 'book-categories:read' },
                         { text: 'Usuarios', icon: <PeopleAltOutlinedIcon />, path: '/dashboard/users', permission: 'users:read' },
                         { text: 'Mi perfil', icon: <PersonIcon />, path: '/dashboard/profile', permission: 'users:read:self' },
