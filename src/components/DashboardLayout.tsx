@@ -141,7 +141,7 @@ const DashboardLayout: React.FC = () => {
                                     textDecoration: 'none',
                                 }}
                             >
-                                <ListItemIcon sx={{ color: 'inherit', fontSize: '0.9em', minWidth: '32px' }}>{item.icon}</ListItemIcon>
+                                <ListItemIcon sx={{ color: 'inherit', fontSize: '0.9em', minWidth: '32px', position: 'relative', bottom: '1px' }}>{item.icon}</ListItemIcon>
                                 <ListItemText primary={item.text} sx={{ '& .MuiListItemText-primary': { fontSize: '0.9em' } }} />
                             </ListItem>
                         );
