@@ -20,8 +20,8 @@ export function toURLSearchParams(request: GetBooksRequest): URLSearchParams {
         });
     }
 
-    if (request.categoryId) {
-        request.categoryId.forEach(id => {
+    if (request.publisherId) {
+        request.publisherId.forEach(id => {
             url.append("publisherId", id);
         });
     }

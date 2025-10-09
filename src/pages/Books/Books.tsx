@@ -241,7 +241,7 @@ const Books: React.FC = () => {
 
   useEffect(() => {
     fetchBooks();
-  }, [debouncedSearch, filters.available, debouncedYearMin, debouncedYearMax, filters.categories, paginationState, paginationControls]);
+  }, [debouncedSearch, filters.available, debouncedYearMin, debouncedYearMax, filters.categories, filters.publishers, paginationState, paginationControls]);
 
   useEffect(() => {
     if (bookSummaryToDelete) {
@@ -419,7 +419,8 @@ const Books: React.FC = () => {
   const withSortedOptions = (options: BookOptionsResponse): BookOptionsResponse => {
     return {
       ...options,
-      categories: options.categories.sort((a, b) => a.label.localeCompare(b.label))
+      categories: options.categories.sort((a, b) => a.label.localeCompare(b.label)),
+      publishers: options.publishers.sort((a, b) => a.label.localeCompare(b.label))
     };
   }
 
@@ -662,6 +663,36 @@ const Books: React.FC = () => {
               {bookOptions?.categories.map((category) => (
                 <MenuItem key={category.value} value={category.value}>
                   {category.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </div>
+
+        {/* Editoriales */}
+        <div className='filter-item'>
+          <FormControl fullWidth size="small">
+            <InputLabel>Editoriales</InputLabel>
+            <Select
+              multiple
+              value={filters.publishers}
+              onChange={(e) => handleFilterChange('publishers', e.target.value)}
+              label="Editoriales"
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {(selected as string[]).map((value) => (
+                    <Chip
+                      key={value}
+                      label={bookOptions?.publishers.find(pub => pub.value === value)?.label || value}
+                      size="small"
+                    />
+                  ))}
+                </Box>
+              )}
+            >
+              {bookOptions?.publishers.map((publisher) => (
+                <MenuItem key={publisher.value} value={publisher.value}>
+                  {publisher.label}
                 </MenuItem>
               ))}
             </Select>
