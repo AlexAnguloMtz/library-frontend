@@ -35,9 +35,10 @@ type BookFilters = {
   yearMin: string;
   yearMax: string;
   categories: string[];
+  publishers: string[];
 };
 
-type SortableColumn = 'title' | 'author' | 'isbn' | 'category' | 'year';
+type SortableColumn = 'title' | 'author' | 'isbn' | 'category' | 'publisher' | 'year';
 
 type PaginationState = {
   sort?: SortableColumn;
@@ -80,7 +81,8 @@ const Books: React.FC = () => {
     available: '',
     yearMin: '',
     yearMax: '',
-    categories: []
+    categories: [],
+    publishers: [],
   });
 
   const [paginationState, setPaginationState] = useState<PaginationState>({
@@ -262,6 +264,7 @@ const Books: React.FC = () => {
     return {
       search: filters.search || undefined,
       categoryId: filters.categories.length > 0 ? filters.categories : undefined,
+      publisherId: filters.publishers.length > 0 ? filters.publishers : undefined,
       yearMin: filters.yearMin ? parseInt(filters.yearMin, 10) : undefined,
       yearMax: filters.yearMax ? parseInt(filters.yearMax, 10) : undefined,
       available: filters.available ? filters.available === 'true' : undefined
@@ -296,6 +299,10 @@ const Books: React.FC = () => {
 
     if (paginationState.sort === 'year') {
       return [{ sort: 'year', order: paginationState.order }];
+    }
+
+    if (paginationState.sort === 'publisher') {
+      return [{ sort: 'publisher', order: paginationState.order }];
     }
 
     return [];
@@ -335,7 +342,8 @@ const Books: React.FC = () => {
       available: '',
       yearMin: '',
       yearMax: '',
-      categories: []
+      categories: [],
+      publishers: [],
     });
     setPaginationControls(prev => ({ ...prev, page: 0 }));
   };
@@ -780,11 +788,18 @@ const Books: React.FC = () => {
                   style={{ width: '15%' }}
                 />
                 <SortableColumnHeader
+                  title='Editorial'
+                  active={paginationState.sort === 'publisher'}
+                  order={paginationState.order}
+                  onClick={() => { setPaginationState(nextPagination("publisher")) }}
+                  style={{ width: '10%' }}
+                />
+                <SortableColumnHeader
                   title='Categoría'
                   active={paginationState.sort === 'category'}
                   order={paginationState.order}
                   onClick={() => { setPaginationState(nextPagination("category")) }}
-                  style={{ width: '15%' }}
+                  style={{ width: '10%' }}
                 />
                 <SortableColumnHeader
                   title='Año'
@@ -866,6 +881,9 @@ const Books: React.FC = () => {
                         size="tiny"
                       />
                     </div>
+                  </td>
+                  <td>
+                    <span className='author-book-count'>{book.publisher || '---'}</span>
                   </td>
                   <td>
                     <span className='author-book-count'>{book.category || '---'}</span>
@@ -1015,6 +1033,11 @@ function toCreationDto(form: BookFormData, imageFile: File | null): CreateBookRe
     categoryId: form.categoryId,
     bookPicture: imageFile,
   };
+}
+
+function alertAndReturn(arg: any) {
+  alert(JSON.stringify(arg))
+  return arg;
 }
 
 export default Books;

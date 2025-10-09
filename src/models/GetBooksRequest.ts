@@ -1,6 +1,7 @@
 export type GetBooksRequest = {
     search?: string;
     categoryId?: string[];
+    publisherId?: string[];
     yearMin?: number
     yearMax?: number;
     available?: boolean;
@@ -18,7 +19,13 @@ export function toURLSearchParams(request: GetBooksRequest): URLSearchParams {
             url.append("categoryId", id);
         });
     }
-    
+
+    if (request.categoryId) {
+        request.categoryId.forEach(id => {
+            url.append("publisherId", id);
+        });
+    }
+
     if (request.yearMin) {
         url.append("yearMin", request.yearMin.toString());
     }
@@ -26,7 +33,7 @@ export function toURLSearchParams(request: GetBooksRequest): URLSearchParams {
     if (request.yearMax) {
         url.append("yearMax", request.yearMax.toString());
     }
-    
+
     if (request.available) {
         url.append("available", request.available.toString());
     }
