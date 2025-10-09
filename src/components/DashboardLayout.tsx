@@ -18,12 +18,12 @@ import CloseIcon from '@mui/icons-material/Close';
 import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
 import PersonIcon from '@mui/icons-material/Person';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
-import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import CategoryIcon from '@mui/icons-material/Category';
 import CollectionsBookmarkIcon from '@mui/icons-material/CollectionsBookmark';
 import { Icon, Icons } from './Icon';
 import authenticationHelper from '../util/AuthenticationHelper';
 import type { AuthenticationResponse } from '../models/AuthenticationResponse';
+import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 
 const drawerWidth = 194;
 
@@ -110,7 +110,7 @@ const DashboardLayout: React.FC = () => {
                 <List sx={{ flexGrow: 1 }}>
                     {[
                         { text: 'Libros', icon: <MenuBookIcon />, path: '/dashboard/books', permission: 'books:read' },
-                        { text: 'Autores', icon: <LibraryBooksIcon />, path: '/dashboard/authors', permission: 'authors:read' },
+                        { text: 'Autores', icon: <PersonSearchIcon />, path: '/dashboard/authors', permission: 'authors:read' },
                         { text: 'Editoriales', icon: <CollectionsBookmarkIcon />, path: '/dashboard/publishers', permission: 'publishers:read' },
                         { text: 'Categorías', icon: <CategoryIcon />, path: '/dashboard/book-categories', permission: 'book-categories:read' },
                         { text: 'Usuarios', icon: <PeopleAltOutlinedIcon />, path: '/dashboard/users', permission: 'users:read' },
