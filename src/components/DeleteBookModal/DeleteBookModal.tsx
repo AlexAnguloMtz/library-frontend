@@ -184,7 +184,30 @@ export function DeleteBookModal({
                                             {bookToDelete.isbn} <CopyToClipboard text={bookToDelete.isbn} />
                                         </Typography>
                                     </Box>
-
+                                    <Box sx={{
+                                        display: 'flex',
+                                        justifyContent: 'flex-start',
+                                        alignItems: 'center',
+                                        py: 0.5,
+                                        gap: 2
+                                    }}>
+                                        <Typography variant="body2" sx={{
+                                            fontWeight: 400,
+                                            color: '#9ca3af',
+                                            minWidth: '120px',
+                                            textAlign: 'left'
+                                        }}>
+                                            Editorial:
+                                        </Typography>
+                                        <Typography variant="body2" sx={{
+                                            fontWeight: 600,
+                                            color: '#1f2937',
+                                            textAlign: 'right',
+                                            flex: 1
+                                        }}>
+                                            {bookToDelete.publisher.name}
+                                        </Typography>
+                                    </Box>
                                     <Box sx={{
                                         display: 'flex',
                                         justifyContent: 'flex-start',

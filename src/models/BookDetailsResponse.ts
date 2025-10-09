@@ -1,6 +1,7 @@
 import type { BookFormData } from "../components/BookFormModal/BookFormModal";
 import type { AuthorResponse } from "./AuthorResponse";
 import type { BookCategoryMinimalResponse } from "./BookCategoryMinimalResponse";
+import type { PublisherMinimalResponse } from "./PublisherMinimalResponse";
 
 export type BookDetailsResponse = {
     id: string;
@@ -8,6 +9,7 @@ export type BookDetailsResponse = {
     isbn: string;
     authors: AuthorResponse[];
     category: BookCategoryMinimalResponse;
+    publisher: PublisherMinimalResponse;
     year: number;
     imageUrl: string;
 };
@@ -26,5 +28,6 @@ export function fromDtoToFormValues(dto: BookDetailsResponse): BookFormData {
             bookCount: author.bookCount,
         })),
         categoryId: dto.category.id,
+        publisherId: dto.publisher.id,
     };
 }

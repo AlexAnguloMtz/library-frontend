@@ -64,6 +64,8 @@ const bookFormSchema = z.object({
     .max(MAX_AUTHORS, `No puede tener más de ${MAX_AUTHORS} autores`),
   categoryId: z.string()
     .min(1, 'La categoría es requerida'),
+  publisherId: z.string()
+    .min(1, 'La editorial es requerida'),
 });
 
 export type BookFormData = z.infer<typeof bookFormSchema>;
@@ -74,12 +76,14 @@ const DEFAULT_INITIAL_VALUES: BookFormData = {
   isbn: '',
   authors: [],
   categoryId: '',
+  publisherId: '',
 };
 
 export const BookFormModal = ({
   open,
   onCloseModal,
   categories,
+  publishers,
   getInitialFormValues = () => Promise.resolve(DEFAULT_INITIAL_VALUES),
   save,
   initialImageSrc = null,
@@ -90,6 +94,7 @@ export const BookFormModal = ({
   open: boolean;
   onCloseModal: () => void;
   categories: OptionResponse[];
+  publishers: OptionResponse[];
   getInitialFormValues?: () => Promise<BookFormData>;
   save: (data: BookFormData, imageFile: File | null) => Promise<BookDetailsResponse>;
   initialImageSrc?: string | null;
@@ -435,6 +440,33 @@ export const BookFormModal = ({
                         )}
                       />
                     </Box>
+                    <Box>
+                      <Controller
+                        name="publisherId"
+                        control={form.control}
+                        render={({ field }) => (
+                          <FormControl fullWidth size="small" error={!!form.formState.errors.publisherId}>
+                            <InputLabel>Editorial</InputLabel>
+                            <Select
+                              {...field}
+                              label="Editorial"
+                              disabled={saveBookState.status === 'saving'}
+                            >
+                              {publishers.map((publisher) => (
+                                <MenuItem key={publisher.value} value={publisher.value}>
+                                  {publisher.label}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                            {form.formState.errors.publisherId && (
+                              <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
+                                {form.formState.errors.publisherId.message}
+                              </Typography>
+                            )}
+                          </FormControl>
+                        )}
+                      />
+                    </Box>
                   </Box>
                 </Box>
                 <Box>
@@ -536,6 +568,14 @@ export const BookFormModal = ({
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {categories.find(c => c.value === form.getValues('categoryId'))?.label || 'No especificado'}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
+                    <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
+                      Editorial:
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {publishers.find(p => p.value === form.getValues('publisherId'))?.label || 'No especificado'}
                     </Typography>
                   </Box>
                 </Box>

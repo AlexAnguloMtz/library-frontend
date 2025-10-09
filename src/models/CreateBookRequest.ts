@@ -3,6 +3,7 @@ export type CreateBookRequest = {
     isbn: string;
     authorIds: string[];
     categoryId: string;
+    publisherId: string;
     year: number;
     bookPicture: File;
 }

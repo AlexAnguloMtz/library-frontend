@@ -968,6 +968,7 @@ const Books: React.FC = () => {
         open={createModalOpen}
         onCloseModal={handleCloseCreateModal}
         categories={bookOptions?.categories || []}
+        publishers={bookOptions?.publishers || []}
         save={(data: BookFormData, imageFile: File | null) => bookService.createBook(toCreationDto(data, imageFile))}
         successPrimaryActionLabel="Ver libro"
         onSuccessPrimaryAction={(book: BookDetailsResponse) => {
@@ -980,6 +981,7 @@ const Books: React.FC = () => {
         open={updateModalOpen}
         onCloseModal={handleCloseUpdateModal}
         categories={bookOptions?.categories || []}
+        publishers={bookOptions?.publishers || []}
         initialImageSrc={bookToUpdate?.imageUrl || undefined}
         getInitialFormValues={getBookToUpdateDetails}
         save={(data: BookFormData, imageFile: File | null) => bookService.updateBook(bookToUpdate!.id, toUpdateDto(data, imageFile))}
@@ -1062,13 +1064,9 @@ function toCreationDto(form: BookFormData, imageFile: File | null): CreateBookRe
     isbn: form.isbn,
     authorIds: form.authors.map((author) => author.id),
     categoryId: form.categoryId,
+    publisherId: form.publisherId,
     bookPicture: imageFile,
   };
-}
-
-function alertAndReturn(arg: any) {
-  alert(JSON.stringify(arg))
-  return arg;
 }
 
 export default Books;

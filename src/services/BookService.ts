@@ -32,6 +32,7 @@ class BookService {
         formData.append('isbn', request.isbn);
         formData.append('authorIds', request.authorIds.join(','));
         formData.append('categoryId', request.categoryId);
+        formData.append('publisherId', request.publisherId);
         formData.append('year', request.year.toString());
         formData.append('bookPicture', request.bookPicture);
 
@@ -51,6 +52,9 @@ class BookService {
         }
         if (request.categoryId) {
             formData.append('categoryId', request.categoryId);
+        }
+        if (request.publisherId) {
+            formData.append('publisherId', request.publisherId);
         }
         if (request.year) {
             formData.append('year', request.year.toString());

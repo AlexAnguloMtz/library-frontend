@@ -5,6 +5,7 @@ export type UpdateBookRequest = {
     isbn?: string;
     authorIds?: string[];
     categoryId?: string;
+    publisherId?: string;
     year?: number;
     bookPicture?: File;
 };
@@ -17,6 +18,7 @@ export function toUpdateDto(form: BookFormData, imageFile: File | null): UpdateB
         isbn: form.isbn,
         authorIds: form.authors.map((author) => author.id),
         categoryId: form.categoryId,
+        publisherId: form.publisherId,
         bookPicture: imageFile || undefined,
     };
 }

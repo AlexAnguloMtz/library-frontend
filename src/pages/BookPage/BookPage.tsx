@@ -303,6 +303,14 @@ const BookPage: React.FC = () => {
                                         </Box>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 5, mt: 1 }}>
                                             <Typography variant="body2" sx={{ width: '100px' }}>
+                                                Editorial:
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                                                {bookDetailsState.book.publisher.name}
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 5, mt: 1 }}>
+                                            <Typography variant="body2" sx={{ width: '100px' }}>
                                                 Año:
                                             </Typography>
                                             <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
@@ -418,6 +426,7 @@ const BookPage: React.FC = () => {
                 open={updateModalOpen}
                 onCloseModal={handleCloseUpdateModal}
                 categories={bookOptionsState.status === DataLoadStatus.SUCCESS ? bookOptionsState.options.categories : []}
+                publishers={bookOptionsState.status === DataLoadStatus.SUCCESS ? bookOptionsState.options.publishers : []}
                 initialImageSrc={bookDetailsState.status === DataLoadStatus.SUCCESS ? bookDetailsState.book.imageUrl : undefined}
                 getInitialFormValues={getUpdateFormValues}
                 save={(data: BookFormData, imageFile: File | null) => bookService.updateBook(id!, toUpdateDto(data, imageFile))}
