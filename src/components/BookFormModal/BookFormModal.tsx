@@ -52,11 +52,18 @@ const authorSchema = z.object({
   bookCount: z.number(),
 });
 
+const currentYear = new Date().getFullYear();
+
 const bookFormSchema = z.object({
   title: z.string()
     .min(1, 'El título es requerido')
     .max(150, 'El título no puede tener más de 150 caracteres'),
-  year: z.string().regex(/^\d{1,4}$/, 'Año inválido'),
+  year:
+    z.string().regex(/^\d{1,4}$/, 'Año inválido')
+      .refine((val) => {
+        const yearNum = parseInt(val, 10);
+        return yearNum >= 1 && yearNum <= currentYear;
+      }, `El año debe estar entre 1 y ${currentYear}`),
   isbn: z.string().refine(isValidIsbn, { message: "ISBN inválido" }),
   authors: z.array(authorSchema)
     .min(1, 'Al menos un autor es requerido')
