@@ -1,9 +1,9 @@
 import type { AuthenticationResponse } from "../models/AuthenticationResponse";
 
 class AuthenticationHelper {
-    
+
     private readonly AUTHENTICATION_KEY = 'authentication';
-    
+
     getAuthentication(): AuthenticationResponse | null {
         const authentication = localStorage.getItem(this.AUTHENTICATION_KEY);
         return authentication ? JSON.parse(authentication) : null;
