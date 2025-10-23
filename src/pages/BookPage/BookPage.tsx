@@ -1,5 +1,5 @@
-import React, { useState, useEffect, type JSX } from 'react';
-import { Tabs, Tab, Box, Typography, IconButton, Skeleton, CircularProgress, TextField, InputAdornment, FormControl, InputLabel, Select, MenuItem, Pagination } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Tabs, Tab, Box, Typography, IconButton, Skeleton, TextField, InputAdornment, FormControl, InputLabel, Select, MenuItem, Pagination } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import './styles.css';
 import { fromDtoToFormValues, type BookDetailsResponse } from '../../models/BookDetailsResponse';

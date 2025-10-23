@@ -27,7 +27,6 @@ import type { BookCategoryResponse } from '../../models/BookCategoryResponse';
 import type { MergeBookCategoriesRequest } from '../../models/MergeBookCategoriesRequest';
 import type { MergeBookCategoriesResponse } from '../../models/MergeBookCategoriesResponse';
 import DeleteIcon from '@mui/icons-material/Delete';
-import CategoryIcon from '@mui/icons-material/Category';
 
 export type CategoriesMergeState =
     | { type: "idle" }

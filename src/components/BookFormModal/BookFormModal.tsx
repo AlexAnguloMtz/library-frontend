@@ -1,13 +1,12 @@
 import { useEffect, useState, type JSX } from 'react';
 import './styles.css';
-import { Dialog, DialogTitle, Button as MuiButton, DialogContent, Stepper, Step, StepLabel, Alert, DialogActions, CircularProgress, Autocomplete, Card, CardContent, IconButton } from '@mui/material';
-import { success, z } from 'zod';
+import { Dialog, DialogTitle, Button as MuiButton, DialogContent, Stepper, Step, StepLabel, Alert, DialogActions, CircularProgress, Autocomplete } from '@mui/material';
+import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { TextField } from '@mui/material';
 import { Button } from '../Button';
 import type { BookDetailsResponse } from '../../models/BookDetailsResponse';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from 'react-router-dom';
 import type { OptionResponse } from '../../models/OptionResponse';
 import { Controller } from "react-hook-form";
 import {
@@ -88,7 +87,7 @@ export const BookFormModal = ({
   save,
   initialImageSrc = null,
   onSaveSuccess = () => { },
-  onSuccessPrimaryAction = (book: BookDetailsResponse): void => { },
+  onSuccessPrimaryAction = (_: BookDetailsResponse): void => { },
   successPrimaryActionLabel = "Ver libro",
 }: {
   open: boolean;
@@ -103,7 +102,6 @@ export const BookFormModal = ({
   successPrimaryActionLabel?: string;
 }): JSX.Element => {
 
-  const navigate = useNavigate();
   const [saveBookState, setSaveBookState] = useState<SaveBookState>({ status: 'idle' });
   const [activeStep, setActiveStep] = useState(BookFormModalStep.Form);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -759,7 +757,7 @@ function AuthorMultiSelect({
                   />
                 </li>
               )}
-              onChange={(event, value) => {
+              onChange={(_, value) => {
                 if (value) {
                   onNewSelected(value);
                   setAddingAuthor(false);
@@ -769,7 +767,7 @@ function AuthorMultiSelect({
               onOpen={() => {
                 onSearchOptions("");
               }}
-              onInputChange={(event, value) => {
+              onInputChange={(_, value) => {
                 onSearchOptions(value || '');
               }}
             />

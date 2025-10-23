@@ -6,7 +6,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import DeleteIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, Pagination, MenuItem, Box, Typography, CircularProgress, Checkbox, FormControl, InputLabel, Select, TextField, Alert, Chip } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, Pagination, MenuItem, Box, CircularProgress, Checkbox, FormControl, InputLabel, Select, TextField, Chip } from '@mui/material';
 import { DashboardModuleTopBar } from '../../components/DashboardModuleTopBar/DashboardModuleTopBar';
 import type { GetBooksRequest } from '../../models/GetBooksRequest';
 import type { PaginationRequest } from '../../models/PaginationRequest';
@@ -96,7 +96,7 @@ const Books: React.FC = () => {
   });
 
   const [booksState, setBooksState] = useState<BooksState>({ status: DataLoadStatus.IDLE });
-  const [filtersState, setFiltersState] = useState<FiltersState>({ status: DataLoadStatus.IDLE });
+  const [_, setFiltersState] = useState<FiltersState>({ status: DataLoadStatus.IDLE });
   const [bookOptions, setBookOptions] = useState<BookOptionsResponse | null>(null);
   const [auth, setAuth] = useState<AuthenticationResponse | null>(null);
   const [displayPagination, setDisplayPagination] = useState<{ totalPages: number; page: number } | null>(null);
