@@ -41,8 +41,6 @@ enum BookFormModalStep {
   Confirmation = 1
 }
 
-
-
 const authorSchema = z.object({
   id: z.string(),
   firstName: z.string(),
