@@ -23,7 +23,7 @@ import type { AuthorPreview } from '../../models/AuthorPreview';
 import { AuthorCard, toAuthorCardModel, type AuthorCardModel } from '../AuthorCard/AuthorCard';
 
 type InitialValuesState =
-  { status: 'idle' }
+  | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'success'; values: BookFormData }
   | { status: 'error'; error: string };
