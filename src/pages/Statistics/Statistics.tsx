@@ -1,49 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import './styles.css';
 import { Box, Tabs, Tab, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { StatisticsListing } from './StatisticsListing/StatisticsListing';
 import CategoryIcon from '@mui/icons-material/Category';
-import { PopularCategories } from './PopularCategories/PopularCategories';
 import PersonSearchIcon from '@mui/icons-material/PersonSearch';
+import { StatisticsListing } from './StatisticsListing/StatisticsListing';
+import { PopularCategories } from './PopularCategories/PopularCategories';
 import { PopularAuthors } from './PopularAuthors/PopularAuthors';
 
 type TabItem = {
     id: string;
-    label: string;
+    title: string;
     content: React.ReactNode;
     removable: boolean;
 };
 
-type CustomTabProps = {
-    tab: TabItem;
-    onClose: (id: string) => void;
-};
-
 const cards = [
-    {
-        id: 'popular-authors',
-        title: 'Autores populares',
-        icon: <PersonSearchIcon />,
-        content: <PopularAuthors />,
-    },
-    {
-        id: 'popular-categories',
-        title: 'Categorías populares',
-        icon: <CategoryIcon />,
-        content: <PopularCategories />,
-    },
+    { id: 'popular-authors', title: 'Autores populares', content: <PopularAuthors />, icon: <PersonSearchIcon /> },
+    { id: 'popular-categories', title: 'Categorías populares', content: <PopularCategories />, icon: <CategoryIcon /> },
 ];
 
 export const Statistics = () => {
-    const [activeTab, setActiveTab] = useState('statistics-listing');
     const [tabs, setTabs] = useState<TabItem[]>([]);
+    const [activeTab, setActiveTab] = useState('statistics-listing');
 
     useEffect(() => {
         setTabs([
             {
                 id: 'statistics-listing',
-                label: 'Todas',
+                title: 'Todas',
                 content: <StatisticsListing onCardClicked={handleCardClicked} cards={cards} />,
                 removable: false,
             },
@@ -56,36 +40,22 @@ export const Statistics = () => {
                 setActiveTab(id);
                 return prevTabs;
             }
-
             const card = cards.find((c) => c.id === id);
-            if (!card) {
-                return prevTabs;
-            }
-
-            const newTab: TabItem = {
-                id: card.id,
-                label: card.title,
-                content: card.content,
-                removable: true,
-            };
+            if (!card) return prevTabs;
 
             setActiveTab(card.id);
-
-            return [...prevTabs, newTab];
+            return [...prevTabs, { ...card, removable: true }];
         });
     };
 
     const handleCloseTab = (id: string) => {
-        setTabs((prev) => {
-            const newTabs = prev.filter((t) => t.id !== id);
-            if (activeTab === id) setActiveTab('statistics-listing');
-            return newTabs;
-        });
+        setTabs((prev) => prev.filter((t) => t.id !== id));
+        if (activeTab === id) setActiveTab('statistics-listing');
     };
 
     return (
         <Box p={2}>
-            <h1 className="dashboard-module-top-bar-title">{'Estadísticas'}</h1>
+            <h1 className="dashboard-module-top-bar-title">Estadísticas</h1>
 
             <Tabs
                 value={activeTab}
@@ -94,39 +64,36 @@ export const Statistics = () => {
                 scrollButtons="auto"
             >
                 {tabs.map((tab) => (
-                    <CustomTab key={tab.id} tab={tab} onClose={handleCloseTab} />
+                    <Tab
+                        key={tab.id}
+                        value={tab.id}
+                        label={
+                            tab.removable ? (
+                                <Box display="flex" alignItems="center">
+                                    {tab.title}
+                                    <IconButton
+                                        size="small"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleCloseTab(tab.id);
+                                        }}
+                                        sx={{ ml: 1 }}
+                                    >
+                                        <CloseIcon fontSize="small" />
+                                    </IconButton>
+                                </Box>
+                            ) : (
+                                tab.title
+                            )
+                        }
+                        sx={{ textTransform: 'none', minHeight: 48 }}
+                    />
                 ))}
             </Tabs>
 
             <Box mt={2}>
-                {tabs.map(
-                    (tab) => tab.id === activeTab && <Box key={tab.id}>{tab.content}</Box>
-                )}
+                {tabs.map((tab) => tab.id === activeTab && <Box key={tab.id}>{tab.content}</Box>)}
             </Box>
         </Box>
     );
 };
-
-const CustomTab: React.FC<CustomTabProps> = ({ tab, onClose }) => (
-    <Tab
-        key={tab.id}
-        value={tab.id}
-        label={
-            <Box display="flex" alignItems="center">
-                {tab.label}
-                {tab.removable && (
-                    <IconButton
-                        size="small"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onClose(tab.id);
-                        }}
-                        sx={{ ml: 1 }}
-                    >
-                        <CloseIcon fontSize="small" />
-                    </IconButton>
-                )}
-            </Box>
-        }
-    />
-);

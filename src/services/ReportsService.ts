@@ -1,5 +1,5 @@
 import type { PopularAuthorsResponse } from "../models/PopularAuthorsResponse";
-import type { PopularBookCategoriesResponse } from "../models/PopularBookCategoriesResponse";
+import type { PopularBookCategoriesResponse } from "../models/BookCategoryPopularityGroupResponse";
 import apiClient from "./ApiClient";
 
 class ReportsService {

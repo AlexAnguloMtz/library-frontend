@@ -9,7 +9,7 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from 'recharts';
-import type { PopularBookCategoriesResponse } from '../../../models/PopularBookCategoriesResponse';
+import type { BookCategoryPopularityGroupResponse } from '../../../models/BookCategoryPopularityGroupResponse';
 import reportsService from '../../../services/ReportsService';
 
 enum DataStatus {
@@ -20,7 +20,7 @@ enum DataStatus {
 
 type DataState =
     | { status: DataStatus.LOADING }
-    | { status: DataStatus.READY; data: PopularBookCategoriesResponse[] }
+    | { status: DataStatus.READY; data: BookCategoryPopularityGroupResponse[] }
     | { status: DataStatus.ERROR; error: string };
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -47,8 +47,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
-const groupData = (data: PopularBookCategoriesResponse[]) => {
-    const map = new Map<string, PopularBookCategoriesResponse[]>();
+const groupData = (data: BookCategoryPopularityGroupResponse[]) => {
+    const map = new Map<string, BookCategoryPopularityGroupResponse[]>();
 
     data.forEach((item) => {
         const key = `${item.gender}-${item.ageMin}-${item.ageMax}`;
@@ -63,7 +63,7 @@ const groupData = (data: PopularBookCategoriesResponse[]) => {
             ageMin: Number(ageMin),
             ageMax: Number(ageMax),
             categories: items.map((i) => ({
-                name: i.categoryName,
+                name: i.category,
                 value: i.value,
             })),
         };

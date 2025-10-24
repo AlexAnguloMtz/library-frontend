@@ -1,7 +1,7 @@
-export type PopularBookCategoriesResponse = {
+export type BookCategoryPopularityGroupResponse = {
     gender: string;
     ageMin: number;
     ageMax: number;
-    categoryName: string;
+    category: string;
     value: number;
 };
