@@ -22,7 +22,6 @@ import authenticationHelper from '../../util/AuthenticationHelper';
 import type { AuthenticationResponse } from '../../models/AuthenticationResponse';
 import authService from '../../services/AuthService';
 
-// Zod schema
 const loginSchema = z.object({
   email: z.string().min(1, 'El correo electrónico es requerido').email('El correo electrónico no es válido'),
   password: z.string().min(1, 'La contraseña es requerida').min(8, 'La contraseña debe tener al menos 8 caracteres')

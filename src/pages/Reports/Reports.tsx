@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Box, Typography, CircularProgress, Alert } from "@mui/material";
 import DownloadIcon from '@mui/icons-material/Download';
 import * as blobHelpers from '../../util/BlobHelpers';
-import apiClient from '../../services/ApiClient';
+import reportsService from "../../services/ReportsService";
 
 type DownloadState =
     | { status: "idle" }
@@ -18,8 +18,7 @@ const Reports: React.FC = () => {
         setDownloadState({ status: "loading" });
 
         try {
-            const response = await apiClient.get<Response>(`/api/v1/reports/books`);
-            const blob = await response.blob();
+            const blob: Blob = await reportsService.getBookLoansReport();
             blobHelpers.downloadBlob(blob, "reporte_libros.pdf");
             setDownloadState({ status: "idle" });
         } catch (err: any) {

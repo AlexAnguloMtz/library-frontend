@@ -15,13 +15,13 @@ import reportsService from '../../../services/ReportsService';
 enum DataStatus {
     LOADING,
     READY,
-    ERROR
+    ERROR,
 }
 
 type DataState =
     | { status: DataStatus.LOADING }
     | { status: DataStatus.READY; data: PopularBookCategoriesResponse[] }
-    | { status: DataStatus.ERROR; error: string }
+    | { status: DataStatus.ERROR; error: string };
 
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -47,6 +47,29 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
+const groupData = (data: PopularBookCategoriesResponse[]) => {
+    const map = new Map<string, PopularBookCategoriesResponse[]>();
+
+    data.forEach((item) => {
+        const key = `${item.gender}-${item.ageMin}-${item.ageMax}`;
+        if (!map.has(key)) map.set(key, []);
+        map.get(key)!.push(item);
+    });
+
+    return Array.from(map.entries()).map(([key, items]) => {
+        const [gender, ageMin, ageMax] = key.split('-');
+        return {
+            gender,
+            ageMin: Number(ageMin),
+            ageMax: Number(ageMax),
+            categories: items.map((i) => ({
+                name: i.categoryName,
+                value: i.value,
+            })),
+        };
+    });
+};
+
 export const PopularCategories = () => {
     const [state, setState] = useState<DataState>({ status: DataStatus.LOADING });
 
@@ -56,8 +79,20 @@ export const PopularCategories = () => {
             const response = await reportsService.getPopularBookCategories();
             setState({ status: DataStatus.READY, data: response });
         } catch (error: any) {
-            setState({ status: DataStatus.ERROR, error: error.message || 'Error al cargar datos' });
+            setState({
+                status: DataStatus.ERROR,
+                error: error.message || 'Error al cargar datos',
+            });
         }
+    };
+
+    const colorForGender = (gender: string): string => {
+        const colors: Record<string, string> = {
+            Hombres: '#1976d2',
+            Mujeres: '#e91e63',
+        };
+
+        return colors[gender] ?? '#9e9e9e';
     };
 
     useEffect(() => {
@@ -95,65 +130,63 @@ export const PopularCategories = () => {
         );
     }
 
+    const grouped = groupData(state.data);
+
     return (
         <Box>
-            <Box p={2} display="flex" flexDirection={'column'} gap={'10px'}>
-                <p><strong>Eje horizontal:</strong> Categorías de libros</p>
-                <p><strong>Eje vertical:</strong> Usuarios distintos con al menos un préstamo de libro de dicha categoría</p>
+            <Box p={2} display="flex" flexDirection="column" gap="10px">
+                <p>
+                    <strong>Eje horizontal:</strong> Categorías de libros
+                </p>
+                <p>
+                    <strong>Eje vertical:</strong> Usuarios distintos con al menos un préstamo de libro de dicha categoría
+                </p>
             </Box>
             <Box p={2} display="flex" flexWrap="wrap" gap={2}>
-                {state.data.map((item, idx) =>
-                    item.groups.map((group, gIdx) => (
-                        <Box
-                            key={`${idx}-${gIdx}`}
-                            flex="1 1 48%"
-                            border="1px solid #ddd"
-                            borderRadius={2}
-                            p={2}
-                        >
-                            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-                                {item.gender} {group.ageRange.min}-{group.ageRange.max} años
-                            </Typography>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <BarChart
-                                    data={group.categories.map(c => ({ name: c.name, frequency: c.frequency }))}
-                                    margin={{ top: 10, right: 10, left: 0, bottom: 30 }}
-                                    barCategoryGap="15%"
-                                    barGap={3}
-                                >
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis
-                                        dataKey="name"
-                                        interval={0}
-                                        angle={-40}
-                                        textAnchor="end"
-                                        tick={{ fontWeight: 'bold', fontSize: 12 }}
-                                        tickMargin={5}
-                                        minTickGap={0}
-                                    />
-                                    <YAxis
-                                        width={30}
-                                        mirror={false}
-                                        tick={{ fontSize: 12 }}
-                                        tickLine={false}
-                                        axisLine={false}
-                                    />
-                                    <Tooltip content={<CustomTooltip />} />
-                                    <Bar
-                                        dataKey="frequency"
-                                        fill={
-                                            item.gender === 'Hombres'
-                                                ? '#1976d2'
-                                                : item.gender === 'Mujeres'
-                                                    ? '#e91e63'
-                                                    : '#9e9e9e'
-                                        }
-                                    />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </Box>
-                    ))
-                )}
+                {grouped.map((group, idx) => (
+                    <Box
+                        key={idx}
+                        flex="1 1 48%"
+                        border="1px solid #ddd"
+                        borderRadius={2}
+                        p={2}
+                    >
+                        <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                            {group.gender} {group.ageMin}-{group.ageMax} años
+                        </Typography>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart
+                                data={group.categories}
+                                margin={{ top: 10, right: 10, left: 0, bottom: 30 }}
+                                barCategoryGap="15%"
+                                barGap={3}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis
+                                    dataKey="name"
+                                    interval={0}
+                                    angle={-40}
+                                    textAnchor="end"
+                                    tick={{ fontWeight: 'bold', fontSize: 12 }}
+                                    tickMargin={5}
+                                    minTickGap={0}
+                                />
+                                <YAxis
+                                    width={30}
+                                    mirror={false}
+                                    tick={{ fontSize: 12 }}
+                                    tickLine={false}
+                                    axisLine={false}
+                                />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Bar
+                                    dataKey="value"
+                                    fill={colorForGender(group.gender)}
+                                />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </Box>
+                ))}
             </Box>
         </Box>
     );
