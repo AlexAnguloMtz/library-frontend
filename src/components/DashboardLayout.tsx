@@ -19,12 +19,13 @@ import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
 import PersonIcon from '@mui/icons-material/Person';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import CategoryIcon from '@mui/icons-material/Category';
-import AssessmentIcon from '@mui/icons-material/Assessment';
 import CollectionsBookmarkIcon from '@mui/icons-material/CollectionsBookmark';
 import { Icon, Icons } from './Icon';
 import authenticationHelper from '../util/AuthenticationHelper';
 import type { AuthenticationResponse } from '../models/AuthenticationResponse';
 import PersonSearchIcon from '@mui/icons-material/PersonSearch';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import FactCheckIcon from '@mui/icons-material/FactCheck';
 
 const drawerWidth = 194;
 
@@ -115,7 +116,8 @@ const DashboardLayout: React.FC = () => {
                         { text: 'Editoriales', icon: <CollectionsBookmarkIcon />, path: '/dashboard/publishers', permission: 'publishers:read' },
                         { text: 'Categorías', icon: <CategoryIcon />, path: '/dashboard/book-categories', permission: 'book-categories:read' },
                         { text: 'Usuarios', icon: <PeopleAltOutlinedIcon />, path: '/dashboard/users', permission: 'users:read' },
-                        { text: 'Reportes', icon: <AssessmentIcon />, path: '/dashboard/reports', permission: 'reports:read' },
+                        { text: 'Estadísticas', icon: <BarChartIcon />, path: '/dashboard/statistics', permission: 'reports:read' },
+                        { text: 'Reportes', icon: <FactCheckIcon />, path: '/dashboard/reports', permission: 'reports:read' },
                         { text: 'Mi perfil', icon: <PersonIcon />, path: '/dashboard/profile', permission: 'users:read:self' },
                     ].filter((item) => {
                         return !item.permission || authenticationHelper.hasAnyPermission(auth, [item.permission]);
