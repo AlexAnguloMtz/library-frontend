@@ -106,7 +106,7 @@ export const PopularCategories = () => {
                     item.groups.map((group, gIdx) => (
                         <Box
                             key={`${idx}-${gIdx}`}
-                            flex="1 1 48%"  // <- dos por fila
+                            flex="1 1 48%"
                             border="1px solid #ddd"
                             borderRadius={2}
                             p={2}
@@ -114,7 +114,7 @@ export const PopularCategories = () => {
                             <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
                                 {item.gender} {group.ageRange.min}-{group.ageRange.max} años
                             </Typography>
-                            <ResponsiveContainer width="100%" height={200}>
+                            <ResponsiveContainer width="100%" height={300}>
                                 <BarChart
                                     data={group.categories.map(c => ({ name: c.name, frequency: c.frequency }))}
                                     margin={{ top: 10, right: 10, left: 0, bottom: 30 }}

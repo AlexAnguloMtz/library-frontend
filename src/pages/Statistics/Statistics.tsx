@@ -6,6 +6,7 @@ import { StatisticsListing } from './StatisticsListing/StatisticsListing';
 import CategoryIcon from '@mui/icons-material/Category';
 import { PopularCategories } from './PopularCategories/PopularCategories';
 import PersonSearchIcon from '@mui/icons-material/PersonSearch';
+import { PopularAuthors } from './PopularAuthors/PopularAuthors';
 
 type TabItem = {
     id: string;
@@ -20,7 +21,7 @@ export const Statistics = () => {
             id: 'popular-authors',
             title: 'Autores populares',
             icon: < PersonSearchIcon />,
-            content: <PopularCategories />
+            content: <PopularAuthors />
         },
         {
             id: 'popular-categories',

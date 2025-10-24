@@ -9,7 +9,7 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from 'recharts';
-import type { PopularBookCategoriesResponse } from '../../../models/PopularBookCategoriesResponse';
+import type { PopularAuthorsResponse } from '../../../models/PopularAuthorsResponse';
 import reportsService from '../../../services/ReportsService';
 
 enum DataStatus {
@@ -20,7 +20,7 @@ enum DataStatus {
 
 type DataState =
     | { status: DataStatus.LOADING }
-    | { status: DataStatus.READY; data: PopularBookCategoriesResponse[] }
+    | { status: DataStatus.READY; data: PopularAuthorsResponse[] }
     | { status: DataStatus.ERROR; error: string }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -47,13 +47,13 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
-export const PopularCategories = () => {
+export const PopularAuthors = () => {
     const [state, setState] = useState<DataState>({ status: DataStatus.LOADING });
 
     const loadData = async () => {
         setState({ status: DataStatus.LOADING });
         try {
-            const response = await reportsService.getPopularBookCategories();
+            const response = await reportsService.getPopularAuthors();
             setState({ status: DataStatus.READY, data: response });
         } catch (error: any) {
             setState({ status: DataStatus.ERROR, error: error.message || 'Error al cargar datos' });
@@ -98,15 +98,15 @@ export const PopularCategories = () => {
     return (
         <Box>
             <Box p={2} display="flex" flexDirection={'column'} gap={'10px'}>
-                <p><strong>Eje horizontal:</strong> Categorías de libros</p>
-                <p><strong>Eje vertical:</strong> Usuarios distintos con al menos un préstamo de libro de dicha categoría</p>
+                <p><strong>Eje horizontal:</strong> Autores </p>
+                <p><strong>Eje vertical:</strong> Usuarios distintos con al menos un préstamo de libro de dicho autor</p>
             </Box>
             <Box p={2} display="flex" flexWrap="wrap" gap={2}>
                 {state.data.map((item, idx) =>
                     item.groups.map((group, gIdx) => (
                         <Box
                             key={`${idx}-${gIdx}`}
-                            flex="1 1 48%"  // <- dos por fila
+                            flex="1 1 48%"
                             border="1px solid #ddd"
                             borderRadius={2}
                             p={2}
@@ -114,9 +114,9 @@ export const PopularCategories = () => {
                             <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
                                 {item.gender} {group.ageRange.min}-{group.ageRange.max} años
                             </Typography>
-                            <ResponsiveContainer width="100%" height={200}>
+                            <ResponsiveContainer width="100%" height={300}>
                                 <BarChart
-                                    data={group.categories.map(c => ({ name: c.name, frequency: c.frequency }))}
+                                    data={group.authors.map(c => ({ name: c.name, frequency: c.frequency }))}
                                     margin={{ top: 10, right: 10, left: 0, bottom: 30 }}
                                     barCategoryGap="15%"
                                     barGap={3}
@@ -125,9 +125,9 @@ export const PopularCategories = () => {
                                     <XAxis
                                         dataKey="name"
                                         interval={0}
-                                        angle={-40}
+                                        angle={-20}
                                         textAnchor="end"
-                                        tick={{ fontWeight: 'bold', fontSize: 12 }}
+                                        tick={{ fontWeight: 'bold', fontSize: 10 }}
                                         tickMargin={5}
                                         minTickGap={0}
                                     />
