@@ -5,6 +5,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { StatisticsListing } from './StatisticsListing/StatisticsListing';
 import CategoryIcon from '@mui/icons-material/Category';
 import { PopularCategories } from './PopularCategories/PopularCategories';
+import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 
 type TabItem = {
     id: string;
@@ -15,6 +16,12 @@ type TabItem = {
 
 export const Statistics = () => {
     const cards = [
+        {
+            id: 'popular-authors',
+            title: 'Autores populares',
+            icon: < PersonSearchIcon />,
+            content: <PopularCategories />
+        },
         {
             id: 'popular-categories',
             title: 'Categorías populares',
@@ -30,7 +37,7 @@ export const Statistics = () => {
         setTabs([
             {
                 id: 'statistics-listing',
-                label: 'Estadísticas',
+                label: 'Todas',
                 content: <StatisticsListing onCardClicked={handleCardClicked} cards={cards} />,
                 removable: false,
             },
