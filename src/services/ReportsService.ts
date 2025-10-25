@@ -1,8 +1,10 @@
-import type { PopularAuthorsResponse } from "../models/PopularAuthorsResponse";
 import type { BookCategoryPopularityResponse } from "../models/BookCategoryPopularityResponse";
 import apiClient from "./ApiClient";
 import type { BookCategoriesPopularityRequest } from "../models/BookCategoriesPopularityRequest";
 import * as bookCategoriesPopularityRequest from "../models/BookCategoriesPopularityRequest";
+import * as authorsPopularityRequest from "../models/AuthorsPopularityRequest";
+import type { AuthorPopularityResponse } from "../models/AuthorPopularityResponse";
+import type { AuthorsPopularityRequest } from "../models/AuthorsPopularityRequest";
 
 class ReportsService {
 
@@ -16,8 +18,9 @@ class ReportsService {
         return apiClient.get<BookCategoryPopularityResponse[]>(`/api/v1/reports/book-categories-popularity${query.toString() ? `?${query.toString()}` : ''}`);
     }
 
-    async getPopularAuthors(): Promise<PopularAuthorsResponse[]> {
-        return apiClient.get<PopularAuthorsResponse[]>("/api/v1/reports/popular-authors");
+    async getAuthorsPopularity(request: AuthorsPopularityRequest): Promise<AuthorPopularityResponse[]> {
+        const query = authorsPopularityRequest.toURLSearchParams(request);
+        return apiClient.get<AuthorPopularityResponse[]>(`/api/v1/reports/authors-popularity${query.toString() ? `?${query.toString()}` : ''}`);
     }
 }
 

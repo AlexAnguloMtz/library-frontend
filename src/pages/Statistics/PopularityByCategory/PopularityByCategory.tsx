@@ -144,7 +144,7 @@ export const PopularityByCategory = () => {
             <Box p={2} display="flex" flexDirection="column" gap="10px">
                 <Box display="flex">
                     <strong style={{ width: 120 }}>Eje horizontal:</strong>
-                    <span>Grupo de edad y género</span>
+                    <span>Edad y género</span>
                 </Box>
                 <Box display="flex">
                     <strong style={{ width: 120 }}>Eje vertical:</strong>

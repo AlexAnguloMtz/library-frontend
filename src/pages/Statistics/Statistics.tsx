@@ -16,7 +16,7 @@ type TabItem = {
 };
 
 const cards = [
-    { id: 'popular-authors', title: 'Autores populares', content: <PopularAuthors />, icon: <PersonSearchIcon /> },
+    { id: 'popular-authors', title: 'Autores más populares', content: <PopularAuthors />, icon: <PersonSearchIcon /> },
     { id: 'popular-categories', title: 'Categorías más populares', content: <PopularCategories />, icon: <CategoryIcon /> },
     { id: 'popularity-by-category', title: 'Popularidad por categoría', content: <PopularityByCategory />, icon: <CategoryIcon /> },
 ];
