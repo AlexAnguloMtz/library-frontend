@@ -10,14 +10,8 @@ import { PopularAuthors } from './PopularAuthors/PopularAuthors';
 import { PopularityByCategory } from './PopularityByCategory/PopularityByCategory';
 import { UsersAcquisition } from './UsersAcquisition/UsersAcquisition';
 import { UsersDemography } from './UsersDemography/UsersDemography';
-import { StatisticsSurfaceStatus, type StatisticsSurfaceState } from './StatisticsSurfaceState';
-import type { AuthorPopularityResponse } from '../../models/AuthorPopularityResponse';
 import { LoansDistribution } from './LoansDistribution/LoansDistibution';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
-
-type TabsState = {
-    popularAuthors?: StatisticsSurfaceState<AuthorPopularityResponse>
-}
 
 type TabItem = {
     id: string;
@@ -38,7 +32,6 @@ const cards = [
 export const Statistics = () => {
     const [tabs, setTabs] = useState<TabItem[]>([]);
     const [activeTab, setActiveTab] = useState('statistics-listing');
-    const [tabsStates, setTabsStates] = useState<TabsState>({});
 
     useEffect(() => {
         setTabs([

@@ -11,7 +11,17 @@ import {
 } from 'recharts';
 import type { AuthorPopularityResponse } from '../../../models/AuthorPopularityResponse';
 import reportsService from '../../../services/ReportsService';
-import { StatisticsSurfaceStatus, type StatisticsSurfaceState } from '../StatisticsSurfaceState';
+
+enum DataStatus {
+    LOADING,
+    READY,
+    ERROR,
+}
+
+type DataState =
+    | { status: DataStatus.LOADING }
+    | { status: DataStatus.READY; data: AuthorPopularityResponse[] }
+    | { status: DataStatus.ERROR; error: string };
 
 const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -66,16 +76,16 @@ const groupData = (data: AuthorPopularityResponse[]) => {
 };
 
 export const PopularAuthors = () => {
-    const [state, setState] = useState<StatisticsSurfaceState<AuthorPopularityResponse>>({ status: StatisticsSurfaceStatus.LOADING });
+    const [state, setState] = useState<DataState>({ status: DataStatus.LOADING });
 
     const loadData = async () => {
-        setState({ status: StatisticsSurfaceStatus.LOADING });
+        setState({ status: DataStatus.LOADING });
         try {
             const response = await reportsService.getAuthorsPopularity({ limit: 5 });
-            setState({ status: StatisticsSurfaceStatus.READY, data: response });
+            setState({ status: DataStatus.READY, data: response });
         } catch (error: any) {
             setState({
-                status: StatisticsSurfaceStatus.ERROR,
+                status: DataStatus.ERROR,
                 error: error.message || 'Error al cargar datos',
             });
         }
@@ -94,7 +104,7 @@ export const PopularAuthors = () => {
         loadData();
     }, []);
 
-    if (state.status === StatisticsSurfaceStatus.LOADING) {
+    if (state.status === DataStatus.LOADING) {
         return (
             <Box display="flex" justifyContent="center" alignItems="center" p={4}>
                 <CircularProgress />
@@ -102,7 +112,7 @@ export const PopularAuthors = () => {
         );
     }
 
-    if (state.status === StatisticsSurfaceStatus.ERROR) {
+    if (state.status === DataStatus.ERROR) {
         return (
             <Box p={2}>
                 <Alert severity="error">
@@ -117,7 +127,7 @@ export const PopularAuthors = () => {
         );
     }
 
-    if (state.status === StatisticsSurfaceStatus.READY && state.data.length === 0) {
+    if (state.status === DataStatus.READY && state.data.length === 0) {
         return (
             <Box p={2}>
                 <Alert severity="info">No hay datos disponibles.</Alert>
