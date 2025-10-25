@@ -35,12 +35,16 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                     boxShadow: 2,
                 }}
             >
-                <Typography fontWeight="bold">{label}</Typography>
-                {payload.map((pl: any) => (
-                    <Typography key={pl.dataKey}>
-                        {pl.dataKey}: {pl.value}
-                    </Typography>
-                ))}
+                {payload.map((pl: any) => {
+                    const data = pl.payload;
+                    return (
+                        <Box key={pl.dataKey} mb={1}>
+                            <Typography fontWeight="bold">{data.name}</Typography>
+                            <Typography>ID Autor: {data.id}</Typography>
+                            <Typography>Media de préstamos: {data.value}</Typography>
+                        </Box>
+                    );
+                })}
             </Box>
         );
     }
@@ -157,10 +161,11 @@ export const PopularAuthors = () => {
                         <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
                             {group.gender} {group.ageMin}-{group.ageMax} años
                         </Typography>
+                        <div style={{ height: '20px' }}></div>
                         <ResponsiveContainer width="100%" height={400}>
                             <BarChart
                                 data={group.authors}
-                                margin={{ top: 10, right: 10, left: 0, bottom: 30 }}
+                                margin={{ top: 10, right: 10, left: 0, bottom: 100 }}
                                 barCategoryGap="15%"
                                 barGap={3}
                             >
@@ -168,10 +173,10 @@ export const PopularAuthors = () => {
                                 <XAxis
                                     dataKey="name"
                                     interval={0}
-                                    angle={-40}
+                                    angle={-50}
                                     textAnchor="end"
                                     tick={{ fontWeight: 'bold', fontSize: 12 }}
-                                    tickMargin={5}
+                                    tickMargin={10}
                                     minTickGap={0}
                                 />
                                 <YAxis
