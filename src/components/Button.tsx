@@ -5,24 +5,26 @@ interface ButtonProps {
     className?: string;
     children: React.ReactNode;
     type: 'primary' | 'secondary' | 'error';
+    variant?: 'default' | 'outlined';
     disabled?: boolean;
     startIcon?: React.ReactNode;
     sx?: React.CSSProperties;
 }
 
-export const Button: React.FC<ButtonProps> = ({ 
-    type, 
-    children, 
-    className, 
-    onClick, 
-    disabled = false, 
+export const Button: React.FC<ButtonProps> = ({
+    type,
+    variant = 'default',
+    children,
+    className,
+    onClick,
+    disabled = false,
     startIcon,
-    sx 
+    sx
 }) => {
     return (
-        <button 
-            className={`btn btn-${type} ${className}`} 
-            onClick={onClick} 
+        <button
+            className={`btn btn-${type} btn-${variant} ${className}`}
+            onClick={onClick}
             disabled={disabled}
             style={{
                 display: 'inline-flex',

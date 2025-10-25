@@ -19,6 +19,7 @@ import type { UsersAcquisitionResponse } from '../../models/UsersAcquisitionResp
 import type { UsersDemographyResponse } from '../../models/UsersDemographyResponse';
 import type { BookCategoryPopularityResponse } from '../../models/BookCategoryPopularityResponse';
 import type { LoansDistributionResponse } from '../../models/LoansDistributionResponse';
+import { Button } from '../../components/Button';
 
 type TabItem = {
     id: string;
@@ -151,13 +152,30 @@ export const Statistics = () => {
 
     const handleCloseTab = (id: string) => {
         setTabs((prev) => prev.filter((t) => t.id !== id));
-        if (activeTab === id) setActiveTab('statistics-listing');
+        if (activeTab === id) {
+            setActiveTab('statistics-listing');
+        }
     };
+
+    const handleCloseTabs = () => {
+        setTabs((prev) => prev.filter((t) => t.id === 'statistics-listing'));
+        setActiveTab('statistics-listing');
+        setTabsData({});
+    }
 
     return (
         <Box p={2}>
-            <h1 className="dashboard-module-top-bar-title">Estadísticas</h1>
-
+            <Box display={'flex'} gap={3} alignItems={'center'}>
+                <h1 className="dashboard-module-top-bar-title">Estadísticas</h1>
+                <Button
+                    type={'secondary'}
+                    variant='outlined'
+                    onClick={handleCloseTabs}
+                    disabled={tabs.length < 2}
+                >
+                    Cerrar pestañas
+                </Button>
+            </Box>
             <Tabs
                 value={activeTab}
                 onChange={(_, newValue) => setActiveTab(newValue)}

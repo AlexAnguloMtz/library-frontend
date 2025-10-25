@@ -19,7 +19,7 @@
   border: none;
   border-radius: 4px;
   font-size: 14px;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 .btn-primary {
@@ -67,4 +67,43 @@
 .btn-error:disabled:hover {
   background-color: #dc2626 !important;
   opacity: 0.6 !important;
+}
+
+.btn-outlined {
+  background-color: transparent;
+  border-width: 1px;
+  border-style: solid;
+}
+
+.btn-primary.btn-outlined {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.btn-primary.btn-outlined:hover {
+  background-color: rgba(79, 70, 229, 0.1);
+}
+
+.btn-secondary.btn-outlined {
+  border-color: rgb(151, 150, 150);
+  color: rgb(143, 142, 142);
+}
+
+.btn-secondary.btn-outlined:hover {
+  background-color: rgba(221, 221, 221, 0.2);
+}
+
+.btn-error.btn-outlined {
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.btn-error.btn-outlined:hover {
+  background-color: rgba(220, 38, 38, 0.1);
+}
+
+.btn:disabled.btn-outlined {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: transparent !important;
 }
