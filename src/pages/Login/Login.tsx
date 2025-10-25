@@ -139,7 +139,7 @@ export function Login() {
             variant="caption"
             sx={{ display: 'block', mb: 1, color: '#475569', fontWeight: 600 }}
           >
-            Este cuadro sólo debe aparecer en modo DEMOSTRATIVO, nunca en PRODUCCIÓN
+            Este cuadro sólo debe aparecer en entornos DEMOSTRATIVOS, nunca en PRODUCCIÓN
           </Typography>
 
           <Button

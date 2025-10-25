@@ -20,6 +20,8 @@ import type { UpdateAccountRequest } from "../models/UpdateAccountRequest";
 import type { ChangePasswordRequest } from "../models/ChangePasswordRequest";
 import { datePartString } from "../util/DateHelper";
 import apiClient from "./ApiClient";
+import type { UpdateUserPermissionsRequest } from "../models/UpdateUserPermissionsRequest";
+import type { UserPermissionsResponse } from "../models/UserPermissionsResponse";
 
 class UserService {
     async getUsersPreviews(query: UserPreviewsQuery, pagination: PaginationRequest): Promise<PaginationResponse<UserPreview>> {
@@ -56,6 +58,10 @@ class UserService {
 
     async updateUserAccount(id: string, request: UpdateAccountRequest): Promise<AccountResponse> {
         return apiClient.put(`/api/v1/users/${id}/account`, request);
+    }
+
+    async updateUserPermissions(id: string, request: UpdateUserPermissionsRequest): Promise<UserPermissionsResponse> {
+        return apiClient.patch(`/api/v1/users/${id}/permissions`, request);
     }
 
     async createUser(request: CreateUserRequest): Promise<CreateUserResponse> {

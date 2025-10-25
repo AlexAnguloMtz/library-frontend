@@ -26,6 +26,11 @@ import type { ProblemDetailError } from '../../models/ProblemDetail';
 import { HttpStatus } from '../../util/HttpStatus';
 import { NotFoundSurface } from '../../components/NotFoundSurface/NotFoundSurface';
 import { GenericErrorSurface } from '../../components/GenericErrorSurface/GenericErrorSurface';
+import { Switch } from '@mui/material';
+import type { UserPermissionsResponse } from '../../models/UserPermissionsResponse';
+import type { UpdateUserPermissionsRequest } from '../../models/UpdateUserPermissionsRequest';
+import { Button as MuiButton } from '@mui/material';
+import * as StringHelpers from '../../util/StringHelpers';
 
 const EMPTY_FIELD_TEXT = '---';
 
@@ -104,6 +109,14 @@ type UserPageState =
     | { status: UserPageStatus.LOADING }
     | { status: UserPageStatus.ERROR; error: ProblemDetailError }
     | { status: UserPageStatus.SUCCESS; user: FullUser };
+
+type PermissionAction = 'grant' | 'revoke';
+
+type EditPermissionsDialogState =
+    | { status: 'confirmation', type: PermissionAction, permissionName: string, request: UpdateUserPermissionsRequest }
+    | { status: 'submiting', type: PermissionAction, permissionName: string, request: UpdateUserPermissionsRequest }
+    | { status: 'error', type: PermissionAction, permissionName: string, request: UpdateUserPermissionsRequest, error: string }
+    | { status: 'success', type: PermissionAction, permissionName: string, request: UpdateUserPermissionsRequest, response: UserPermissionsResponse }
 
 const UserPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -200,6 +213,10 @@ const UserPage: React.FC = () => {
     const [deleteSuccess, setDeleteSuccess] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    // Estados para editar permisos de usuario
+    const [editPermissionsDialogOpen, setEditPermissionsDialogOpen] = useState<boolean>(false);
+    const [editPermissionsDialogState, setEditPermissionsDialogState] = useState<EditPermissionsDialogState | undefined>(undefined);
 
     // Formulario para datos personales
     const personalDataForm = useForm<PersonalDataFormData>({
@@ -616,9 +633,47 @@ const UserPage: React.FC = () => {
         }
     };
 
+    const handleLoginToggleClick = async (currentValue: boolean) => {
+        setEditPermissionsDialogOpen((_) => true);
+        setEditPermissionsDialogState(() => ({
+            status: 'confirmation',
+            type: currentValue ? 'revoke' : 'grant',
+            permissionName: 'Iniciar Sesión',
+            request: { login: !currentValue }
+        }));
+    }
+
+    const handleConfirmEditPermissions = async () => {
+        const userId = getUserId();
+        if (!userId) return;
+
+        setEditPermissionsDialogState((state) => ({ ...state!, status: 'submiting' }));
+
+        try {
+            const response: UserPermissionsResponse = await userService.updateUserPermissions(userId, editPermissionsDialogState!.request);
+            setEditPermissionsDialogState((state) => ({ ...state!, status: 'success', response }));
+            if (state.status === UserPageStatus.SUCCESS) {
+                setState({
+                    status: UserPageStatus.SUCCESS,
+                    user: {
+                        ...state.user,
+                        canLogin: response.login
+                    }
+                });
+            }
+        } catch (error: any) {
+            setEditPermissionsDialogState((state) => ({ ...state!, status: 'error', error: error.message || 'Error desconocido' }));
+        }
+    }
+
+    const handleCloseEditPermissionsDialog = () => {
+        setEditPermissionsDialogOpen(false);
+        setEditPermissionsDialogState(undefined);
+    }
+
     useEffect(() => {
         loadUserData();
-    }, [location.pathname]); // Se ejecuta cuando cambia la ruta completa
+    }, [location.pathname]);
 
     const dateOfBirth = personalDataForm.watch("dateOfBirth");
 
@@ -1477,6 +1532,25 @@ const UserPage: React.FC = () => {
                                             )}
                                         </Box>
                                     </Box>
+
+                                    {/* Sección Permisos */}
+                                    <Box sx={{ mt: 4 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                                Permisos
+                                            </Typography>
+                                        </Box>
+                                        <Box>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: '100px' }}>
+                                                <label>Iniciar sesión</label>
+                                                <Switch
+                                                    checked={state.user.canLogin}
+                                                    onClick={() => handleLoginToggleClick(state.user.canLogin)}
+                                                    disabled={!state.user.permissions.includes('change-individual-permissions')}
+                                                />
+                                            </Box>
+                                        </Box>
+                                    </Box>
                                 </Box>
                             )}
                         </Box>
@@ -2209,7 +2283,88 @@ const UserPage: React.FC = () => {
                     )}
                 </DialogActions>
             </Dialog>
+
+            {/* Modal de confirmación para cambiar permisos */}
+            ({editPermissionsDialogState && <EditUserPermissionDialog
+                open={editPermissionsDialogOpen}
+                state={editPermissionsDialogState}
+                onConfirm={handleConfirmEditPermissions}
+                onClose={handleCloseEditPermissionsDialog}
+            />})
         </div>
+    );
+};
+
+type EditUserPermissionDialogProps = {
+    open: boolean,
+    state: EditPermissionsDialogState;
+    onConfirm: () => void;
+    onClose: () => void;
+};
+
+const EditUserPermissionDialog = ({
+    open,
+    state,
+    onConfirm,
+    onClose,
+}: EditUserPermissionDialogProps) => {
+    const actionText = state.type === 'revoke' ? 'revocar' : 'asignar';
+    const actionTextPast = state.type === 'revoke' ? 'revocado' : 'asignado';
+    const actionTitle = state.type === 'revoke' ? 'revocación' : 'asignación';
+
+    return (
+        <Dialog
+            open={open}
+            onClose={state.status === 'submiting' ? undefined : onClose}
+            disableEscapeKeyDown={state.status === 'submiting'}
+        >
+            <DialogTitle>
+                {
+                    state.status !== 'success'
+                        ? `Confirmar ${actionTitle} de permisos`
+                        : `Permiso ${actionTextPast} correctamente.`
+                }
+            </DialogTitle>
+
+            <DialogContent dividers>
+                {state.status === 'error' && (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                        {state.error}
+                    </Alert>
+                )}
+                {state.status === 'success' && (
+                    <Alert severity="success" sx={{ mb: 2 }}>
+                        Permiso {actionTextPast} correctamente.
+                    </Alert>
+                )}
+                {state.status !== 'success' && (
+                    <Typography>
+                        ¿{StringHelpers.capitalize(actionText)} permiso <strong>{state.permissionName}</strong> a este usuario?
+                    </Typography>
+                )}
+            </DialogContent>
+
+            <DialogActions>
+                <MuiButton
+                    onClick={onClose}
+                    disabled={state.status === 'submiting'}
+                >
+                    Cerrar
+                </MuiButton>
+
+                {state.status !== 'success' && (
+                    <MuiButton
+                        variant="contained"
+                        color="primary"
+                        onClick={onConfirm}
+                        disabled={state.status === 'submiting'}
+                        startIcon={state.status === 'submiting' ? <CircularProgress size={20} /> : null}
+                    >
+                        Confirmar
+                    </MuiButton>
+                )}
+            </DialogActions>
+        </Dialog>
     );
 };
 

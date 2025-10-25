@@ -16,5 +16,6 @@ export type FullUser = {
     profilePictureUrl: string;
     dateOfBirth: string;
     age: number;
+    canLogin: boolean;
     permissions: string[];
 }
