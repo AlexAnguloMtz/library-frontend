@@ -23,7 +23,7 @@ type DataState =
     | { status: DataStatus.READY; data: AuthorPopularityResponse[] }
     | { status: DataStatus.ERROR; error: string };
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
         return (
             <Box

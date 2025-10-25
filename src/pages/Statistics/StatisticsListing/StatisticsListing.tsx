@@ -1,5 +1,4 @@
 import React, { type JSX } from 'react';
-import './styles.css';
 import { Box, Card, Typography, Avatar } from '@mui/material';
 
 const ListingCard: React.FC<ListingCardProps> = ({
