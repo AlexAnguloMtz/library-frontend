@@ -23,6 +23,11 @@ type DataState =
     | { status: DataStatus.READY; data: AuthorPopularityResponse[] }
     | { status: DataStatus.ERROR; error: string };
 
+type Props = {
+    data?: AuthorPopularityResponse[];
+    onDataReady: (data: AuthorPopularityResponse[]) => void;
+};
+
 const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
         return (
@@ -75,14 +80,17 @@ const groupData = (data: AuthorPopularityResponse[]) => {
     });
 };
 
-export const PopularAuthors = () => {
-    const [state, setState] = useState<DataState>({ status: DataStatus.LOADING });
+export const PopularAuthors = ({ data, onDataReady }: Props) => {
+    const [state, setState] = useState<DataState>(
+        data ? { status: DataStatus.READY, data } : { status: DataStatus.LOADING }
+    );
 
     const loadData = async () => {
         setState({ status: DataStatus.LOADING });
         try {
             const response = await reportsService.getAuthorsPopularity({ limit: 5 });
             setState({ status: DataStatus.READY, data: response });
+            onDataReady(response);
         } catch (error: any) {
             setState({
                 status: DataStatus.ERROR,
@@ -96,13 +104,14 @@ export const PopularAuthors = () => {
             Hombres: '#1976d2',
             Mujeres: '#e91e63',
         };
-
         return colors[gender] ?? '#9e9e9e';
     };
 
     useEffect(() => {
-        loadData();
-    }, []);
+        if (!data) {
+            loadData();
+        }
+    }, [data]);
 
     if (state.status === DataStatus.LOADING) {
         return (

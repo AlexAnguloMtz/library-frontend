@@ -75,15 +75,20 @@ const groupData = (data: BookCategoryPopularityResponse[]) => {
     return orderedGrouped;
 };
 
+type Props = {
+    data?: BookCategoryPopularityResponse[];
+    onDataReady: (data: BookCategoryPopularityResponse[]) => void;
+}
 
-export const PopularityByCategory = () => {
+export const PopularityByCategory = ({ data, onDataReady }: Props) => {
     const [state, setState] = useState<DataState>({ status: DataStatus.LOADING });
 
     const loadData = async () => {
         setState({ status: DataStatus.LOADING });
         try {
-            const response: BookCategoryPopularityResponse[] = await reportsService.getBookCategoriesPopularity({});
-            setState({ status: DataStatus.READY, data: response });
+            const data: BookCategoryPopularityResponse[] = await reportsService.getBookCategoriesPopularity({});
+            setState({ status: DataStatus.READY, data });
+            onDataReady(data);
         } catch (error: any) {
             setState({
                 status: DataStatus.ERROR,
@@ -101,8 +106,10 @@ export const PopularityByCategory = () => {
     };
 
     useEffect(() => {
-        loadData();
-    }, []);
+        if (!data) {
+            loadData();
+        }
+    }, [data]);
 
     if (state.status === DataStatus.LOADING) {
         return (

@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, type JSX } from 'react';
 import { Box, Tabs, Tab, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import CategoryIcon from '@mui/icons-material/Category';
 import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import PersonIcon from '@mui/icons-material/Person';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+
 import { StatisticsListing } from './StatisticsListing/StatisticsListing';
 import { PopularCategories } from './PopularCategories/PopularCategories';
 import { PopularAuthors } from './PopularAuthors/PopularAuthors';
@@ -11,29 +13,118 @@ import { PopularityByCategory } from './PopularityByCategory/PopularityByCategor
 import { UsersAcquisition } from './UsersAcquisition/UsersAcquisition';
 import { UsersDemography } from './UsersDemography/UsersDemography';
 import { LoansDistribution } from './LoansDistribution/LoansDistibution';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
+
+import type { AuthorPopularityResponse } from '../../models/AuthorPopularityResponse';
+import type { UsersAcquisitionResponse } from '../../models/UsersAcquisitionResponse';
+import type { UsersDemographyResponse } from '../../models/UsersDemographyResponse';
+import type { BookCategoryPopularityResponse } from '../../models/BookCategoryPopularityResponse';
+import type { LoansDistributionResponse } from '../../models/LoansDistributionResponse';
 
 type TabItem = {
     id: string;
     title: string;
     content: React.ReactNode;
     removable: boolean;
+    icon: JSX.Element;
 };
 
-const cards = [
-    { id: 'users-acquisition', title: 'Adquisición de usuarios', content: <UsersAcquisition />, icon: <PersonIcon /> },
-    { id: 'users-demography', title: 'Demografía de usuarios', content: <UsersDemography />, icon: <PersonIcon /> },
-    { id: 'popular-authors', title: 'Autores más populares', content: <PopularAuthors />, icon: <PersonSearchIcon /> },
-    { id: 'popular-categories', title: 'Categorías más populares', content: <PopularCategories />, icon: <CategoryIcon /> },
-    { id: 'popularity-by-category', title: 'Popularidad por categoría', content: <PopularityByCategory />, icon: <CategoryIcon /> },
-    { id: 'loans-distribution', title: 'Distribución de préstamos', content: <LoansDistribution />, icon: <MenuBookIcon /> }
-];
+type TabsData = {
+    popularAuthors?: AuthorPopularityResponse[];
+    usersAcquisition?: UsersAcquisitionResponse[];
+    usersDemography?: UsersDemographyResponse[];
+    popularCategories?: BookCategoryPopularityResponse[];
+    popularityByCategory?: BookCategoryPopularityResponse[];
+    loansDistribution?: LoansDistributionResponse[];
+};
 
 export const Statistics = () => {
-    const [tabs, setTabs] = useState<TabItem[]>([]);
+    const [tabs, setTabs] = useState<any[]>([]);
     const [activeTab, setActiveTab] = useState('statistics-listing');
+    const [tabsData, setTabsData] = useState<TabsData>({});
+
+    const makeOnDataReady = <K extends keyof TabsData>(key: K) => {
+        return (data: TabsData[K]) => {
+            setTabsData((state) => ({ ...state, [key]: data }));
+        };
+    };
+
+    const cards: TabItem[] = [
+        {
+            id: 'users-acquisition',
+            title: 'Adquisición de usuarios',
+            content: (
+                <UsersAcquisition
+                    data={tabsData.usersAcquisition}
+                    onDataReady={makeOnDataReady('usersAcquisition')}
+                />
+            ),
+            removable: true,
+            icon: <PersonIcon />
+        },
+        {
+            id: 'users-demography',
+            title: 'Demografía de usuarios',
+            content: (
+                <UsersDemography
+                    data={tabsData.usersDemography}
+                    onDataReady={makeOnDataReady('usersDemography')}
+                />
+            ),
+            removable: true,
+            icon: <PersonIcon />
+        },
+        {
+            id: 'popular-authors',
+            title: 'Autores más populares',
+            content: (
+                <PopularAuthors
+                    data={tabsData.popularAuthors}
+                    onDataReady={makeOnDataReady('popularAuthors')}
+                />
+            ),
+            removable: true,
+            icon: <PersonSearchIcon />
+        },
+        {
+            id: 'popular-categories',
+            title: 'Categorías más populares',
+            content: (
+                <PopularCategories
+                    data={tabsData.popularCategories}
+                    onDataReady={makeOnDataReady('popularCategories')}
+                />
+            ),
+            removable: true,
+            icon: <CategoryIcon />
+        },
+        {
+            id: 'popularity-by-category',
+            title: 'Popularidad por categoría',
+            content: (
+                <PopularityByCategory
+                    data={tabsData.popularityByCategory}
+                    onDataReady={makeOnDataReady('popularityByCategory')}
+                />
+            ),
+            removable: true,
+            icon: <CategoryIcon />
+        },
+        {
+            id: 'loans-distribution',
+            title: 'Distribución de préstamos',
+            content: (
+                <LoansDistribution
+                    data={tabsData.loansDistribution}
+                    onDataReady={makeOnDataReady('loansDistribution')}
+                />
+            ),
+            removable: true,
+            icon: <MenuBookIcon />
+        }
+    ];
 
     useEffect(() => {
+        // Tab principal "Todas"
         setTabs([
             {
                 id: 'statistics-listing',
@@ -102,7 +193,14 @@ export const Statistics = () => {
             </Tabs>
 
             <Box mt={2}>
-                {tabs.map((tab) => tab.id === activeTab && <Box key={tab.id}>{tab.content}</Box>)}
+                {tabs.map((tab) => (
+                    <Box
+                        key={tab.id}
+                        style={{ display: tab.id === activeTab ? 'block' : 'none' }}
+                    >
+                        {tab.content}
+                    </Box>
+                ))}
             </Box>
         </Box>
     );

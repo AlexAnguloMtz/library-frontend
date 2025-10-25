@@ -54,20 +54,30 @@ const CustomTooltip = ({ active, payload }: any) => {
     return null;
 };
 
-export const UsersDemography = () => {
+type Props = {
+    data?: UsersDemographyResponse[];
+    onDataReady: (data: UsersDemographyResponse[]) => void;
+}
+
+export const UsersDemography = ({ data, onDataReady }: Props) => {
     const [state, setState] = useState<DataState>({ status: DataStatus.LOADING });
 
     const loadData = async () => {
         setState({ status: DataStatus.LOADING });
         try {
-            const response = await reportsService.getUsersDemography();
-            setState({ status: DataStatus.READY, data: response });
+            const data = await reportsService.getUsersDemography();
+            setState({ status: DataStatus.READY, data });
+            onDataReady(data);
         } catch (error: any) {
             setState({ status: DataStatus.ERROR, error: error.message || 'Error al cargar datos' });
         }
     };
 
-    useEffect(() => { loadData(); }, []);
+    useEffect(() => {
+        if (!data) {
+            loadData();
+        }
+    }, [data]);
 
     if (state.status === DataStatus.LOADING)
         return <Box display="flex" justifyContent="center" alignItems="center" p={4}><CircularProgress /></Box>;

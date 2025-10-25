@@ -95,20 +95,32 @@ const mergeYearlyData = (grouped: Record<number, UsersAcquisitionResponse[]>) =>
     return merged;
 };
 
-export const UsersAcquisition = () => {
-    const [state, setState] = useState<DataState>({ status: DataStatus.LOADING });
+type Props = {
+    data?: UsersAcquisitionResponse[],
+    onDataReady: (data: UsersAcquisitionResponse[]) => void
+}
+
+export const UsersAcquisition = ({ data, onDataReady }: Props) => {
+    const [state, setState] = useState<DataState>(
+        data ? { status: DataStatus.READY, data } : { status: DataStatus.LOADING }
+    );
 
     const loadData = async () => {
         setState({ status: DataStatus.LOADING });
         try {
             const response = await reportsService.getUsersAcquisition();
             setState({ status: DataStatus.READY, data: response });
+            onDataReady(response);
         } catch (error: any) {
             setState({ status: DataStatus.ERROR, error: error.message || 'Error al cargar datos' });
         }
     };
 
-    useEffect(() => { loadData(); }, []);
+    useEffect(() => {
+        if (!data) {
+            loadData();
+        }
+    }, [data]);
 
     if (state.status === DataStatus.LOADING) return (
         <Box display="flex" justifyContent="center" alignItems="center" p={4}><CircularProgress /></Box>
