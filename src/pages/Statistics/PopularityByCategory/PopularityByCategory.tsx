@@ -48,35 +48,41 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const groupData = (data: BookCategoryPopularityResponse[]) => {
-    const map = new Map<string, BookCategoryPopularityResponse[]>();
+    const grouped: Record<string, any[]> = {};
 
     data.forEach((item) => {
-        const key = `${item.gender}-${item.ageMin}-${item.ageMax}`;
-        if (!map.has(key)) map.set(key, []);
-        map.get(key)!.push(item);
+        const ageGroup = `${item.ageMin}-${item.ageMax}`;
+        if (!grouped[item.category]) grouped[item.category] = [];
+        let group = grouped[item.category].find((g) => g.ageGroup === ageGroup);
+        if (!group) {
+            group = { ageGroup };
+            grouped[item.category].push(group);
+        }
+        group[item.gender] = item.value;
     });
 
-    return Array.from(map.entries()).map(([key, items]) => {
-        const [gender, ageMin, ageMax] = key.split('-');
-        return {
-            gender,
-            ageMin: Number(ageMin),
-            ageMax: Number(ageMax),
-            categories: items.map((i) => ({
-                name: i.category,
-                value: i.value,
-            })),
-        };
+    Object.values(grouped).forEach((arr) => {
+        arr.sort((a, b) => parseInt(a.ageGroup.split('-')[0]) - parseInt(b.ageGroup.split('-')[0]));
     });
+
+    const orderedGrouped: Record<string, any[]> = {};
+    Object.keys(grouped)
+        .sort((a, b) => a.localeCompare(b))
+        .forEach((key) => {
+            orderedGrouped[key] = grouped[key];
+        });
+
+    return orderedGrouped;
 };
 
-export const PopularCategories = () => {
+
+export const PopularityByCategory = () => {
     const [state, setState] = useState<DataState>({ status: DataStatus.LOADING });
 
     const loadData = async () => {
         setState({ status: DataStatus.LOADING });
         try {
-            const response = await reportsService.getBookCategoriesPopularity({ limit: 5 });
+            const response: BookCategoryPopularityResponse[] = await reportsService.getBookCategoriesPopularity({});
             setState({ status: DataStatus.READY, data: response });
         } catch (error: any) {
             setState({
@@ -91,7 +97,6 @@ export const PopularCategories = () => {
             Hombres: '#1976d2',
             Mujeres: '#e91e63',
         };
-
         return colors[gender] ?? '#9e9e9e';
     };
 
@@ -132,64 +137,57 @@ export const PopularCategories = () => {
 
     const grouped = groupData(state.data);
 
+    const allGenders = Array.from(new Set(state.data.map(d => d.gender)));
+
     return (
         <Box>
             <Box p={2} display="flex" flexDirection="column" gap="10px">
                 <Box display="flex">
                     <strong style={{ width: 120 }}>Eje horizontal:</strong>
-                    <span>Categorías de libros</span>
+                    <span>Grupo de edad y género</span>
                 </Box>
                 <Box display="flex">
                     <strong style={{ width: 120 }}>Eje vertical:</strong>
-                    <span>Media de préstamos por categoría</span>
+                    <span>Media de préstamos</span>
                 </Box>
             </Box>
-            <Box p={2} display="flex" flexWrap="wrap" gap={2}>
-                {grouped.map((group, idx) => (
+            <Box
+                p={2}
+                display="flex"
+                flexDirection="column"
+                gap={4}
+            >
+                {Object.entries(grouped).map(([category, data]) => (
                     <Box
-                        key={idx}
-                        flex="1 1 48%"
-                        border="1px solid #ddd"
-                        borderRadius={2}
-                        p={2}
+                        key={category}
+                        width="100%"
+                        height={400}
                     >
-                        <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-                            {group.gender} {group.ageMin}-{group.ageMax} años
+                        <Typography textAlign="center" fontWeight="bold" mb={1}>
+                            {category}
                         </Typography>
-                        <ResponsiveContainer width="100%" height={400}>
+                        <ResponsiveContainer width="100%" height="100%">
                             <BarChart
-                                data={group.categories}
-                                margin={{ top: 10, right: 10, left: 0, bottom: 30 }}
-                                barCategoryGap="15%"
-                                barGap={3}
+                                data={data}
+                                margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
                             >
                                 <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis
-                                    dataKey="name"
-                                    interval={0}
-                                    angle={-40}
-                                    textAnchor="end"
-                                    tick={{ fontWeight: 'bold', fontSize: 12 }}
-                                    tickMargin={5}
-                                    minTickGap={0}
-                                />
-                                <YAxis
-                                    width={30}
-                                    mirror={false}
-                                    tick={{ fontSize: 12 }}
-                                    tickLine={false}
-                                    axisLine={false}
-                                />
+                                <XAxis dataKey="ageGroup" />
+                                <YAxis />
                                 <Tooltip content={<CustomTooltip />} />
-                                <Bar
-                                    dataKey="value"
-                                    fill={colorForGender(group.gender)}
-                                />
+                                {allGenders.map((gender) => (
+                                    <Bar
+                                        key={gender}
+                                        dataKey={gender}
+                                        fill={colorForGender(gender)}
+                                    />
+                                ))}
                             </BarChart>
                         </ResponsiveContainer>
                     </Box>
                 ))}
             </Box>
+
         </Box>
     );
 };

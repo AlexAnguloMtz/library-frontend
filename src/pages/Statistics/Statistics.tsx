@@ -6,6 +6,7 @@ import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import { StatisticsListing } from './StatisticsListing/StatisticsListing';
 import { PopularCategories } from './PopularCategories/PopularCategories';
 import { PopularAuthors } from './PopularAuthors/PopularAuthors';
+import { PopularityByCategory } from './PopularityByCategory/PopularityByCategory';
 
 type TabItem = {
     id: string;
@@ -16,7 +17,8 @@ type TabItem = {
 
 const cards = [
     { id: 'popular-authors', title: 'Autores populares', content: <PopularAuthors />, icon: <PersonSearchIcon /> },
-    { id: 'popular-categories', title: 'Categorías populares', content: <PopularCategories />, icon: <CategoryIcon /> },
+    { id: 'popular-categories', title: 'Categorías más populares', content: <PopularCategories />, icon: <CategoryIcon /> },
+    { id: 'popularity-by-category', title: 'Popularidad por categoría', content: <PopularityByCategory />, icon: <CategoryIcon /> },
 ];
 
 export const Statistics = () => {
