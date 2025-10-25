@@ -42,6 +42,12 @@ type LoginState =
   | { status: LoginStatus.LoginError; error: string }
   | { status: LoginStatus.LoginSuccess };
 
+enum UserRole {
+  Admin = 'admin',
+  Librarian = 'librarian',
+  User = 'user'
+}
+
 export function Login() {
   const navigate = useNavigate();
   const [loginState, setLoginState] = useState<LoginState>({ status: LoginStatus.Idle });
@@ -50,6 +56,7 @@ export function Login() {
   const {
     control,
     handleSubmit,
+    setValue,
     formState: { errors }
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -63,7 +70,10 @@ export function Login() {
   const onSubmit = async (data: LoginFormData) => {
     setLoginState({ status: LoginStatus.LoggingIn });
     try {
-      const authentication: AuthenticationResponse = await authService.login({ email: data.email, password: data.password });
+      const authentication: AuthenticationResponse = await authService.login({
+        email: data.email,
+        password: data.password
+      });
       setLoginState({ status: LoginStatus.LoginSuccess });
       authenticationHelper.setAuthentication(authentication);
       navigate('/dashboard/books');
@@ -75,8 +85,93 @@ export function Login() {
     }
   };
 
+  const credentialsForRole = (role: UserRole): LoginFormData | null => {
+    if (!import.meta.env.DEV) {
+      return null;
+    }
+
+    const credentials = {
+      [UserRole.Admin]: {
+        email: import.meta.env.VITE_DEV_ADMIN_EMAIL!,
+        password: import.meta.env.VITE_DEV_ADMIN_PASSWORD!,
+      },
+      [UserRole.Librarian]: {
+        email: import.meta.env.VITE_DEV_LIBRARIAN_EMAIL!,
+        password: import.meta.env.VITE_DEV_LIBRARIAN_PASSWORD!,
+      },
+      [UserRole.User]: {
+        email: import.meta.env.VITE_DEV_USER_EMAIL!,
+        password: import.meta.env.VITE_DEV_USER_PASSWORD!,
+      },
+    } as const;
+
+    return credentials[role];
+  };
+
+  const handleQuickLogin = (role: UserRole) => {
+    const values: LoginFormData | null = credentialsForRole(role);
+    if (values) {
+      setValue('email', values.email);
+      setValue('password', values.password);
+    }
+  };
+
   return (
     <Box className="login-container">
+
+      {/* --- Dialog only visible in 'dev' mode --- */}
+      {import.meta.env.DEV && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '25%',
+            bgcolor: '#f1f5f9',
+            border: '1px solid #cbd5e1',
+            borderRadius: '0 0 8px 0',
+            p: 2,
+            zIndex: 9999,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{ display: 'block', mb: 1, color: '#475569', fontWeight: 600 }}
+          >
+            Este cuadro sólo debe aparecer en modo DEMOSTRATIVO, nunca en PRODUCCIÓN
+          </Typography>
+
+          <Button
+            size="small"
+            variant="contained"
+            color="secondary"
+            onClick={() => handleQuickLogin(UserRole.Admin)}
+            sx={{ mb: 1, textTransform: 'none', width: '100%' }}
+          >
+            Ingresar como Administrador
+          </Button>
+
+          <Button
+            size="small"
+            variant="contained"
+            onClick={() => handleQuickLogin(UserRole.Librarian)}
+            sx={{ mb: 1, textTransform: 'none', width: '100%' }}
+          >
+            Ingresar como Bibliotecario
+          </Button>
+
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => handleQuickLogin(UserRole.User)}
+            sx={{ textTransform: 'none', width: '100%' }}
+          >
+            Ingresar como Usuario
+          </Button>
+        </Box>
+      )}
+
       <Card className="login-card">
         <CardContent className="login-card-content">
           <Box className="login-header">
@@ -165,9 +260,9 @@ export function Login() {
               variant="contained"
               disabled={loginState.status === LoginStatus.LoggingIn}
               className="login-button"
-              startIcon={(loginState.status === LoginStatus.LoggingIn) ? <CircularProgress size={20} /> : undefined}
+              startIcon={loginState.status === LoginStatus.LoggingIn ? <CircularProgress size={20} /> : undefined}
             >
-              {(loginState.status === LoginStatus.LoggingIn) ? 'Iniciando sesión...' : 'Iniciar sesión'}
+              {loginState.status === LoginStatus.LoggingIn ? 'Iniciando sesión...' : 'Iniciar sesión'}
             </Button>
           </Box>
         </CardContent>

@@ -135,12 +135,14 @@ export const PopularCategories = () => {
     return (
         <Box>
             <Box p={2} display="flex" flexDirection="column" gap="10px">
-                <p>
-                    <strong>Eje horizontal:</strong> Categorías de libros
-                </p>
-                <p>
-                    <strong>Eje vertical:</strong> Usuarios distintos con al menos un préstamo de libro de dicha categoría
-                </p>
+                <Box display="flex">
+                    <strong style={{ width: 120 }}>Eje horizontal:</strong>
+                    <span>Categorías de libros</span>
+                </Box>
+                <Box display="flex">
+                    <strong style={{ width: 120 }}>Eje vertical:</strong>
+                    <span>Media de préstamos por categoría</span>
+                </Box>
             </Box>
             <Box p={2} display="flex" flexWrap="wrap" gap={2}>
                 {grouped.map((group, idx) => (
