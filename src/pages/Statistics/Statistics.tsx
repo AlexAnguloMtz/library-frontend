@@ -10,6 +10,14 @@ import { PopularAuthors } from './PopularAuthors/PopularAuthors';
 import { PopularityByCategory } from './PopularityByCategory/PopularityByCategory';
 import { UsersAcquisition } from './UsersAcquisition/UsersAcquisition';
 import { UsersDemography } from './UsersDemography/UsersDemography';
+import { StatisticsSurfaceStatus, type StatisticsSurfaceState } from './StatisticsSurfaceState';
+import type { AuthorPopularityResponse } from '../../models/AuthorPopularityResponse';
+import { LoansDistribution } from './LoansDistribution/LoansDistibution';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+
+type TabsState = {
+    popularAuthors?: StatisticsSurfaceState<AuthorPopularityResponse>
+}
 
 type TabItem = {
     id: string;
@@ -24,11 +32,13 @@ const cards = [
     { id: 'popular-authors', title: 'Autores más populares', content: <PopularAuthors />, icon: <PersonSearchIcon /> },
     { id: 'popular-categories', title: 'Categorías más populares', content: <PopularCategories />, icon: <CategoryIcon /> },
     { id: 'popularity-by-category', title: 'Popularidad por categoría', content: <PopularityByCategory />, icon: <CategoryIcon /> },
+    { id: 'loans-distribution', title: 'Distribución de préstamos', content: <LoansDistribution />, icon: <MenuBookIcon /> }
 ];
 
 export const Statistics = () => {
     const [tabs, setTabs] = useState<TabItem[]>([]);
     const [activeTab, setActiveTab] = useState('statistics-listing');
+    const [tabsStates, setTabsStates] = useState<TabsState>({});
 
     useEffect(() => {
         setTabs([

@@ -7,6 +7,7 @@ import type { AuthorPopularityResponse } from "../models/AuthorPopularityRespons
 import type { AuthorsPopularityRequest } from "../models/AuthorsPopularityRequest";
 import type { UsersAcquisitionResponse } from "../models/UsersAcquisitionResponse";
 import type { UsersDemographyResponse } from "../models/UsersDemographyResponse";
+import type { LoansDistributionResponse } from "../models/LoansDistributionResponse";
 
 class ReportsService {
 
@@ -31,6 +32,10 @@ class ReportsService {
     async getAuthorsPopularity(request: AuthorsPopularityRequest): Promise<AuthorPopularityResponse[]> {
         const query = authorsPopularityRequest.toURLSearchParams(request);
         return apiClient.get<AuthorPopularityResponse[]>(`/api/v1/reports/authors-popularity${query.toString() ? `?${query.toString()}` : ''}`);
+    }
+
+    async getLoansDistribution(): Promise<LoansDistributionResponse[]> {
+        return apiClient.get<LoansDistributionResponse[]>(`/api/v1/reports/loans-distribution`);
     }
 
 }
