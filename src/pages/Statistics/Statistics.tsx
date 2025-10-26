@@ -7,7 +7,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 
 import { StatisticsListing } from './StatisticsListing/StatisticsListing';
-import { PopularCategories, type PopularCategoriesData } from './PopularCategories/PopularCategories';
+import { PopularCategories } from './PopularCategories/PopularCategories';
 import { PopularAuthors } from './PopularAuthors/PopularAuthors';
 import { PopularityByCategory } from './PopularityByCategory/PopularityByCategory';
 import { UsersAcquisition } from './UsersAcquisition/UsersAcquisition';
@@ -17,9 +17,9 @@ import { LoansDistribution } from './LoansDistribution/LoansDistibution';
 import type { AuthorPopularityResponse } from '../../models/AuthorPopularityResponse';
 import type { UsersAcquisitionResponse } from '../../models/UsersAcquisitionResponse';
 import type { UsersDemographyResponse } from '../../models/UsersDemographyResponse';
-import type { BookCategoryPopularityResponse } from '../../models/BookCategoryPopularityResponse';
 import type { LoansDistributionResponse } from '../../models/LoansDistributionResponse';
 import { Button } from '../../components/Button';
+import type { PopularCategoriesData } from './shared/CategoriesPopularity/CategoriesPopularity';
 
 type TabItem = {
     id: string;
@@ -34,7 +34,7 @@ type TabsData = {
     usersAcquisition?: UsersAcquisitionResponse[];
     usersDemography?: UsersDemographyResponse[];
     popularCategories?: PopularCategoriesData;
-    popularityByCategory?: BookCategoryPopularityResponse[];
+    popularityByCategory?: PopularCategoriesData;
     loansDistribution?: LoansDistributionResponse[];
 };
 
