@@ -22,6 +22,8 @@ import type { BookCategoryPopularityResponse } from '../../models/BookCategoryPo
 import { PopularPublishers } from './PopularPublishers/PopularPublishers';
 import type { PublisherPopularityResponse } from '../../models/PublisherPopularityResponse';
 import CollectionsBookmarkIcon from '@mui/icons-material/CollectionsBookmark';
+import { PopularBooks } from './PopularBooks/PopularBooks';
+import type { BookPopularityResponse } from '../../models/BookPopularityResponse';
 
 type TabItem = {
     id: string;
@@ -38,6 +40,7 @@ type TabsData = {
     popularCategories?: PopularityData<BookCategoryPopularityResponse>;
     popularityByCategory?: PopularityData<BookCategoryPopularityResponse>;
     popularPublishers?: PopularityData<PublisherPopularityResponse>;
+    popularBooks?: PopularityData<BookPopularityResponse>;
     loansDistribution?: LoansDistributionResponse[];
 };
 
@@ -102,6 +105,18 @@ export const Statistics = () => {
             icon: <CategoryIcon />
         },
         {
+            id: 'popularity-by-category',
+            title: 'Popularidad por categoría',
+            content: (
+                <PopularityByCategory
+                    data={tabsData.popularityByCategory}
+                    onDataReady={makeOnDataReady('popularityByCategory')}
+                />
+            ),
+            removable: true,
+            icon: <CategoryIcon />
+        },
+        {
             id: 'popular-publishers',
             title: 'Editoriales más populares',
             content: (
@@ -114,16 +129,16 @@ export const Statistics = () => {
             icon: <CollectionsBookmarkIcon />
         },
         {
-            id: 'popularity-by-category',
-            title: 'Popularidad por categoría',
+            id: 'popular-books',
+            title: 'Libros más populares',
             content: (
-                <PopularityByCategory
-                    data={tabsData.popularityByCategory}
-                    onDataReady={makeOnDataReady('popularityByCategory')}
+                <PopularBooks
+                    data={tabsData.popularBooks}
+                    onDataReady={makeOnDataReady('popularBooks')}
                 />
             ),
             removable: true,
-            icon: <CategoryIcon />
+            icon: <CollectionsBookmarkIcon />
         },
         {
             id: 'loans-distribution',

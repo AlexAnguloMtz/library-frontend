@@ -7,6 +7,7 @@ import type { UsersAcquisitionResponse } from "../models/UsersAcquisitionRespons
 import type { UsersDemographyResponse } from "../models/UsersDemographyResponse";
 import type { LoansDistributionResponse } from "../models/LoansDistributionResponse";
 import type { PublisherPopularityResponse } from "../models/PublisherPopularityResponse";
+import type { BookPopularityResponse } from "../models/BookPopularityResponse";
 
 class ReportsService {
 
@@ -21,6 +22,11 @@ class ReportsService {
 
     async getUsersDemography(): Promise<UsersDemographyResponse[]> {
         return apiClient.get<UsersDemographyResponse[]>(`/api/v1/reports/users-demography`);
+    }
+
+    async getBooksPopularity(request: PopularityRequest): Promise<BookPopularityResponse[]> {
+        const query = popularityRequest.toURLSearchParams(request);
+        return apiClient.get<BookPopularityResponse[]>(`/api/v1/reports/books-popularity${query.toString() ? `?${query.toString()}` : ''}`);
     }
 
     async getBookCategoriesPopularity(request: PopularityRequest): Promise<BookCategoryPopularityResponse[]> {
