@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react';
+import { useEffect, useReducer, type JSX } from 'react';
 import { Box, CircularProgress, Alert, Button, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import { PopularityMetric } from '../../../../models/PopularityMetric';
 
@@ -42,6 +42,34 @@ export type PopularityProps<T> = {
     getItems: ({ metric, limit }: { metric: PopularityMetric, limit?: number }) => Promise<T[]>;
 };
 
+// ------------------------ Reducer ------------------------
+type Action<T> =
+    | { type: 'LOADING'; metric: PopularityMetric }
+    | { type: 'READY'; metric: PopularityMetric; data: T[] }
+    | { type: 'ERROR'; metric: PopularityMetric; error: string };
+
+const metricKey = (metric: PopularityMetric) => {
+    switch (metric) {
+        case PopularityMetric.DISTINCT_USERS: return 'distinctUsers';
+        case PopularityMetric.AVERAGE: return 'averages';
+        case PopularityMetric.FREQUENCY: return 'frequencies';
+        case PopularityMetric.MEDIAN: return 'medians';
+    }
+}
+
+function reducer<T>(state: PopularityState<T>, action: Action<T>): PopularityState<T> {
+    const key = metricKey(action.metric) as keyof PopularityState<T>;
+    switch (action.type) {
+        case 'LOADING':
+            return { ...state, [key]: { status: DataStatus.LOADING } };
+        case 'READY':
+            return { ...state, [key]: { status: DataStatus.READY, data: action.data } };
+        case 'ERROR':
+            return { ...state, [key]: { status: DataStatus.ERROR, error: action.error } };
+    }
+}
+
+// ------------------------ Component ------------------------
 function initialState<T>(): PopularityState<T> {
     return {
         distinctUsers: { status: DataStatus.IDLE },
@@ -52,104 +80,16 @@ function initialState<T>(): PopularityState<T> {
 }
 
 export function Popularity<T>({ limit, data, onDataReady, renderData, getItems }: PopularityProps<T>) {
-    const [state, setState] = useState<PopularityState<T>>(initialState<T>());
-    const [metric, setMetric] = useState<PopularityMetric>(
-        PopularityMetric.DISTINCT_USERS
-    );
-
-    const newStateWithError = (
-        previous: PopularityState<T>,
-        metric: PopularityMetric,
-        error: string
-    ): PopularityState<T> => {
-        if (metric === PopularityMetric.DISTINCT_USERS) {
-            return {
-                ...previous,
-                distinctUsers: { status: DataStatus.ERROR, error }
-            }
-        }
-        if (metric === PopularityMetric.FREQUENCY) {
-            return {
-                ...previous,
-                frequencies: { status: DataStatus.ERROR, error }
-            }
-        }
-        if (metric === PopularityMetric.MEDIAN) {
-            return {
-                ...previous,
-                medians: { status: DataStatus.ERROR, error }
-            }
-        }
-        return {
-            ...previous,
-            averages: { status: DataStatus.ERROR, error }
-        }
-    }
-
-    const newStateWithLoading = (
-        previous: PopularityState<T>,
-        metric: PopularityMetric,
-    ): PopularityState<T> => {
-        if (metric === PopularityMetric.DISTINCT_USERS) {
-            return {
-                ...previous,
-                distinctUsers: { status: DataStatus.LOADING }
-            }
-        }
-        if (metric === PopularityMetric.FREQUENCY) {
-            return {
-                ...previous,
-                frequencies: { status: DataStatus.LOADING }
-            }
-        }
-        if (metric === PopularityMetric.MEDIAN) {
-            return {
-                ...previous,
-                medians: { status: DataStatus.LOADING }
-            }
-        }
-        return {
-            ...previous,
-            averages: { status: DataStatus.LOADING }
-        }
-    }
-
-    const newStateWithData = (
-        previous: PopularityState<T>,
-        data: T[],
-        metric: PopularityMetric,
-    ): PopularityState<T> => {
-        if (metric === PopularityMetric.DISTINCT_USERS) {
-            return {
-                ...previous,
-                distinctUsers: { status: DataStatus.READY, data }
-            }
-        }
-        if (metric === PopularityMetric.FREQUENCY) {
-            return {
-                ...previous,
-                frequencies: { status: DataStatus.READY, data }
-            }
-        }
-        if (metric === PopularityMetric.MEDIAN) {
-            return {
-                ...previous,
-                medians: { status: DataStatus.READY, data }
-            }
-        }
-        return {
-            ...previous,
-            averages: { status: DataStatus.READY, data }
-        }
-    }
+    const [state, dispatch] = useReducer(reducer, initialState<T>());
+    const [metric, setMetric] = useReducer((_: PopularityMetric, newMetric: PopularityMetric) => newMetric, PopularityMetric.DISTINCT_USERS);
 
     const loadData = async (metric: PopularityMetric) => {
-        setState((prev) => newStateWithLoading(prev, metric));
+        dispatch({ type: 'LOADING', metric });
         try {
-            const items: T[] = await getItems({ limit, metric });
-            setState((prev) => newStateWithData(prev, items, metric));
-        } catch (error: any) {
-            setState((prev) => newStateWithError(prev, metric, error.message));
+            const items = await getItems({ limit, metric });
+            dispatch({ type: 'READY', metric, data: items });
+        } catch (e: any) {
+            dispatch({ type: 'ERROR', metric, error: e.message });
         }
     };
 
@@ -158,27 +98,17 @@ export function Popularity<T>({ limit, data, onDataReady, renderData, getItems }
             Hombres: '#1976d2',
             Mujeres: '#e91e63',
         };
-
         return colors[gender] ?? '#9e9e9e';
     };
 
-    useEffect(() => {
-        if (!data || !data.distinctUsers) {
-            loadData(metric);
-        }
-    }, [data?.distinctUsers]);
+    const currentState = state[metricKey(metric)];
 
     useEffect(() => {
-        const shouldLoadAverages: boolean = metric === PopularityMetric.AVERAGE && !data?.averages
-        const shouldLoadFrequencies: boolean = metric === PopularityMetric.FREQUENCY && !data?.frequencies;
-        const shouldLoadMedians: boolean = metric === PopularityMetric.MEDIAN && !data?.medians;
-        const shouldLoadData = shouldLoadAverages || shouldLoadFrequencies || shouldLoadMedians;
-
-        if (shouldLoadData) {
+        const key = metricKey(metric) as keyof PopularityData<T>;
+        if (!data || !data[key]) {
             loadData(metric);
         }
-
-    }, [metric]);
+    }, [metric, data]);
 
     useEffect(() => {
         const newData: PopularityData<T> = {};
@@ -196,6 +126,7 @@ export function Popularity<T>({ limit, data, onDataReady, renderData, getItems }
         }
         onDataReady(newData);
     }, [state.distinctUsers, state.averages, state.frequencies, state.medians]);
+
 
     const ToggleButtons = (): JSX.Element => {
         const options = [
@@ -221,24 +152,8 @@ export function Popularity<T>({ limit, data, onDataReady, renderData, getItems }
         );
     };
 
-    const dataSateForMetric = (state: PopularityState<T>, metric: PopularityMetric): DataState<T> => {
-        if (metric === PopularityMetric.DISTINCT_USERS) {
-            return state.distinctUsers;
-        }
-        if (metric === PopularityMetric.FREQUENCY) {
-            return state.frequencies;
-        }
-        if (metric === PopularityMetric.MEDIAN) {
-            return state.medians;
-        }
-        return state.averages;
-    }
-
     const ViewContent = ({ state }: { state: DataState<T> }): JSX.Element => {
-        if (state.status === DataStatus.IDLE) {
-            return <></>
-        }
-
+        if (state.status === DataStatus.IDLE) return <></>;
         if (state.status === DataStatus.LOADING) {
             return (
                 <Box display="flex" justifyContent="center" alignItems="center" p={4}>
@@ -246,14 +161,13 @@ export function Popularity<T>({ limit, data, onDataReady, renderData, getItems }
                 </Box>
             );
         }
-
         if (state.status === DataStatus.ERROR) {
             return (
                 <Box p={2}>
                     <Alert severity="error">
                         {state.error}
                         <Box mt={1}>
-                            <Button variant="outlined" color="primary" onClick={(_) => loadData(metric)}>
+                            <Button variant="outlined" color="primary" onClick={() => loadData(metric)}>
                                 Reintentar
                             </Button>
                         </Box>
@@ -261,7 +175,6 @@ export function Popularity<T>({ limit, data, onDataReady, renderData, getItems }
                 </Box>
             );
         }
-
         if (state.status === DataStatus.READY && state.data.length === 0) {
             return (
                 <Box p={2}>
@@ -269,29 +182,26 @@ export function Popularity<T>({ limit, data, onDataReady, renderData, getItems }
                 </Box>
             );
         }
-
-        return (
-            renderData(state.data, metric, colorForGender, metricLabel)
-        );
+        return renderData(state.data, metric, colorForGender, metricLabel);
     };
 
     return (
         <Box>
             <ToggleButtons />
-            <ViewContent state={dataSateForMetric(state, metric)} />
+            <ViewContent state={currentState} />
         </Box>
     );
 };
 
 const metricLabel = (metric: PopularityMetric): string => {
-    if (metric === PopularityMetric.DISTINCT_USERS) {
-        return 'Usuarios distintos con al menos 1 préstamo';
+    switch (metric) {
+        case PopularityMetric.DISTINCT_USERS:
+            return 'Usuarios distintos con al menos 1 préstamo';
+        case PopularityMetric.FREQUENCY:
+            return 'Frecuencia de préstamos';
+        case PopularityMetric.MEDIAN:
+            return 'Mediana de préstamos';
+        case PopularityMetric.AVERAGE:
+            return 'Media de préstamos';
     }
-    if (metric === PopularityMetric.FREQUENCY) {
-        return 'Frecuencia de préstamos';
-    }
-    if (metric === PopularityMetric.MEDIAN) {
-        return 'Mediana de préstamos';
-    }
-    return 'Media de préstamos';
 };
