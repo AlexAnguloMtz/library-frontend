@@ -3,4 +3,5 @@ export enum PopularityMetric {
     DISTINCT_USERS = 'DISTINCT_USERS',
     FREQUENCY = 'FREQUENCY',
     MEDIAN = 'MEDIAN',
+    MODE = 'MODE',
 }

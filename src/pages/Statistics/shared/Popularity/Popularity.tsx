@@ -20,6 +20,7 @@ export type PopularityData<T> = {
     averages?: T[];
     frequencies?: T[];
     medians?: T[];
+    modes?: T[];
 }
 
 export type PopularityState<T> = {
@@ -27,6 +28,7 @@ export type PopularityState<T> = {
     averages: DataState<T>;
     frequencies: DataState<T>;
     medians: DataState<T>;
+    modes: DataState<T>;
 }
 
 export type PopularityProps<T> = {
@@ -54,6 +56,7 @@ const metricKey = (metric: PopularityMetric) => {
         case PopularityMetric.AVERAGE: return 'averages';
         case PopularityMetric.FREQUENCY: return 'frequencies';
         case PopularityMetric.MEDIAN: return 'medians';
+        case PopularityMetric.MODE: return 'modes';
     }
 }
 
@@ -76,6 +79,7 @@ function initialState<T>(): PopularityState<T> {
         averages: { status: DataStatus.IDLE },
         frequencies: { status: DataStatus.IDLE },
         medians: { status: DataStatus.IDLE },
+        modes: { status: DataStatus.IDLE },
     };
 }
 
@@ -112,26 +116,20 @@ export function Popularity<T>({ limit, data, onDataReady, renderData, getItems }
 
     useEffect(() => {
         const newData: PopularityData<T> = {};
-        if (state.averages.status === DataStatus.READY) {
-            newData.averages = state.averages.data;
-        }
-        if (state.distinctUsers.status === DataStatus.READY) {
-            newData.distinctUsers = state.distinctUsers.data;
-        }
-        if (state.frequencies.status === DataStatus.READY) {
-            newData.frequencies = state.frequencies.data;
-        }
-        if (state.medians.status === DataStatus.READY) {
-            newData.medians = state.medians.data;
-        }
+        if (state.averages.status === DataStatus.READY) newData.averages = state.averages.data;
+        if (state.distinctUsers.status === DataStatus.READY) newData.distinctUsers = state.distinctUsers.data;
+        if (state.frequencies.status === DataStatus.READY) newData.frequencies = state.frequencies.data;
+        if (state.medians.status === DataStatus.READY) newData.medians = state.medians.data;
+        if (state.modes.status === DataStatus.READY) newData.modes = state.modes.data;
         onDataReady(newData);
-    }, [state.distinctUsers, state.averages, state.frequencies, state.medians]);
+    }, [state.distinctUsers, state.averages, state.frequencies, state.medians, state.modes]);
 
 
     const ToggleButtons = (): JSX.Element => {
         const options = [
             { value: PopularityMetric.DISTINCT_USERS, label: 'Usuarios distintos' },
             { value: PopularityMetric.AVERAGE, label: 'Media' },
+            { value: PopularityMetric.MODE, label: 'Moda' },
             { value: PopularityMetric.MEDIAN, label: 'Mediana' },
             { value: PopularityMetric.FREQUENCY, label: 'Frecuencia' },
         ];
@@ -203,5 +201,7 @@ const metricLabel = (metric: PopularityMetric): string => {
             return 'Mediana de préstamos';
         case PopularityMetric.AVERAGE:
             return 'Media de préstamos';
+        case PopularityMetric.MODE:
+            return 'Moda de préstamos';
     }
 };
