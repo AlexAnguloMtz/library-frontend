@@ -104,11 +104,10 @@ export const PopularBooks = ({ data, onDataReady }: Props) => {
                                     <XAxis
                                         dataKey="name"
                                         interval={0}
-                                        angle={-40}
+                                        angle={-50}
                                         textAnchor="end"
-                                        tick={{ fontWeight: 'bold', fontSize: 12 }}
-                                        tickMargin={5}
-                                        minTickGap={0}
+                                        tick={{ fontWeight: 'bold', fontSize: 11 }}
+                                        height={80}
                                     />
                                     <YAxis
                                         width={30}
