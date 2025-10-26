@@ -138,7 +138,7 @@ export const Statistics = () => {
                 />
             ),
             removable: true,
-            icon: <CollectionsBookmarkIcon />
+            icon: <MenuBookIcon />
         },
         {
             id: 'loans-distribution',
