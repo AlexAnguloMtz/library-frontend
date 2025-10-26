@@ -30,6 +30,13 @@ const groupData = (data: BookPopularityResponse[]) => {
             .map((i) => ({
                 name: i.bookTitle,
                 value: i.value,
+                bookId: i.bookId,
+                bookIsbn: i.bookIsbn,
+                bookTitle: i.bookTitle,
+                bookImageUrl: i.bookImageUrl,
+                gender: i.gender,
+                ageMin: i.ageMin,
+                ageMax: i.ageMax,
             }))
             .sort((a, b) => a.value - b.value);
 
@@ -41,6 +48,7 @@ const groupData = (data: BookPopularityResponse[]) => {
         };
     });
 };
+
 
 type Props = {
     data?: PopularityData<BookPopularityResponse>,
@@ -77,7 +85,7 @@ export const PopularBooks = ({ data, onDataReady }: Props) => {
                     {grouped.map((group, idx) => (
                         <Box
                             key={idx}
-                            width="32%"
+                            width="48%"
                             border="1px solid #ddd"
                             borderRadius={2}
                             p={2}
@@ -139,26 +147,52 @@ export const PopularBooks = ({ data, onDataReady }: Props) => {
     );
 };
 
-const CustomTooltip = ({ active, payload, label, metric, metricLabel }: any) => {
+const CustomTooltip = ({ active, payload, metric, metricLabel }: any) => {
     if (active && payload && payload.length) {
-        const value = payload[0].value;
+        const item = payload[0].payload;
+
         return (
             <Box
                 sx={{
                     bgcolor: '#fff',
                     border: '1px solid #ccc',
-                    p: 1.2,
-                    borderRadius: 1,
-                    boxShadow: 2,
+                    p: 1.5,
+                    borderRadius: 2,
+                    boxShadow: 3,
+                    maxWidth: 280,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1,
                 }}
             >
-                <Typography fontWeight="bold">{label}</Typography>
-                <Typography>
-                    {metricLabel(metric)}: <strong>{value}</strong>
+                <Box
+                    component="img"
+                    src={item.bookImageUrl}
+                    alt={item.bookTitle}
+                    sx={{
+                        width: '130px',
+                        height: 180,
+                        objectFit: 'cover',
+                        borderRadius: 1,
+                        mb: 1,
+                    }}
+                />
+
+                <Typography fontWeight="bold" variant="subtitle1" noWrap>
+                    {item.bookTitle}
+                </Typography>
+
+                <Typography variant="body2" color="text.secondary">
+                    <strong>ISBN:</strong> {item.bookIsbn}
+                </Typography>
+                <Typography variant="body2" mt={1}>
+                    {metricLabel(metric)}: <strong>{item.value}</strong>
                 </Typography>
             </Box>
         );
     }
     return null;
 };
+
+
 
