@@ -197,6 +197,13 @@ export const CategoriesPopularity = ({ topCategories, data, onDataReady, renderD
     }, [state.distinctUsers, state.averages, state.frequencies, state.medians]);
 
     const ToggleButtons = (): JSX.Element => {
+        const options = [
+            { value: BookCategoryPopularityMetric.DISTINCT_USERS, label: 'Usuarios distintos' },
+            { value: BookCategoryPopularityMetric.AVERAGE, label: 'Media' },
+            { value: BookCategoryPopularityMetric.MEDIAN, label: 'Mediana' },
+            { value: BookCategoryPopularityMetric.FREQUENCY, label: 'Frecuencia' },
+        ];
+
         return (
             <ToggleButtonGroup
                 value={metric}
@@ -204,18 +211,11 @@ export const CategoriesPopularity = ({ topCategories, data, onDataReady, renderD
                 onChange={(_, newView) => newView && setMetric(newView)}
                 sx={{ mb: 2 }}
             >
-                <ToggleButton value={BookCategoryPopularityMetric.DISTINCT_USERS}>
-                    Usuarios distintos
-                </ToggleButton>
-                <ToggleButton value={BookCategoryPopularityMetric.AVERAGE}>
-                    Media
-                </ToggleButton>
-                <ToggleButton value={BookCategoryPopularityMetric.MEDIAN}>
-                    Mediana
-                </ToggleButton>
-                <ToggleButton value={BookCategoryPopularityMetric.FREQUENCY}>
-                    Frecuencia
-                </ToggleButton>
+                {options.map(({ value, label }) => (
+                    <ToggleButton key={value} value={value}>
+                        {label}
+                    </ToggleButton>
+                ))}
             </ToggleButtonGroup>
         );
     };
