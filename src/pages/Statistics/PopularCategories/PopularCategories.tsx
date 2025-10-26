@@ -108,7 +108,12 @@ export const PopularCategories = ({ data, onDataReady }: Props) => {
                                         tickLine={false}
                                         axisLine={false}
                                     />
-                                    <Tooltip content={<CustomTooltip metric={metric} />} />
+                                    <Tooltip content={
+                                        <CustomTooltip
+                                            metric={metric}
+                                            metricLabel={metricLabel}
+                                        />}
+                                    />
                                     <Bar
                                         dataKey="value"
                                         fill={colorForGender(group.gender)}
@@ -132,14 +137,9 @@ export const PopularCategories = ({ data, onDataReady }: Props) => {
     );
 };
 
-const CustomTooltip = ({ active, payload, label, metric }: any) => {
+const CustomTooltip = ({ active, payload, label, metric, metricLabel }: any) => {
     if (active && payload && payload.length) {
         const value = payload[0].value;
-        const description =
-            metric === BookCategoryPopularityMetric.AVERAGE
-                ? 'Promedio de préstamos por usuario'
-                : 'Usuarios distintos con al menos 1 préstamo';
-
         return (
             <Box
                 sx={{
@@ -152,7 +152,7 @@ const CustomTooltip = ({ active, payload, label, metric }: any) => {
             >
                 <Typography fontWeight="bold">{label}</Typography>
                 <Typography>
-                    {description}: <strong>{value}</strong>
+                    {metricLabel(metric)}: <strong>{value}</strong>
                 </Typography>
             </Box>
         );

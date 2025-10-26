@@ -20,11 +20,13 @@ type DataState =
 export type PopularCategoriesData = {
     distinctUsers?: BookCategoryPopularityResponse[];
     averages?: BookCategoryPopularityResponse[];
+    frequencies?: BookCategoryPopularityResponse[];
 }
 
 export type PopularCategoriesState = {
     distinctUsers: DataState;
     averages: DataState;
+    frequencies: DataState;
 }
 
 export type CategoriesPopularityProps = {
@@ -41,7 +43,8 @@ export type CategoriesPopularityProps = {
 
 const initialState: PopularCategoriesState = {
     distinctUsers: { status: DataStatus.IDLE },
-    averages: { status: DataStatus.IDLE }
+    averages: { status: DataStatus.IDLE },
+    frequencies: { status: DataStatus.IDLE },
 }
 
 export const CategoriesPopularity = ({ topCategories, data, onDataReady, renderData }: CategoriesPopularityProps) => {
@@ -61,6 +64,12 @@ export const CategoriesPopularity = ({ topCategories, data, onDataReady, renderD
                 distinctUsers: { status: DataStatus.ERROR, error }
             }
         }
+        if (metric === BookCategoryPopularityMetric.FREQUENCY) {
+            return {
+                ...previous,
+                frequencies: { status: DataStatus.ERROR, error }
+            }
+        }
         return {
             ...previous,
             averages: { status: DataStatus.ERROR, error }
@@ -75,6 +84,12 @@ export const CategoriesPopularity = ({ topCategories, data, onDataReady, renderD
             return {
                 ...previous,
                 distinctUsers: { status: DataStatus.LOADING }
+            }
+        }
+        if (metric === BookCategoryPopularityMetric.FREQUENCY) {
+            return {
+                ...previous,
+                frequencies: { status: DataStatus.LOADING }
             }
         }
         return {
@@ -92,6 +107,12 @@ export const CategoriesPopularity = ({ topCategories, data, onDataReady, renderD
             return {
                 ...previous,
                 distinctUsers: { status: DataStatus.READY, data }
+            }
+        }
+        if (metric === BookCategoryPopularityMetric.FREQUENCY) {
+            return {
+                ...previous,
+                frequencies: { status: DataStatus.READY, data }
             }
         }
         return {
@@ -126,7 +147,10 @@ export const CategoriesPopularity = ({ topCategories, data, onDataReady, renderD
     }, [data?.distinctUsers]);
 
     useEffect(() => {
-        if (metric === BookCategoryPopularityMetric.AVERAGE && !data?.averages) {
+        const shouldLoadAverages: boolean = metric === BookCategoryPopularityMetric.AVERAGE && !data?.averages
+        const shouldLoadFrequencies: boolean = metric === BookCategoryPopularityMetric.FREQUENCY && !data?.frequencies;
+        const shouldLoadData = shouldLoadAverages || shouldLoadFrequencies;
+        if (shouldLoadData) {
             loadData(metric);
         }
     }, [metric]);
@@ -139,8 +163,11 @@ export const CategoriesPopularity = ({ topCategories, data, onDataReady, renderD
         if (state.distinctUsers.status === DataStatus.READY) {
             newData.distinctUsers = state.distinctUsers.data;
         }
+        if (state.frequencies.status === DataStatus.READY) {
+            newData.frequencies = state.frequencies.data;
+        }
         onDataReady(newData);
-    }, [state.distinctUsers, state.averages]);
+    }, [state.distinctUsers, state.averages, state.frequencies]);
 
     const ToggleButtons = (): JSX.Element => {
         return (
@@ -156,15 +183,19 @@ export const CategoriesPopularity = ({ topCategories, data, onDataReady, renderD
                 <ToggleButton value={BookCategoryPopularityMetric.AVERAGE}>
                     Promedio de préstamos
                 </ToggleButton>
+                <ToggleButton value={BookCategoryPopularityMetric.FREQUENCY}>
+                    Frecuencia total de préstamos
+                </ToggleButton>
             </ToggleButtonGroup>
         );
     };
 
-
-
     const dataSateForMetric = (state: PopularCategoriesState, metric: BookCategoryPopularityMetric): DataState => {
         if (metric === BookCategoryPopularityMetric.DISTINCT_USERS) {
             return state.distinctUsers;
+        }
+        if (metric === BookCategoryPopularityMetric.FREQUENCY) {
+            return state.frequencies;
         }
         return state.averages;
     }
@@ -219,7 +250,11 @@ export const CategoriesPopularity = ({ topCategories, data, onDataReady, renderD
 };
 
 const metricLabel = (metric: BookCategoryPopularityMetric): string => {
-    return metric === BookCategoryPopularityMetric.DISTINCT_USERS
-        ? 'Usuarios distintos con al menos 1 préstamo por categoría'
-        : 'Promedio de préstamos por categoría';
+    if (metric === BookCategoryPopularityMetric.DISTINCT_USERS) {
+        return 'Usuarios distintos con al menos 1 préstamo';
+    }
+    if (metric === BookCategoryPopularityMetric.FREQUENCY) {
+        return 'Frecuencia de préstamos';
+    }
+    return 'Promedio de préstamos por categoría';
 };
