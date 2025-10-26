@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import type { BookCategoryPopularityResponse } from '../../../models/BookCategoryPopularityResponse';
 import reportsService from '../../../services/ReportsService';
+import { BookCategoryPopularityMetric } from '../../../models/BookCategoriesPopularityRequest';
 
 enum DataStatus {
     LOADING,
@@ -86,7 +87,7 @@ export const PopularityByCategory = ({ data, onDataReady }: Props) => {
     const loadData = async () => {
         setState({ status: DataStatus.LOADING });
         try {
-            const data: BookCategoryPopularityResponse[] = await reportsService.getBookCategoriesPopularity({});
+            const data: BookCategoryPopularityResponse[] = await reportsService.getBookCategoriesPopularity({ metric: BookCategoryPopularityMetric.DISTINCT_USERS });
             setState({ status: DataStatus.READY, data });
             onDataReady(data);
         } catch (error: any) {

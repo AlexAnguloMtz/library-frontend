@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Box, Typography, CircularProgress, Alert, Button } from '@mui/material';
+import { useEffect, useState, type JSX } from 'react';
+import { Box, Typography, CircularProgress, Alert, Button, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import {
     BarChart,
     Bar,
@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import type { BookCategoryPopularityResponse } from '../../../models/BookCategoryPopularityResponse';
 import reportsService from '../../../services/ReportsService';
+import { BookCategoryPopularityMetric } from '../../../models/BookCategoriesPopularityRequest';
 
 enum DataStatus {
     LOADING,
@@ -77,11 +78,12 @@ type Props = {
 
 export const PopularCategories = ({ data, onDataReady }: Props) => {
     const [state, setState] = useState<DataState>({ status: DataStatus.LOADING });
+    const [metric, setMetric] = useState<BookCategoryPopularityMetric>(BookCategoryPopularityMetric.DISTINCT_USERS);
 
     const loadData = async () => {
         setState({ status: DataStatus.LOADING });
         try {
-            const data = await reportsService.getBookCategoriesPopularity({ limit: 5 });
+            const data = await reportsService.getBookCategoriesPopularity({ limit: 5, metric: BookCategoryPopularityMetric.DISTINCT_USERS });
             setState({ status: DataStatus.READY, data });
             onDataReady(data);
         } catch (error: any) {
@@ -107,97 +109,131 @@ export const PopularCategories = ({ data, onDataReady }: Props) => {
         }
     }, [data]);
 
-    if (state.status === DataStatus.LOADING) {
+    const toggleButtons = (): JSX.Element => {
         return (
-            <Box display="flex" justifyContent="center" alignItems="center" p={4}>
-                <CircularProgress />
-            </Box>
+            <ToggleButtonGroup
+                value={metric}
+                exclusive
+                onChange={(_, newView) => newView && setMetric(newView)}
+                sx={{ mb: 2 }}
+            >
+                <ToggleButton value={BookCategoryPopularityMetric.DISTINCT_USERS}>
+                    Usuarios distintos
+                </ToggleButton>
+                <ToggleButton value={BookCategoryPopularityMetric.AVERAGE}>
+                    Promedio de préstamos
+                </ToggleButton>
+            </ToggleButtonGroup>
         );
     }
 
-    if (state.status === DataStatus.ERROR) {
+    const verticalAxisLabel = (): string => {
+        return metric === BookCategoryPopularityMetric.AVERAGE
+            ? 'Media de préstamos por categoría'
+            : 'Usuarios distintos con al menos 1 préstamo para esa categoría';
+    }
+
+    const viewContent = (): JSX.Element => {
+        if (state.status === DataStatus.LOADING) {
+            return (
+                <Box display="flex" justifyContent="center" alignItems="center" p={4}>
+                    <CircularProgress />
+                </Box>
+            );
+        }
+
+        if (state.status === DataStatus.ERROR) {
+            return (
+                <Box p={2}>
+                    <Alert severity="error">
+                        {state.error}
+                        <Box mt={1}>
+                            <Button variant="outlined" color="primary" onClick={loadData}>
+                                Reintentar
+                            </Button>
+                        </Box>
+                    </Alert>
+                </Box>
+            );
+        }
+
+        if (state.status === DataStatus.READY && state.data.length === 0) {
+            return (
+                <Box p={2}>
+                    <Alert severity="info">No hay datos disponibles.</Alert>
+                </Box>
+            );
+        }
+
+        const grouped = groupData(state.data);
+
         return (
-            <Box p={2}>
-                <Alert severity="error">
-                    {state.error}
-                    <Box mt={1}>
-                        <Button variant="outlined" color="primary" onClick={loadData}>
-                            Reintentar
-                        </Button>
+            <>
+
+                <Box p={2} display="flex" flexDirection="column" gap="10px">
+                    <Box display="flex">
+                        <strong style={{ width: 120 }}>Eje horizontal:</strong>
+                        <span>Categorías de libros</span>
                     </Box>
-                </Alert>
-            </Box>
+                    <Box display="flex">
+                        <strong style={{ width: 120 }}>Eje vertical:</strong>
+                        <span>{verticalAxisLabel()}</span>
+                    </Box>
+                </Box>
+                <Box p={2} display="flex" flexWrap="wrap" gap={2}>
+                    {grouped.map((group, idx) => (
+                        <Box
+                            key={idx}
+                            flex="1 1 48%"
+                            border="1px solid #ddd"
+                            borderRadius={2}
+                            p={2}
+                        >
+                            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                                {group.gender} {group.ageMin}-{group.ageMax} años
+                            </Typography>
+                            <ResponsiveContainer width="100%" height={400}>
+                                <BarChart
+                                    data={group.categories}
+                                    margin={{ top: 10, right: 10, left: 0, bottom: 30 }}
+                                    barCategoryGap="15%"
+                                    barGap={3}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis
+                                        dataKey="name"
+                                        interval={0}
+                                        angle={-40}
+                                        textAnchor="end"
+                                        tick={{ fontWeight: 'bold', fontSize: 12 }}
+                                        tickMargin={5}
+                                        minTickGap={0}
+                                    />
+                                    <YAxis
+                                        width={30}
+                                        mirror={false}
+                                        tick={{ fontSize: 12 }}
+                                        tickLine={false}
+                                        axisLine={false}
+                                    />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Bar
+                                        dataKey="value"
+                                        fill={colorForGender(group.gender)}
+                                    />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </Box>
+                    ))}
+                </Box>
+            </>
         );
     }
-
-    if (state.status === DataStatus.READY && state.data.length === 0) {
-        return (
-            <Box p={2}>
-                <Alert severity="info">No hay datos disponibles.</Alert>
-            </Box>
-        );
-    }
-
-    const grouped = groupData(state.data);
 
     return (
         <Box>
-            <Box p={2} display="flex" flexDirection="column" gap="10px">
-                <Box display="flex">
-                    <strong style={{ width: 120 }}>Eje horizontal:</strong>
-                    <span>Categorías de libros</span>
-                </Box>
-                <Box display="flex">
-                    <strong style={{ width: 120 }}>Eje vertical:</strong>
-                    <span>Media de préstamos por categoría</span>
-                </Box>
-            </Box>
-            <Box p={2} display="flex" flexWrap="wrap" gap={2}>
-                {grouped.map((group, idx) => (
-                    <Box
-                        key={idx}
-                        flex="1 1 48%"
-                        border="1px solid #ddd"
-                        borderRadius={2}
-                        p={2}
-                    >
-                        <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-                            {group.gender} {group.ageMin}-{group.ageMax} años
-                        </Typography>
-                        <ResponsiveContainer width="100%" height={400}>
-                            <BarChart
-                                data={group.categories}
-                                margin={{ top: 10, right: 10, left: 0, bottom: 30 }}
-                                barCategoryGap="15%"
-                                barGap={3}
-                            >
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis
-                                    dataKey="name"
-                                    interval={0}
-                                    angle={-40}
-                                    textAnchor="end"
-                                    tick={{ fontWeight: 'bold', fontSize: 12 }}
-                                    tickMargin={5}
-                                    minTickGap={0}
-                                />
-                                <YAxis
-                                    width={30}
-                                    mirror={false}
-                                    tick={{ fontSize: 12 }}
-                                    tickLine={false}
-                                    axisLine={false}
-                                />
-                                <Tooltip content={<CustomTooltip />} />
-                                <Bar
-                                    dataKey="value"
-                                    fill={colorForGender(group.gender)}
-                                />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </Box>
-                ))}
-            </Box>
+            {toggleButtons()}
+            {viewContent()}
         </Box>
     );
 };
