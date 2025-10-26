@@ -19,7 +19,8 @@ import type { UsersAcquisitionResponse } from '../../models/UsersAcquisitionResp
 import type { UsersDemographyResponse } from '../../models/UsersDemographyResponse';
 import type { LoansDistributionResponse } from '../../models/LoansDistributionResponse';
 import { Button } from '../../components/Button';
-import type { PopularCategoriesData } from './shared/CategoriesPopularity/CategoriesPopularity';
+import type { PopularityData } from './shared/Popularity/Popularity';
+import type { BookCategoryPopularityResponse } from '../../models/BookCategoryPopularityResponse';
 
 type TabItem = {
     id: string;
@@ -30,11 +31,11 @@ type TabItem = {
 };
 
 type TabsData = {
-    popularAuthors?: AuthorPopularityResponse[];
+    popularAuthors?: PopularityData<AuthorPopularityResponse>;
     usersAcquisition?: UsersAcquisitionResponse[];
     usersDemography?: UsersDemographyResponse[];
-    popularCategories?: PopularCategoriesData;
-    popularityByCategory?: PopularCategoriesData;
+    popularCategories?: PopularityData<BookCategoryPopularityResponse>;
+    popularityByCategory?: PopularityData<BookCategoryPopularityResponse>;
     loansDistribution?: LoansDistributionResponse[];
 };
 

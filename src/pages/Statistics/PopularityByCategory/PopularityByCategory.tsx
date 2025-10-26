@@ -9,9 +9,10 @@ import {
     ResponsiveContainer,
 } from 'recharts';
 import type { BookCategoryPopularityResponse } from '../../../models/BookCategoryPopularityResponse';
-import { CategoriesPopularity, type PopularCategoriesData } from '../shared/CategoriesPopularity/CategoriesPopularity';
+import { Popularity, type PopularityData } from '../shared/Popularity/Popularity';
 import type { JSX } from 'react';
-import type { BookCategoryPopularityMetric } from '../../../models/BookCategoriesPopularityRequest';
+import type { PopularityMetric } from '../../../models/PopularityMetric';
+import reportsService from '../../../services/ReportsService';
 
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -39,16 +40,16 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 
 type Props = {
-    data?: PopularCategoriesData;
-    onDataReady: (data: PopularCategoriesData) => void;
+    data?: PopularityData<BookCategoryPopularityResponse>;
+    onDataReady: (data: PopularityData<BookCategoryPopularityResponse>) => void;
 }
 
 export const PopularityByCategory = ({ data, onDataReady }: Props) => {
     const renderData = (
         data: BookCategoryPopularityResponse[],
-        metric: BookCategoryPopularityMetric,
+        metric: PopularityMetric,
         colorForGender: (gender: string) => string,
-        metricLabel: (metric: BookCategoryPopularityMetric) => string,
+        metricLabel: (metric: PopularityMetric) => string,
     ): JSX.Element => {
         const grouped = groupData(data);
         const allGenders = Array.from(new Set(data.map(d => d.gender)));
@@ -107,14 +108,13 @@ export const PopularityByCategory = ({ data, onDataReady }: Props) => {
     }
 
     return (
-        <CategoriesPopularity
+        <Popularity
             data={data}
             onDataReady={onDataReady}
             renderData={renderData}
+            getItems={(request) => reportsService.getBookCategoriesPopularity(request)}
         />
     );
-
-
 };
 
 const groupData = (data: BookCategoryPopularityResponse[]) => {

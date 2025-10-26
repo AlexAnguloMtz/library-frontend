@@ -10,8 +10,9 @@ import {
     ResponsiveContainer,
 } from 'recharts';
 import type { BookCategoryPopularityResponse } from '../../../models/BookCategoryPopularityResponse';
-import { BookCategoryPopularityMetric } from '../../../models/BookCategoriesPopularityRequest';
-import { CategoriesPopularity, type PopularCategoriesData } from '../shared/CategoriesPopularity/CategoriesPopularity';
+import { PopularityMetric } from '../../../models/PopularityMetric';
+import { Popularity, type PopularityData } from '../shared/Popularity/Popularity';
+import reportsService from '../../../services/ReportsService';
 
 const groupData = (data: BookCategoryPopularityResponse[]) => {
     const map = new Map<string, BookCategoryPopularityResponse[]>();
@@ -42,16 +43,16 @@ const groupData = (data: BookCategoryPopularityResponse[]) => {
 };
 
 type Props = {
-    data?: PopularCategoriesData,
-    onDataReady: (data: PopularCategoriesData) => void;
+    data?: PopularityData<BookCategoryPopularityResponse>,
+    onDataReady: (data: PopularityData<BookCategoryPopularityResponse>) => void;
 }
 
 export const PopularCategories = ({ data, onDataReady }: Props) => {
     const renderData = (
         data: BookCategoryPopularityResponse[],
-        metric: BookCategoryPopularityMetric,
+        metric: PopularityMetric,
         colorForGender: (gender: string) => string,
-        metricLabel: (metric: BookCategoryPopularityMetric) => string,
+        metricLabel: (metric: PopularityMetric) => string,
     ): JSX.Element => {
         const grouped = groupData(data);
         return (
@@ -128,11 +129,12 @@ export const PopularCategories = ({ data, onDataReady }: Props) => {
     }
 
     return (
-        <CategoriesPopularity
-            topCategories={5}
+        <Popularity
+            limit={5}
             data={data}
             onDataReady={onDataReady}
             renderData={renderData}
+            getItems={(request) => reportsService.getBookCategoriesPopularity(request)}
         />
     );
 };

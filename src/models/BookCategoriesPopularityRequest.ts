@@ -1,13 +1,8 @@
-export enum BookCategoryPopularityMetric {
-    AVERAGE = 'AVERAGE',
-    DISTINCT_USERS = 'DISTINCT_USERS',
-    FREQUENCY = 'FREQUENCY',
-    MEDIAN = 'MEDIAN',
-}
+import type { PopularityMetric } from "./PopularityMetric";
 
 export type BookCategoriesPopularityRequest = {
     limit?: number;
-    metric: BookCategoryPopularityMetric;
+    metric: PopularityMetric;
 }
 
 export function toURLSearchParams(request: BookCategoriesPopularityRequest): URLSearchParams {
