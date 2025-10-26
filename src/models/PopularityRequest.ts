@@ -1,11 +1,11 @@
 import type { PopularityMetric } from "./PopularityMetric";
 
-export type BookCategoriesPopularityRequest = {
+export type PopularityRequest = {
     limit?: number;
     metric: PopularityMetric;
 }
 
-export function toURLSearchParams(request: BookCategoriesPopularityRequest): URLSearchParams {
+export function toURLSearchParams(request: PopularityRequest): URLSearchParams {
     const url: URLSearchParams = new URLSearchParams();
 
     if (request.limit) {

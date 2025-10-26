@@ -1,13 +1,12 @@
 import type { BookCategoryPopularityResponse } from "../models/BookCategoryPopularityResponse";
 import apiClient from "./ApiClient";
-import type { BookCategoriesPopularityRequest } from "../models/BookCategoriesPopularityRequest";
-import * as bookCategoriesPopularityRequest from "../models/BookCategoriesPopularityRequest";
-import * as authorsPopularityRequest from "../models/AuthorsPopularityRequest";
 import type { AuthorPopularityResponse } from "../models/AuthorPopularityResponse";
-import type { AuthorsPopularityRequest } from "../models/AuthorsPopularityRequest";
+import type { PopularityRequest } from "../models/PopularityRequest";
+import * as popularityRequest from "../models/PopularityRequest";
 import type { UsersAcquisitionResponse } from "../models/UsersAcquisitionResponse";
 import type { UsersDemographyResponse } from "../models/UsersDemographyResponse";
 import type { LoansDistributionResponse } from "../models/LoansDistributionResponse";
+import type { PublisherPopularityResponse } from "../models/PublisherPopularityResponse";
 
 class ReportsService {
 
@@ -24,14 +23,19 @@ class ReportsService {
         return apiClient.get<UsersDemographyResponse[]>(`/api/v1/reports/users-demography`);
     }
 
-    async getBookCategoriesPopularity(request: BookCategoriesPopularityRequest): Promise<BookCategoryPopularityResponse[]> {
-        const query = bookCategoriesPopularityRequest.toURLSearchParams(request);
+    async getBookCategoriesPopularity(request: PopularityRequest): Promise<BookCategoryPopularityResponse[]> {
+        const query = popularityRequest.toURLSearchParams(request);
         return apiClient.get<BookCategoryPopularityResponse[]>(`/api/v1/reports/book-categories-popularity${query.toString() ? `?${query.toString()}` : ''}`);
     }
 
-    async getAuthorsPopularity(request: AuthorsPopularityRequest): Promise<AuthorPopularityResponse[]> {
-        const query = authorsPopularityRequest.toURLSearchParams(request);
+    async getAuthorsPopularity(request: PopularityRequest): Promise<AuthorPopularityResponse[]> {
+        const query = popularityRequest.toURLSearchParams(request);
         return apiClient.get<AuthorPopularityResponse[]>(`/api/v1/reports/authors-popularity${query.toString() ? `?${query.toString()}` : ''}`);
+    }
+
+    async getPublishersPopularity(request: PopularityRequest): Promise<PublisherPopularityResponse[]> {
+        const query = popularityRequest.toURLSearchParams(request);
+        return apiClient.get<PublisherPopularityResponse[]>(`/api/v1/reports/publishers-popularity${query.toString() ? `?${query.toString()}` : ''}`);
     }
 
     async getLoansDistribution(): Promise<LoansDistributionResponse[]> {

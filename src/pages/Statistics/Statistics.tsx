@@ -5,7 +5,6 @@ import CategoryIcon from '@mui/icons-material/Category';
 import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import PersonIcon from '@mui/icons-material/Person';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
-
 import { StatisticsListing } from './StatisticsListing/StatisticsListing';
 import { PopularCategories } from './PopularCategories/PopularCategories';
 import { PopularAuthors } from './PopularAuthors/PopularAuthors';
@@ -13,7 +12,6 @@ import { PopularityByCategory } from './PopularityByCategory/PopularityByCategor
 import { UsersAcquisition } from './UsersAcquisition/UsersAcquisition';
 import { UsersDemography } from './UsersDemography/UsersDemography';
 import { LoansDistribution } from './LoansDistribution/LoansDistibution';
-
 import type { AuthorPopularityResponse } from '../../models/AuthorPopularityResponse';
 import type { UsersAcquisitionResponse } from '../../models/UsersAcquisitionResponse';
 import type { UsersDemographyResponse } from '../../models/UsersDemographyResponse';
@@ -21,6 +19,9 @@ import type { LoansDistributionResponse } from '../../models/LoansDistributionRe
 import { Button } from '../../components/Button';
 import type { PopularityData } from './shared/Popularity/Popularity';
 import type { BookCategoryPopularityResponse } from '../../models/BookCategoryPopularityResponse';
+import { PopularPublishers } from './PopularPublishers/PopularPublishers';
+import type { PublisherPopularityResponse } from '../../models/PublisherPopularityResponse';
+import CollectionsBookmarkIcon from '@mui/icons-material/CollectionsBookmark';
 
 type TabItem = {
     id: string;
@@ -36,6 +37,7 @@ type TabsData = {
     usersDemography?: UsersDemographyResponse[];
     popularCategories?: PopularityData<BookCategoryPopularityResponse>;
     popularityByCategory?: PopularityData<BookCategoryPopularityResponse>;
+    popularPublishers?: PopularityData<PublisherPopularityResponse>;
     loansDistribution?: LoansDistributionResponse[];
 };
 
@@ -98,6 +100,18 @@ export const Statistics = () => {
             ),
             removable: true,
             icon: <CategoryIcon />
+        },
+        {
+            id: 'popular-publishers',
+            title: 'Editoriales más populares',
+            content: (
+                <PopularPublishers
+                    data={tabsData.popularPublishers}
+                    onDataReady={makeOnDataReady('popularPublishers')}
+                />
+            ),
+            removable: true,
+            icon: <CollectionsBookmarkIcon />
         },
         {
             id: 'popularity-by-category',
