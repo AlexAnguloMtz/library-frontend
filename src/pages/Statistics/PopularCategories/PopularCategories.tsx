@@ -14,15 +14,27 @@ import reportsService from '../../../services/ReportsService';
 import { BookCategoryPopularityMetric } from '../../../models/BookCategoriesPopularityRequest';
 
 enum DataStatus {
+    IDLE,
     LOADING,
     READY,
     ERROR,
 }
 
 type DataState =
+    | { status: DataStatus.IDLE }
     | { status: DataStatus.LOADING }
     | { status: DataStatus.READY; data: BookCategoryPopularityResponse[] }
     | { status: DataStatus.ERROR; error: string };
+
+export type PopularCategoriesData = {
+    distinctUsers?: BookCategoryPopularityResponse[];
+    averages?: BookCategoryPopularityResponse[];
+}
+
+type PopularCategoriesState = {
+    distinctUsers: DataState;
+    averages: DataState;
+}
 
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -59,38 +71,96 @@ const groupData = (data: BookCategoryPopularityResponse[]) => {
 
     return Array.from(map.entries()).map(([key, items]) => {
         const [gender, ageMin, ageMax] = key.split('-');
+
+        const categories = items
+            .map((i) => ({
+                name: i.category,
+                value: i.value,
+            }))
+            .sort((a, b) => a.value - b.value);
+
         return {
             gender,
             ageMin: Number(ageMin),
             ageMax: Number(ageMax),
-            categories: items.map((i) => ({
-                name: i.category,
-                value: i.value,
-            })),
+            categories,
         };
     });
 };
 
 type Props = {
-    data?: BookCategoryPopularityResponse[];
-    onDataReady: (data: BookCategoryPopularityResponse[]) => void;
+    data?: PopularCategoriesData;
+    onDataReady: (data: PopularCategoriesData) => void;
+};
+
+const initialState: PopularCategoriesState = {
+    distinctUsers: { status: DataStatus.IDLE },
+    averages: { status: DataStatus.IDLE }
 }
 
 export const PopularCategories = ({ data, onDataReady }: Props) => {
-    const [state, setState] = useState<DataState>({ status: DataStatus.LOADING });
-    const [metric, setMetric] = useState<BookCategoryPopularityMetric>(BookCategoryPopularityMetric.DISTINCT_USERS);
+    const [state, setState] = useState<PopularCategoriesState>(initialState);
+    const [metric, setMetric] = useState<BookCategoryPopularityMetric>(
+        BookCategoryPopularityMetric.DISTINCT_USERS
+    );
 
-    const loadData = async () => {
-        setState({ status: DataStatus.LOADING });
+    const newStateWithError = (
+        previous: PopularCategoriesState,
+        metric: BookCategoryPopularityMetric,
+        error: string
+    ): PopularCategoriesState => {
+        if (metric === BookCategoryPopularityMetric.DISTINCT_USERS) {
+            return {
+                ...previous,
+                distinctUsers: { status: DataStatus.ERROR, error }
+            }
+        }
+        return {
+            ...previous,
+            averages: { status: DataStatus.ERROR, error }
+        }
+    }
+
+    const newStateWithLoading = (
+        previous: PopularCategoriesState,
+        metric: BookCategoryPopularityMetric,
+    ): PopularCategoriesState => {
+        if (metric === BookCategoryPopularityMetric.DISTINCT_USERS) {
+            return {
+                ...previous,
+                distinctUsers: { status: DataStatus.LOADING }
+            }
+        }
+        return {
+            ...previous,
+            averages: { status: DataStatus.LOADING }
+        }
+    }
+
+    const newStateWithData = (
+        previous: PopularCategoriesState,
+        data: BookCategoryPopularityResponse[],
+        metric: BookCategoryPopularityMetric,
+    ): PopularCategoriesState => {
+        if (metric === BookCategoryPopularityMetric.DISTINCT_USERS) {
+            return {
+                ...previous,
+                distinctUsers: { status: DataStatus.READY, data }
+            }
+        }
+        return {
+            ...previous,
+            averages: { status: DataStatus.READY, data }
+        }
+    }
+
+    const loadData = async (metric: BookCategoryPopularityMetric) => {
+        setState((prev) => newStateWithLoading(prev, metric));
         try {
-            const data = await reportsService.getBookCategoriesPopularity({ limit: 5, metric: BookCategoryPopularityMetric.DISTINCT_USERS });
-            setState({ status: DataStatus.READY, data });
-            onDataReady(data);
+            const items: BookCategoryPopularityResponse[] = await reportsService.getBookCategoriesPopularity({ limit: 5, metric });
+            setState((prev) => newStateWithData(prev, items, metric));
         } catch (error: any) {
-            setState({
-                status: DataStatus.ERROR,
-                error: error.message || 'Error al cargar datos',
-            });
+            setState((prev) => newStateWithError(prev, metric, error.message));
         }
     };
 
@@ -104,12 +174,29 @@ export const PopularCategories = ({ data, onDataReady }: Props) => {
     };
 
     useEffect(() => {
-        if (!data) {
-            loadData();
+        if (!data || !data.distinctUsers) {
+            loadData(metric);
         }
-    }, [data]);
+    }, [data?.distinctUsers]);
 
-    const toggleButtons = (): JSX.Element => {
+    useEffect(() => {
+        if (metric === BookCategoryPopularityMetric.AVERAGE && !data?.averages) {
+            loadData(metric);
+        }
+    }, [metric]);
+
+    useEffect(() => {
+        const newData: PopularCategoriesData = {};
+        if (state.averages.status === DataStatus.READY) {
+            newData.averages = state.averages.data;
+        }
+        if (state.distinctUsers.status === DataStatus.READY) {
+            newData.distinctUsers = state.distinctUsers.data;
+        }
+        onDataReady(newData);
+    }, [state.distinctUsers, state.averages]);
+
+    const ToggleButtons = (): JSX.Element => {
         return (
             <ToggleButtonGroup
                 value={metric}
@@ -125,15 +212,26 @@ export const PopularCategories = ({ data, onDataReady }: Props) => {
                 </ToggleButton>
             </ToggleButtonGroup>
         );
+    };
+
+    const verticalAxisLabel = (metric: BookCategoryPopularityMetric): string => {
+        return metric === BookCategoryPopularityMetric.DISTINCT_USERS
+            ? 'Usuarios distintos con al menos 1 préstamo por categoría'
+            : 'Promedio de préstamos por categoría';
+    };
+
+    const dataSateForMetric = (state: PopularCategoriesState, metric: BookCategoryPopularityMetric): DataState => {
+        if (metric === BookCategoryPopularityMetric.DISTINCT_USERS) {
+            return state.distinctUsers;
+        }
+        return state.averages;
     }
 
-    const verticalAxisLabel = (): string => {
-        return metric === BookCategoryPopularityMetric.AVERAGE
-            ? 'Media de préstamos por categoría'
-            : 'Usuarios distintos con al menos 1 préstamo para esa categoría';
-    }
+    const ViewContent = ({ state }: { state: DataState }): JSX.Element => {
+        if (state.status === DataStatus.IDLE) {
+            return <></>
+        }
 
-    const viewContent = (): JSX.Element => {
         if (state.status === DataStatus.LOADING) {
             return (
                 <Box display="flex" justifyContent="center" alignItems="center" p={4}>
@@ -148,7 +246,7 @@ export const PopularCategories = ({ data, onDataReady }: Props) => {
                     <Alert severity="error">
                         {state.error}
                         <Box mt={1}>
-                            <Button variant="outlined" color="primary" onClick={loadData}>
+                            <Button variant="outlined" color="primary" onClick={(_) => loadData(metric)}>
                                 Reintentar
                             </Button>
                         </Box>
@@ -169,7 +267,6 @@ export const PopularCategories = ({ data, onDataReady }: Props) => {
 
         return (
             <>
-
                 <Box p={2} display="flex" flexDirection="column" gap="10px">
                     <Box display="flex">
                         <strong style={{ width: 120 }}>Eje horizontal:</strong>
@@ -177,14 +274,20 @@ export const PopularCategories = ({ data, onDataReady }: Props) => {
                     </Box>
                     <Box display="flex">
                         <strong style={{ width: 120 }}>Eje vertical:</strong>
-                        <span>{verticalAxisLabel()}</span>
+                        <span>{verticalAxisLabel(metric)}</span>
                     </Box>
                 </Box>
-                <Box p={2} display="flex" flexWrap="wrap" gap={2}>
+                <Box
+                    p={2}
+                    display="flex"
+                    flexWrap="wrap"
+                    justifyContent="space-between"
+                    gap={2}
+                >
                     {grouped.map((group, idx) => (
                         <Box
                             key={idx}
-                            flex="1 1 48%"
+                            width="32%"
                             border="1px solid #ddd"
                             borderRadius={2}
                             p={2}
@@ -228,12 +331,12 @@ export const PopularCategories = ({ data, onDataReady }: Props) => {
                 </Box>
             </>
         );
-    }
+    };
 
     return (
         <Box>
-            {toggleButtons()}
-            {viewContent()}
+            <ToggleButtons />
+            <ViewContent state={dataSateForMetric(state, metric)} />
         </Box>
     );
 };

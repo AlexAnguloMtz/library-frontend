@@ -7,7 +7,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 
 import { StatisticsListing } from './StatisticsListing/StatisticsListing';
-import { PopularCategories } from './PopularCategories/PopularCategories';
+import { PopularCategories, type PopularCategoriesData } from './PopularCategories/PopularCategories';
 import { PopularAuthors } from './PopularAuthors/PopularAuthors';
 import { PopularityByCategory } from './PopularityByCategory/PopularityByCategory';
 import { UsersAcquisition } from './UsersAcquisition/UsersAcquisition';
@@ -33,7 +33,7 @@ type TabsData = {
     popularAuthors?: AuthorPopularityResponse[];
     usersAcquisition?: UsersAcquisitionResponse[];
     usersDemography?: UsersDemographyResponse[];
-    popularCategories?: BookCategoryPopularityResponse[];
+    popularCategories?: PopularCategoriesData;
     popularityByCategory?: BookCategoryPopularityResponse[];
     loansDistribution?: LoansDistributionResponse[];
 };

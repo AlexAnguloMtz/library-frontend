@@ -67,15 +67,20 @@ const groupData = (data: AuthorPopularityResponse[]) => {
 
     return Array.from(map.entries()).map(([key, items]) => {
         const [gender, ageMin, ageMax] = key.split('-');
+
+        const authors = items
+            .map((i) => ({
+                id: i.authorId,
+                name: `${i.authorFirstName} ${i.authorLastName}`,
+                value: i.value,
+            }))
+            .sort((a, b) => a.value - b.value);
+
         return {
             gender,
             ageMin: Number(ageMin),
             ageMax: Number(ageMax),
-            authors: items.map((i) => ({
-                id: i.authorId,
-                name: `${i.authorFirstName} ${i.authorLastName}`,
-                value: i.value,
-            })),
+            authors,
         };
     });
 };
