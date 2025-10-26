@@ -36,29 +36,35 @@ type PopularCategoriesState = {
     averages: DataState;
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label, metric }: any) => {
     if (active && payload && payload.length) {
+        const value = payload[0].value;
+        const description =
+            metric === BookCategoryPopularityMetric.AVERAGE
+                ? 'Promedio de préstamos por usuario'
+                : 'Usuarios distintos con al menos 1 préstamo';
+
         return (
             <Box
                 sx={{
                     bgcolor: '#fff',
                     border: '1px solid #ccc',
-                    p: 1,
+                    p: 1.2,
                     borderRadius: 1,
                     boxShadow: 2,
                 }}
             >
                 <Typography fontWeight="bold">{label}</Typography>
-                {payload.map((pl: any) => (
-                    <Typography key={pl.dataKey}>
-                        {pl.dataKey}: {pl.value}
-                    </Typography>
-                ))}
+                <Typography>
+                    {description}: <strong>{value}</strong>
+                </Typography>
             </Box>
         );
     }
     return null;
 };
+
+
 
 const groupData = (data: BookCategoryPopularityResponse[]) => {
     const map = new Map<string, BookCategoryPopularityResponse[]>();
@@ -319,7 +325,7 @@ export const PopularCategories = ({ data, onDataReady }: Props) => {
                                         tickLine={false}
                                         axisLine={false}
                                     />
-                                    <Tooltip content={<CustomTooltip />} />
+                                    <Tooltip content={<CustomTooltip metric={metric} />} />
                                     <Bar
                                         dataKey="value"
                                         fill={colorForGender(group.gender)}

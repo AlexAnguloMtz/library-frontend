@@ -30,14 +30,12 @@ type DataState =
     | { status: DataStatus.READY; data: UsersDemographyResponse[] }
     | { status: DataStatus.ERROR; error: string };
 
-// Helper para colores
 const colorForGender = (gender: string) => {
     if (gender === 'Femenino') return '#e91e63';
     if (gender === 'Masculino') return '#1976d2';
-    return '#9e9e9e'; // gris por defecto
+    return '#9e9e9e';
 };
 
-// Tooltip personalizado
 const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
         return (
@@ -74,9 +72,7 @@ export const UsersDemography = ({ data, onDataReady }: Props) => {
     };
 
     useEffect(() => {
-        if (!data) {
-            loadData();
-        }
+        if (!data) loadData();
     }, [data]);
 
     if (state.status === DataStatus.LOADING)
@@ -99,7 +95,6 @@ export const UsersDemography = ({ data, onDataReady }: Props) => {
 
     const chartData: any[] = [];
     const genders = Array.from(new Set(state.data.map(d => d.gender)));
-
     const ageRanges = Array.from({ length: 10 }, (_, i) => ({ ageMin: i * 10, ageMax: i * 10 + 9 }));
 
     let totalAbsolute = 0;
@@ -134,10 +129,8 @@ export const UsersDemography = ({ data, onDataReady }: Props) => {
                     {genders.map(g => (
                         <Bar key={g} dataKey={g} fill={colorForGender(g)} />
                     ))}
-                    <Bar key="Total" dataKey="Total" fill="#4caf50" />
                 </BarChart>
             </ResponsiveContainer>
         </Box>
     );
 };
-
