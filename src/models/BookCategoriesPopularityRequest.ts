@@ -2,6 +2,7 @@ export enum BookCategoryPopularityMetric {
     AVERAGE = 'AVERAGE',
     DISTINCT_USERS = 'DISTINCT_USERS',
     FREQUENCY = 'FREQUENCY',
+    MEDIAN = 'MEDIAN',
 }
 
 export type BookCategoriesPopularityRequest = {
