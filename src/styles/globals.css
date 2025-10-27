@@ -107,3 +107,9 @@
   cursor: not-allowed;
   background-color: transparent !important;
 }
+
+/* TODO */
+/* Refactor all tables to remove this global style */
+table th {
+  padding-left: 13px !important;
+}

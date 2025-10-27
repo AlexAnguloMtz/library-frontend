@@ -4,10 +4,11 @@ import { Icon, Icons } from '../Icon';
 import authenticationHelper from '../../util/AuthenticationHelper';
 import type { AuthenticationResponse } from '../../models/AuthenticationResponse';
 
-export const DashboardModuleTopBar = ({ title, onExportClick, onNewClick, selectedCount, isExporting, auth, exportPermission, newPermission, additionalActions }: {
+export const DashboardModuleTopBar = ({ title, onExportClick, showCreateNew = true, onNewClick = () => { }, selectedCount, isExporting, auth, exportPermission, newPermission, additionalActions }: {
     title: string;
+    showCreateNew?: boolean;
     onExportClick: () => void | Promise<void>;
-    onNewClick: () => void;
+    onNewClick?: () => void;
     selectedCount?: number;
     isExporting?: boolean;
     auth?: AuthenticationResponse | null;
@@ -21,9 +22,9 @@ export const DashboardModuleTopBar = ({ title, onExportClick, onNewClick, select
             <div className='dashboard-module-top-bar-actions'>
                 {additionalActions}
                 {(!exportPermission || (auth && authenticationHelper.hasAnyPermission(auth, [exportPermission]))) && (
-                    <Button 
-                        onClick={onExportClick} 
-                        className='dashboard-module-top-bar-action' 
+                    <Button
+                        onClick={onExportClick}
+                        className='dashboard-module-top-bar-action'
                         type='secondary'
                         disabled={(!selectedCount || selectedCount === 0) || isExporting}
                     >
@@ -36,12 +37,15 @@ export const DashboardModuleTopBar = ({ title, onExportClick, onNewClick, select
                     </Button>
                 )}
                 {(!newPermission || (auth && authenticationHelper.hasAnyPermission(auth, [newPermission]))) && (
-                    <Button onClick={onNewClick} className='dashboard-module-top-bar-action' type='primary'>
-                        <div className='dashboard-module-top-bar-action-icon-container'>
-                            <Icon name={Icons.add} />
-                        </div>
-                        <span className='dashboard-module-top-bar-action-text'>Nuevo</span>
-                    </Button>
+                    (showCreateNew === true &&
+                        (
+                            <Button onClick={onNewClick} className='dashboard-module-top-bar-action' type='primary'>
+                                <div className='dashboard-module-top-bar-action-icon-container'>
+                                    <Icon name={Icons.add} />
+                                </div>
+                                <span className='dashboard-module-top-bar-action-text'>Nuevo</span>
+                            </Button>
+                        ))
                 )}
             </div>
         </div>

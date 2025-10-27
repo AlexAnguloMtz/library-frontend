@@ -26,6 +26,7 @@ import type { AuthenticationResponse } from '../models/AuthenticationResponse';
 import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
+import HistoryIcon from '@mui/icons-material/History';
 
 const drawerWidth = 194;
 
@@ -118,6 +119,7 @@ const DashboardLayout: React.FC = () => {
                         { text: 'Usuarios', icon: <PeopleAltOutlinedIcon />, path: '/dashboard/users', permission: 'users:read' },
                         { text: 'Estadísticas', icon: <BarChartIcon />, path: '/dashboard/statistics', permission: 'reports:read' },
                         { text: 'Reportes', icon: <FactCheckIcon />, path: '/dashboard/reports', permission: 'reports:read' },
+                        { text: 'Bitácora', icon: <HistoryIcon />, path: '/dashboard/audit', permission: 'audit-events:read' },
                         { text: 'Mi perfil', icon: <PersonIcon />, path: '/dashboard/profile', permission: 'users:read:self' },
                     ].filter((item) => {
                         return !item.permission || authenticationHelper.hasAnyPermission(auth, [item.permission]);
