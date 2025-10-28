@@ -549,7 +549,6 @@ export const Audit: React.FC = () => {
                                         <td><Skeleton variant="rectangular" height={40} /></td>
                                         <td><Skeleton variant="rectangular" height={40} /></td>
                                         <td><Skeleton variant="rectangular" height={40} /></td>
-                                        <td><Skeleton variant="rectangular" height={40} /></td>
                                     </tr>
                                 ))
                             )}
