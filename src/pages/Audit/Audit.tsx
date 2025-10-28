@@ -21,14 +21,13 @@ import type { AuditResourceTypeResponse } from '../../models/AuditResourceTypeRe
 
 type Filters = {
     responsible: string;
-    resourceIdentifier: string;
     resourceType: string;
     eventType: string;
     occurredAtMin?: Date;
     occurredAtMax?: Date;
 }
 
-type SortableColumn = 'responsible' | 'resourceIdentifier' | 'resourceType' | 'eventType' | 'occurredAt';
+type SortableColumn = 'responsible' | 'resourceType' | 'eventType' | 'occurredAt';
 
 type PaginationState = {
     sort?: SortableColumn;
@@ -53,7 +52,7 @@ type OptionsState =
     | { status: 'success'; resourceTypes: AuditResourceTypeResponse[] };
 
 export const Audit: React.FC = () => {
-    const [filters, setFilters] = useState<Filters>({ responsible: '', resourceIdentifier: '', resourceType: '', eventType: '' });
+    const [filters, setFilters] = useState<Filters>({ responsible: '', resourceType: '', eventType: '' });
 
     const [paginationState, setPaginationState] = useState<PaginationState>({
         sort: undefined,
@@ -80,8 +79,6 @@ export const Audit: React.FC = () => {
     const [exportErrorMessage, setExportErrorMessage] = useState('');
 
     const debouncedSearch = useDebounce(filters.responsible, 500);
-
-    const debouncedResourceIdentifier = useDebounce(filters.resourceIdentifier, 500);
 
     const handleSelectItem = (id: string) => {
         setSelectedItems(prev => {
@@ -170,11 +167,11 @@ export const Audit: React.FC = () => {
 
     useEffect(() => {
         setPaginationControls(prev => ({ ...prev, page: 0 }));
-    }, [debouncedSearch, debouncedResourceIdentifier, filters.eventType, filters.resourceType, filters.occurredAtMin, filters.occurredAtMax]);
+    }, [debouncedSearch, filters.eventType, filters.resourceType, filters.occurredAtMin, filters.occurredAtMax]);
 
     useEffect(() => {
         fetchItems();
-    }, [debouncedSearch, debouncedResourceIdentifier, filters.eventType, filters.resourceType, filters.occurredAtMin, filters.occurredAtMax, paginationState, paginationControls]);
+    }, [debouncedSearch, filters.eventType, filters.resourceType, filters.occurredAtMin, filters.occurredAtMax, paginationState, paginationControls]);
 
 
     const fetchItems = async () => {
@@ -191,7 +188,6 @@ export const Audit: React.FC = () => {
     const toQuery = (filters: Filters): GetAuditEventsRequest => {
         return {
             responsible: filters.responsible,
-            resourceId: filters.resourceIdentifier,
             eventType: filters.eventType,
             resourceType: filters.resourceType,
             occurredAtMin: filters.occurredAtMin,
@@ -213,10 +209,6 @@ export const Audit: React.FC = () => {
             return [{ sort: 'eventType', order: paginationState.order }];
         }
 
-        if (paginationState.sort === 'resourceIdentifier') {
-            return [{ sort: 'resourceIdentifier', order: paginationState.order }];
-        }
-
         if (paginationState.sort === 'resourceType') {
             return [{ sort: 'resourceType', order: paginationState.order }];
         }
@@ -236,7 +228,6 @@ export const Audit: React.FC = () => {
     const clearFilters = () => {
         setFilters((_) => ({
             responsible: '',
-            resourceIdentifier: '',
             resourceType: '',
             eventType: '',
             occurredAtMin: undefined,
@@ -306,24 +297,6 @@ export const Audit: React.FC = () => {
                         onChange={(e) => handleFilterChange('responsible', e.target.value)}
                         label="Responsable"
                         placeholder='Responsable...'
-                        variant="outlined"
-                        fullWidth
-                        size='small'
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <SearchIcon />
-                                </InputAdornment>
-                            ),
-                        }}
-                    />
-                </div>
-                <div className='filter-item'>
-                    <TextField
-                        value={filters.resourceIdentifier}
-                        onChange={(e) => handleFilterChange('resourceIdentifier', e.target.value)}
-                        label="ID Recurso"
-                        placeholder='ID Recurso...'
                         variant="outlined"
                         fullWidth
                         size='small'
@@ -508,13 +481,6 @@ export const Audit: React.FC = () => {
                                     style={{ width: '20%' }}
                                 />
                                 <SortableColumnHeader
-                                    title='ID recurso'
-                                    active={paginationState.sort === 'resourceIdentifier'}
-                                    order={paginationState.order}
-                                    onClick={() => { setPaginationState(nextPagination("resourceIdentifier")) }}
-                                    style={{ width: '12.5%' }}
-                                />
-                                <SortableColumnHeader
                                     title='Tipo de recurso'
                                     active={paginationState.sort === 'resourceType'}
                                     order={paginationState.order}
@@ -543,7 +509,6 @@ export const Audit: React.FC = () => {
                                         <td style={{ width: '50px', textAlign: 'center' }}>
                                             <Checkbox disabled size="small" />
                                         </td>
-                                        <td><Skeleton variant="rectangular" height={40} /></td>
                                         <td><Skeleton variant="rectangular" height={40} /></td>
                                         <td><Skeleton variant="rectangular" height={40} /></td>
                                         <td><Skeleton variant="rectangular" height={40} /></td>
@@ -591,12 +556,6 @@ export const Audit: React.FC = () => {
                                                 />
                                             </div>
                                         </div>
-                                    </td>
-                                    <td>
-                                        <span className='event-table-id-cell'>
-                                            {item.resourceId}
-                                            <CopyToClipboard text={item.resourceId} size={'tiny'} />
-                                        </span>
                                     </td>
                                     <td>
                                         <span className=''>{item.resourceType}</span>

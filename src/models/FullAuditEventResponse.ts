@@ -1,4 +1,4 @@
-export type AuditEventResponse = {
+export type FullAuditEventResponse = {
     id: string;
     responsibleId: string,
     responsibleFirstName: string,

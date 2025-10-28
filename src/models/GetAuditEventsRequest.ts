@@ -1,6 +1,5 @@
 export type GetAuditEventsRequest = {
     responsible?: string;
-    resourceId?: string;
     resourceType?: string;
     eventType?: string;
     occurredAtMin?: Date;
@@ -17,10 +16,6 @@ export function toURLSearchParams(query: GetAuditEventsRequest): URLSearchParams
 
     if (query.responsible) {
         url.append("responsible", query.responsible);
-    }
-
-    if (query.resourceId) {
-        url.append("resourceId", query.resourceId);
     }
 
     if (query.eventType) {
