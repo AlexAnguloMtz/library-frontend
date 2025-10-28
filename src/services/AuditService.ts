@@ -27,9 +27,10 @@ class AuditService {
         const data: any = await apiClient.get<any>(`/api/v1/audit/events/${id}`);
         return parseAuditEventJson(data);
     }
+
 }
 
-const parseAuditEventJson = (json: any): AuditEventResponse => {
+const parseAuditEventJson = (json: any) => {
     return {
         ...json,
         occurredAt: new Date(json.occurredAt)

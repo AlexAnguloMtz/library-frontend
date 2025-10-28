@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/Button';
 import InputAdornment from "@mui/material/InputAdornment";
 import SearchIcon from '@mui/icons-material/Search';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, Pagination, MenuItem, Checkbox, FormControl, InputLabel, Select, TextField, OutlinedInput, Box, Chip } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, Pagination, MenuItem, Checkbox, FormControl, InputLabel, Select, TextField, OutlinedInput, Box, Chip, CircularProgress, Alert, Typography, Avatar, Paper } from '@mui/material';
 import { DashboardModuleTopBar } from '../../components/DashboardModuleTopBar/DashboardModuleTopBar';
 import type { PaginationRequest } from '../../models/PaginationRequest';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -18,6 +18,8 @@ import type { GetAuditEventsRequest } from '../../models/GetAuditEventsRequest';
 import { CopyToClipboard } from '../../components/CopyToClipboard/CopyToClipboard';
 import { Icon as CustomIcon, Icons } from '../../components/Icon';
 import type { AuditResourceTypeResponse } from '../../models/AuditResourceTypeResponse';
+import type { FullAuditEventResponse } from '../../models/FullAuditEventResponse';
+import { Button as MuiButton } from '@mui/material';
 
 type Filters = {
     responsible: string;
@@ -39,11 +41,11 @@ type PaginationControls = {
     size: number;
 };
 
-type DataState =
+type DataState<T> =
     | { status: 'idle' }
     | { status: 'loading' }
     | { status: 'error'; error: string }
-    | { status: 'success'; response: PaginationResponse<AuditEventResponse> };
+    | { status: 'success'; data: T };
 
 type OptionsState =
     | { status: 'idle' }
@@ -64,7 +66,7 @@ export const Audit: React.FC = () => {
         size: 20
     });
 
-    const [dataState, setDataState] = useState<DataState>({ status: 'idle' });
+    const [dataState, setDataState] = useState<DataState<PaginationResponse<AuditEventResponse>>>({ status: 'idle' });
     const [optionsState, setOptionsState] = useState<OptionsState>({ status: 'idle' });
     const [auth, setAuth] = useState<AuthenticationResponse | null>(null);
     const [displayPagination, setDisplayPagination] = useState<{ totalPages: number; page: number } | null>(null);
@@ -80,6 +82,9 @@ export const Audit: React.FC = () => {
 
     const debouncedResponsibleSearch = useDebounce(filters.responsible, 500);
 
+    const [itemToManageId, setItemToManageId] = useState<string | undefined>(undefined);
+    const [itemToManageState, setItemToManageState] = useState<DataState<FullAuditEventResponse>>({ status: 'idle' });
+
     const handleSelectItem = (id: string) => {
         setSelectedItems(prev => {
             const newSet = new Set(prev);
@@ -93,12 +98,12 @@ export const Audit: React.FC = () => {
     };
 
     const handleSelectAll = () => {
-        if (dataState.status === 'success' && dataState.response) {
+        if (dataState.status === 'success' && dataState.data) {
             if (isAllSelected || selectedItems.size > 0) {
                 setSelectedItems(new Set());
                 setIsAllSelected(false);
             } else {
-                const allIds = new Set(dataState.response.items.map(item => item.id));
+                const allIds = new Set(dataState.data.items.map(item => item.id));
                 setSelectedItems(allIds);
                 setIsAllSelected(true);
             }
@@ -129,15 +134,15 @@ export const Audit: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        if (dataState.status === 'success' && dataState.response) {
+        if (dataState.status === 'success' && dataState.data) {
             setSelectedItems(new Set());
             setIsAllSelected(false);
         }
-    }, [dataState.status, dataState.status === 'success' ? dataState.response?.items : undefined]);
+    }, [dataState.status, dataState.status === 'success' ? dataState.data?.items : undefined]);
 
     useEffect(() => {
-        if (dataState.status === 'success' && dataState.response) {
-            const totalItems = dataState.response.items.length;
+        if (dataState.status === 'success' && dataState.data) {
+            const totalItems = dataState.data.items.length;
             const selectedCount = selectedItems.size;
 
             if (selectedCount === 0) {
@@ -152,7 +157,7 @@ export const Audit: React.FC = () => {
 
     useEffect(() => {
         if (dataState.status === 'success') {
-            const response = dataState.response;
+            const response = dataState.data;
             setDisplayPagination({
                 totalPages: response.totalPages,
                 page: response.page
@@ -173,12 +178,17 @@ export const Audit: React.FC = () => {
         fetchItems();
     }, [debouncedResponsibleSearch, filters.eventType, filters.resourceType, filters.occurredAtMin, filters.occurredAtMax, paginationState, paginationControls]);
 
+    useEffect(() => {
+        if (itemToManageId) {
+            loadItemToManage(itemToManageId);
+        }
+    }, [itemToManageId]);
 
     const fetchItems = async () => {
         setDataState({ status: 'loading' });
         try {
-            const response = await auditService.getAuditEvents(toQuery(filters), pagination(paginationState, paginationControls));
-            setDataState({ status: 'success', response });
+            const data = await auditService.getAuditEvents(toQuery(filters), pagination(paginationState, paginationControls));
+            setDataState({ status: 'success', data });
         } catch (error: any) {
             setDataState({ status: 'error', error: error.message || 'Unknown error' });
             setErrorOpen(true);
@@ -255,8 +265,18 @@ export const Audit: React.FC = () => {
         return { sort: column, order: 'asc' };
     };
 
-    const handleViewItem = (id: string) => void {
+    const handleViewItem = (id: string): void => {
+        setItemToManageId((_) => id);
+    }
 
+    const loadItemToManage = async (id: string): Promise<void> => {
+        setItemToManageState((_) => ({ status: 'loading' }));
+        try {
+            const data = await auditService.getAuditEventById(id);
+            setItemToManageState(() => ({ status: 'success', data }));
+        } catch (e: any) {
+            setItemToManageState((_) => ({ status: 'error', error: e.message || 'Error desconocido' }));
+        }
     }
 
     const dateTimeFormat = (): Intl.DateTimeFormat => {
@@ -517,7 +537,7 @@ export const Audit: React.FC = () => {
                                     </tr>
                                 ))
                             )}
-                            {dataState.status === 'success' && dataState.response.items.map((item: AuditEventResponse) => (
+                            {dataState.status === 'success' && dataState.data.items.map((item: AuditEventResponse) => (
                                 <tr
                                     key={item.id}
                                     style={{
@@ -599,6 +619,98 @@ export const Audit: React.FC = () => {
                 </DialogContent>
                 <DialogActions>
                     <Button type='primary' onClick={() => setExportErrorOpen(false)}>Cerrar</Button>
+                </DialogActions>
+            </Dialog>
+
+            { /* Item modal */}
+            <Dialog open={!!itemToManageId} onClose={() => setItemToManageId(undefined)} fullWidth maxWidth="sm">
+                <DialogTitle>Detalle de acción</DialogTitle>
+                <DialogContent dividers>
+                    {itemToManageState.status === "idle" ? null : itemToManageState.status === "loading" ? (
+                        <Box display="flex" justifyContent="center" alignItems="center" minHeight="150px">
+                            <CircularProgress />
+                        </Box>
+                    ) : itemToManageState.status === "error" ? (
+                        <Alert
+                            severity="error"
+                            action={
+                                <MuiButton
+                                    color="inherit"
+                                    size="small"
+                                    onClick={() => itemToManageId ? loadItemToManage(itemToManageId) : null}
+                                >
+                                    Reintentar
+                                </MuiButton>
+                            }
+                        >
+                            Ocurrió un error al cargar los datos.
+                        </Alert>
+                    ) : (
+                        <>
+                            <Box mb={2}>
+                                <Typography variant="subtitle2" color="text.secondary">
+                                    Fecha y hora
+                                </Typography>
+                                <Typography variant="body2">
+                                    {new Date(itemToManageState.data.occurredAt).toLocaleString()}
+                                </Typography>
+                            </Box>
+
+                            <Box mb={2}>
+                                <Typography variant="subtitle2" color="text.secondary">
+                                    Responsable
+                                </Typography>
+                                <Box display="flex" alignItems="center" mt={1}>
+                                    <Avatar
+                                        src={itemToManageState.data.responsibleProfilePictureUrl}
+                                        alt="Responsable"
+                                        sx={{ width: 40, height: 40, mr: 2 }}
+                                    />
+                                    <Box>
+                                        <Typography variant="body2">
+                                            {itemToManageState.data.responsibleFirstName}{" "}
+                                            {itemToManageState.data.responsibleLastName}
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            <span>
+                                                ID: {itemToManageState.data.responsibleId}
+                                            </span>
+                                            <span>
+                                                <CopyToClipboard text={itemToManageState.data.responsibleId} size='tiny' />
+                                            </span>
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </Box>
+
+                            <Box>
+                                <Typography variant="subtitle2" color="text.secondary">
+                                    Datos
+                                </Typography>
+
+                                <Paper variant="outlined" sx={{ p: 2 }}>
+                                    {Object.entries(JSON.parse(itemToManageState.data.eventData)).map(([key, value]) => (
+                                        <Box
+                                            key={key}
+                                            sx={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                mb: 1,
+                                                fontFamily: 'monospace',
+                                            }}
+                                        >
+                                            <Typography color="text.secondary">{key}</Typography>
+                                            <Typography fontWeight="bold">{String(value)}</Typography>
+                                        </Box>
+                                    ))}
+                                </Paper>
+                            </Box>
+                        </>
+                    )}
+                </DialogContent>
+
+                <DialogActions>
+                    <MuiButton onClick={() => setItemToManageId(undefined)}>Cerrar</MuiButton>
                 </DialogActions>
             </Dialog>
         </div>
