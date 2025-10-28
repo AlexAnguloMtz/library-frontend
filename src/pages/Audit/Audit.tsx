@@ -78,7 +78,7 @@ export const Audit: React.FC = () => {
     const [exportErrorOpen, setExportErrorOpen] = useState(false);
     const [exportErrorMessage, setExportErrorMessage] = useState('');
 
-    const debouncedSearch = useDebounce(filters.responsible, 500);
+    const debouncedResponsibleSearch = useDebounce(filters.responsible, 500);
 
     const handleSelectItem = (id: string) => {
         setSelectedItems(prev => {
@@ -167,11 +167,11 @@ export const Audit: React.FC = () => {
 
     useEffect(() => {
         setPaginationControls(prev => ({ ...prev, page: 0 }));
-    }, [debouncedSearch, filters.eventType, filters.resourceType, filters.occurredAtMin, filters.occurredAtMax]);
+    }, [debouncedResponsibleSearch, filters.eventType, filters.resourceType, filters.occurredAtMin, filters.occurredAtMax]);
 
     useEffect(() => {
         fetchItems();
-    }, [debouncedSearch, filters.eventType, filters.resourceType, filters.occurredAtMin, filters.occurredAtMax, paginationState, paginationControls]);
+    }, [debouncedResponsibleSearch, filters.eventType, filters.resourceType, filters.occurredAtMin, filters.occurredAtMax, paginationState, paginationControls]);
 
 
     const fetchItems = async () => {
