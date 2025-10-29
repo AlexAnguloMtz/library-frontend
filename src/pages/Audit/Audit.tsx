@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../../components/Button';
 import InputAdornment from "@mui/material/InputAdornment";
 import SearchIcon from '@mui/icons-material/Search';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, Pagination, MenuItem, Checkbox, FormControl, InputLabel, Select, TextField, OutlinedInput, Box, Chip, CircularProgress, Alert, Typography, Avatar, Paper } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Skeleton, Pagination, MenuItem, Checkbox, FormControl, InputLabel, Select, TextField, OutlinedInput, Box, CircularProgress, Alert, Typography, Avatar, Paper } from '@mui/material';
 import { DashboardModuleTopBar } from '../../components/DashboardModuleTopBar/DashboardModuleTopBar';
 import type { PaginationRequest } from '../../models/PaginationRequest';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -77,9 +77,9 @@ export const Audit: React.FC = () => {
 
     const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
     const [isAllSelected, setIsAllSelected] = useState(false);
-    const [isExporting, setIsExporting] = useState(false);
+    const [isExporting, _] = useState(false);
     const [exportErrorOpen, setExportErrorOpen] = useState(false);
-    const [exportErrorMessage, setExportErrorMessage] = useState('');
+    const [exportErrorMessage, __] = useState('');
 
     const debouncedResponsibleSearch = useDebounce(filters.responsible, 500);
 
