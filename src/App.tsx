@@ -10,7 +10,6 @@ import { Login } from './pages/Login/Login';
 import Publishers from './pages/Publishers/Publishers';
 import Reports from './pages/Reports/Reports';
 import { Statistics } from './pages/Statistics/Statistics';
-import { Audit } from './pages/Audit/Audit';
 
 function App() {
   return (
