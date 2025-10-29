@@ -20,6 +20,7 @@ import { Icon as CustomIcon, Icons } from '../../components/Icon';
 import type { AuditResourceTypeResponse } from '../../models/AuditResourceTypeResponse';
 import type { FullAuditEventResponse } from '../../models/FullAuditEventResponse';
 import { Button as MuiButton } from '@mui/material';
+import * as ObjectHelper from '../../util/ObjectHelper';
 
 type Filters = {
     responsible: string;
@@ -649,15 +650,6 @@ export const Audit: React.FC = () => {
                         <>
                             <Box mb={2}>
                                 <Typography variant="subtitle2" color="text.secondary">
-                                    Fecha y hora
-                                </Typography>
-                                <Typography variant="body2">
-                                    {new Date(itemToManageState.data.occurredAt).toLocaleString()}
-                                </Typography>
-                            </Box>
-
-                            <Box mb={2}>
-                                <Typography variant="subtitle2" color="text.secondary">
                                     Responsable
                                 </Typography>
                                 <Box display="flex" alignItems="center" mt={1}>
@@ -672,9 +664,7 @@ export const Audit: React.FC = () => {
                                             {itemToManageState.data.responsibleLastName}
                                         </Typography>
                                         <Typography variant="caption" color="text.secondary">
-                                            <span>
-                                                ID: {itemToManageState.data.responsibleId}
-                                            </span>
+                                            <span>ID: {itemToManageState.data.responsibleId}</span>
                                             <span>
                                                 <CopyToClipboard text={itemToManageState.data.responsibleId} size='tiny' />
                                             </span>
@@ -683,29 +673,53 @@ export const Audit: React.FC = () => {
                                 </Box>
                             </Box>
 
-                            <Box>
-                                <Typography variant="subtitle2" color="text.secondary">
-                                    Datos
-                                </Typography>
+                            {/* Cada par etiqueta-valor en horizontal */}
+                            <Box mb={1} display="flex" justifyContent="space-between">
+                                <Typography variant="subtitle2" color="text.secondary">Recurso</Typography>
+                                <Typography variant="body2">{itemToManageState.data.resourceType}</Typography>
+                            </Box>
 
+                            <Box mb={1} display="flex" justifyContent="space-between">
+                                <Typography variant="subtitle2" color="text.secondary">Acción</Typography>
+                                <Typography variant="body2">{itemToManageState.data.eventType}</Typography>
+                            </Box>
+
+                            <Box mb={2} display="flex" justifyContent="space-between">
+                                <Typography variant="subtitle2" color="text.secondary">Fecha y hora</Typography>
+                                <Typography variant="body2">
+                                    {new Date(itemToManageState.data.occurredAt).toLocaleString()}
+                                </Typography>
+                            </Box>
+
+
+                            <Box>
+                                <Typography variant="subtitle2" color="text.secondary">Datos</Typography>
                                 <Paper variant="outlined" sx={{ p: 2 }}>
-                                    {Object.entries(JSON.parse(itemToManageState.data.eventData)).map(([key, value]) => (
-                                        <Box
-                                            key={key}
-                                            sx={{
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                mb: 1,
-                                                fontFamily: 'monospace',
-                                            }}
-                                        >
-                                            <Typography color="text.secondary">{key}</Typography>
-                                            <Typography fontWeight="bold">{String(value)}</Typography>
+                                    {Object.entries(ObjectHelper.reverse(JSON.parse((itemToManageState.data.eventData)))).map(([key, value]) => (
+                                        <Box key={key} mb={1} sx={{ fontFamily: 'monospace' }}>
+                                            {value && typeof value === 'object' && !Array.isArray(value) ? (
+                                                <>
+                                                    <Typography fontWeight="bold" mb={0.5}>{key}</Typography>
+                                                    {Object.entries(value).map(([subKey, subValue]) => (
+                                                        <Box key={subKey} sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                                                            <Typography color="text.secondary">{subKey}</Typography>
+                                                            <Typography fontWeight="bold">{String(subValue)}</Typography>
+                                                        </Box>
+                                                    ))}
+                                                </>
+                                            ) : (
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <Typography color="text.secondary">{key}</Typography>
+                                                    <Typography fontWeight="bold">{String(value)}</Typography>
+                                                </Box>
+                                            )}
                                         </Box>
                                     ))}
                                 </Paper>
                             </Box>
+
                         </>
+
                     )}
                 </DialogContent>
 
