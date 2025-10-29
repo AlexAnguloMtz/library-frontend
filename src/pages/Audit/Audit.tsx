@@ -20,7 +20,7 @@ import { Icon as CustomIcon, Icons } from '../../components/Icon';
 import type { AuditResourceTypeResponse } from '../../models/AuditResourceTypeResponse';
 import type { FullAuditEventResponse } from '../../models/FullAuditEventResponse';
 import { Button as MuiButton } from '@mui/material';
-import * as ObjectHelper from '../../util/ObjectHelper';
+import DOMPurify from 'dompurify';
 
 type Filters = {
     responsible: string;
@@ -273,7 +273,7 @@ export const Audit: React.FC = () => {
     const loadItemToManage = async (id: string): Promise<void> => {
         setItemToManageState((_) => ({ status: 'loading' }));
         try {
-            const data = await auditService.getAuditEventById(id);
+            const data = await auditService.getAuditEventById(id, { eventDataPretty: true });
             setItemToManageState(() => ({ status: 'success', data }));
         } catch (e: any) {
             setItemToManageState((_) => ({ status: 'error', error: e.message || 'Error desconocido' }));
@@ -690,31 +690,13 @@ export const Audit: React.FC = () => {
                                     {new Date(itemToManageState.data.occurredAt).toLocaleString()}
                                 </Typography>
                             </Box>
-
-
                             <Box>
                                 <Typography variant="subtitle2" color="text.secondary">Datos</Typography>
-                                <Paper variant="outlined" sx={{ p: 2 }}>
-                                    {Object.entries(ObjectHelper.reverse(JSON.parse((itemToManageState.data.eventData)))).map(([key, value]) => (
-                                        <Box key={key} mb={1} sx={{ fontFamily: 'monospace' }}>
-                                            {value && typeof value === 'object' && !Array.isArray(value) ? (
-                                                <>
-                                                    <Typography fontWeight="bold" mb={0.5}>{key}</Typography>
-                                                    {Object.entries(value).map(([subKey, subValue]) => (
-                                                        <Box key={subKey} sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                                                            <Typography color="text.secondary">{subKey}</Typography>
-                                                            <Typography fontWeight="bold">{String(subValue)}</Typography>
-                                                        </Box>
-                                                    ))}
-                                                </>
-                                            ) : (
-                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                    <Typography color="text.secondary">{key}</Typography>
-                                                    <Typography fontWeight="bold">{String(value)}</Typography>
-                                                </Box>
-                                            )}
-                                        </Box>
-                                    ))}
+                                <Paper variant="outlined" sx={{ p: 2 }}
+                                    dangerouslySetInnerHTML={{
+                                        __html: DOMPurify.sanitize(itemToManageState.data.eventDataPretty),
+                                    }}
+                                >
                                 </Paper>
                             </Box>
 

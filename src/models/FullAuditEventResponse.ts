@@ -5,6 +5,7 @@ export type FullAuditEventResponse = {
     responsibleLastName: string,
     responsibleProfilePictureUrl: string,
     eventData: string;
+    eventDataPretty: string;
     eventType: string;
     resourceType: string;
     occurredAt: Date;

@@ -8,6 +8,8 @@ import type { GetAuditEventsRequest } from '../models/GetAuditEventsRequest';
 import * as getAuditEventsRequest from '../models/GetAuditEventsRequest';
 import type { AuditResourceTypeResponse } from '../models/AuditResourceTypeResponse';
 import type { FullAuditEventResponse } from '../models/FullAuditEventResponse';
+import type { GetAuditEventRequest } from '../models/GetAuditEventRequest';
+import * as  getAuditEventRequest from '../models/GetAuditEventRequest';
 
 class AuditService {
     async getAuditEvents(filters: GetAuditEventsRequest, pagination: PaginationRequest): Promise<PaginationResponse<AuditEventResponse>> {
@@ -23,8 +25,9 @@ class AuditService {
         return await apiClient.get<AuditResourceTypeResponse[]>(`/api/v1/audit/resource-types`);
     }
 
-    async getAuditEventById(id: string): Promise<FullAuditEventResponse> {
-        const data: any = await apiClient.get<any>(`/api/v1/audit/events/${id}`);
+    async getAuditEventById(id: string, request: GetAuditEventRequest): Promise<FullAuditEventResponse> {
+        const params: URLSearchParams = getAuditEventRequest.toURLSearchParams(request);
+        const data: any = await apiClient.get<any>(`/api/v1/audit/events/${id}${params.toString() ? `?${params.toString()}` : ''}`);
         return parseAuditEventJson(data);
     }
 
