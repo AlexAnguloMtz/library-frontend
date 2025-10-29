@@ -28,7 +28,7 @@ function App() {
           <Route path="/dashboard/publishers" element={<Publishers />} ></Route>
           <Route path="/dashboard/reports" element={<Reports />} />
           <Route path="/dashboard/statistics" element={<Statistics />} />
-          <Route path="/dashboard/audit" element={<Audit />} />
+          {/*<Route path="/dashboard/audit" element={<Audit />} />*/}
           <Route path="/dashboard/profile" element={<UserPage key="user-profile" />} ></Route>
         </Route>
       </Routes>
