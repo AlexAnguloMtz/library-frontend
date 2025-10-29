@@ -167,3 +167,8 @@ body {
     max-width: 24%;
   }
 }
+
+.event-data-pretty-container table th {
+  text-align: left;
+  padding-left: 0 !important;
+}

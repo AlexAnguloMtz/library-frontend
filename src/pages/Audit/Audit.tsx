@@ -692,7 +692,7 @@ export const Audit: React.FC = () => {
                             </Box>
                             <Box>
                                 <Typography variant="subtitle2" color="text.secondary">Datos</Typography>
-                                <Paper variant="outlined" sx={{ p: 2 }}
+                                <Paper className='event-data-pretty-container' variant="outlined" sx={{ p: 2 }}
                                     dangerouslySetInnerHTML={{
                                         __html: DOMPurify.sanitize(itemToManageState.data.eventDataPretty),
                                     }}
