@@ -1,4 +1,3 @@
-// src/layouts/DashboardLayout.tsx
 import React, { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -58,7 +57,16 @@ const DashboardLayout: React.FC = () => {
     };
 
     const drawerContent = (
-        <Box sx={{ width: drawerWidth, bgcolor: '#3834a4', height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Box
+            sx={{
+                width: drawerWidth,
+                bgcolor: '#3834a4',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'auto',
+            }}
+        >
             {/* Close button solo visible en mobile */}
             <Toolbar sx={{ display: { xs: 'flex', md: 'none' }, justifyContent: 'flex-end' }}>
                 <IconButton onClick={toggleDrawer}>
@@ -75,7 +83,6 @@ const DashboardLayout: React.FC = () => {
 
             {/* Información del usuario */}
             <div style={{ padding: '0px 16px 12px 16px', color: 'white', textAlign: 'center' }}>
-                {/* Avatar del usuario */}
                 <div style={{ marginBottom: '12px' }}>
                     <img
                         src={auth.profilePictureUrl}
@@ -106,12 +113,12 @@ const DashboardLayout: React.FC = () => {
                 </div>
             </div>
 
-            <div style={{ width: '96%', height: '1px', margin: '0px auto 8px auto', backgroundColor: '#D8BCE3' }}>
-            </div>
+            <div style={{ width: '96%', height: '1px', margin: '0px auto 8px auto', backgroundColor: '#D8BCE3' }} />
 
             <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                 <List sx={{ flexGrow: 1 }}>
                     {[
+                        // TODO: Arreglar permisos reales para ingresar a préstamos y adquisiciones, tanto en la BDD como aquí.
                         { text: 'Libros', icon: <MenuBookIcon />, path: '/dashboard/books', permission: 'books:read' },
                         { text: 'Autores', icon: <PersonSearchIcon />, path: '/dashboard/authors', permission: 'authors:read' },
                         { text: 'Editoriales', icon: <CollectionsBookmarkIcon />, path: '/dashboard/publishers', permission: 'publishers:read' },
@@ -125,7 +132,6 @@ const DashboardLayout: React.FC = () => {
                         return !item.permission || authenticationHelper.hasAnyPermission(auth, [item.permission]);
                     }).map((item) => {
                         const isActive = location.pathname.startsWith(item.path);
-
                         return (
                             <ListItem
                                 key={item.text}
@@ -137,24 +143,20 @@ const DashboardLayout: React.FC = () => {
                                     borderRadius: 1,
                                     px: 2,
                                     transition: 'all 0.2s',
-                                    ...(isActive && {
-                                        bgcolor: 'rgba(255,255,255,0.2)',
-                                    }),
-                                    '&:hover': {
-                                        bgcolor: 'rgba(255,255,255,0.1)',
-                                        transform: 'translateX(3px)',
-                                    },
+                                    ...(isActive && { bgcolor: 'rgba(255,255,255,0.2)' }),
+                                    '&:hover': { bgcolor: 'rgba(255,255,255,0.1)', transform: 'translateX(3px)' },
                                     textDecoration: 'none',
                                 }}
                             >
-                                <ListItemIcon sx={{ color: 'inherit', fontSize: '0.9em', minWidth: '32px', position: 'relative', bottom: '1px' }}>{item.icon}</ListItemIcon>
+                                <ListItemIcon sx={{ color: 'inherit', fontSize: '0.9em', minWidth: '32px', position: 'relative', bottom: '1px' }}>
+                                    {item.icon}
+                                </ListItemIcon>
                                 <ListItemText primary={item.text} sx={{ '& .MuiListItemText-primary': { fontSize: '0.9em' } }} />
                             </ListItem>
                         );
                     })}
                 </List>
 
-                {/* Logout button at the bottom */}
                 <List sx={{ mt: 'auto' }}>
                     <ListItem
                         onClick={handleLogout}
@@ -165,10 +167,7 @@ const DashboardLayout: React.FC = () => {
                             px: 2,
                             cursor: 'pointer',
                             transition: 'all 0.2s',
-                            '&:hover': {
-                                bgcolor: 'rgba(255,255,255,0.1)',
-                                transform: 'translateX(3px)',
-                            },
+                            '&:hover': { bgcolor: 'rgba(255,255,255,0.1)', transform: 'translateX(3px)' },
                             textDecoration: 'none',
                         }}
                     >
@@ -219,7 +218,6 @@ const DashboardLayout: React.FC = () => {
 
             {/* Contenido principal */}
             <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                {/* AppBar solo mobile */}
                 <AppBar position="fixed" sx={{ display: { xs: 'block', md: 'none' }, bgcolor: 'white' }}>
                     <Toolbar>
                         <IconButton edge="start" onClick={toggleDrawer} sx={{ mr: 2 }}>
@@ -228,10 +226,8 @@ const DashboardLayout: React.FC = () => {
                     </Toolbar>
                 </AppBar>
 
-                {/* Toolbar para spacing solo mobile */}
                 <Toolbar sx={{ display: { xs: 'block', md: 'none' } }} />
 
-                {/* Contenido inyectable */}
                 <Box
                     component="main"
                     sx={{
@@ -243,7 +239,6 @@ const DashboardLayout: React.FC = () => {
                 >
                     <Outlet />
                 </Box>
-
             </Box>
         </Box>
     );

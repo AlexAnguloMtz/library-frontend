@@ -10,6 +10,7 @@ import { Login } from './pages/Login/Login';
 import Publishers from './pages/Publishers/Publishers';
 import Reports from './pages/Reports/Reports';
 import { Statistics } from './pages/Statistics/Statistics';
+import Audit from './pages/Audit/Audit';
 
 function App() {
   return (
@@ -27,7 +28,7 @@ function App() {
           <Route path="/dashboard/publishers" element={<Publishers />} ></Route>
           <Route path="/dashboard/reports" element={<Reports />} />
           <Route path="/dashboard/statistics" element={<Statistics />} />
-          {/*<Route path="/dashboard/audit" element={<Audit />} />*/}
+          <Route path="/dashboard/audit" element={<Audit />} />
           <Route path="/dashboard/profile" element={<UserPage key="user-profile" />} ></Route>
         </Route>
       </Routes>
